@@ -130,7 +130,7 @@ export default function LoginPage() {
     return (
         <div className="login-container">
             <div className="login-card">
-                <div className="login-title">CIMS 管理面板</div>
+                <div className="login-title">欢迎来到 MINI ClassIsland</div>
                 <div className="login-subtitle">
                     {step === "email" && "输入您的邮箱以继续"}
                     {step === "login" && "欢迎回来，请登录"}
@@ -329,6 +329,10 @@ export default function LoginPage() {
                         )}
                     </div>
                 )}
+            </div>
+            <div style={{ marginTop: 24, textAlign: "center", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, padding: "0 20px" }}>
+                <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
+                <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
             </div>
         </div>
     );

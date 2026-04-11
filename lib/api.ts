@@ -397,37 +397,40 @@ export const invitations = {
 // ============================================================
 
 export const data = {
-    /** 创建资源 */
-    create: (accountId: string, type: ResourceType, body?: unknown) =>
-        post<StatusResponse>(`${acctPath(accountId)}/${type}/create`, body),
+    /** 创建资源 (Backend uses GET /create?name=... for empty creation) */
+    create: (accountId: string, type: ResourceType, name: string) =>
+        get<StatusResponse>(`${acctPath(accountId)}/${type}/create?name=${encodeURIComponent(name)}`),
 
     /** 列出资源 */
     list: (accountId: string, type: ResourceType) =>
         get<string[]>(`${acctPath(accountId)}/${type}/list`),
 
-    /** 搜索资源 */
-    search: (accountId: string, type: ResourceType, q?: string) =>
-        post<unknown>(`${acctPath(accountId)}/${type}/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
-
-    /** 上传资源 */
-    upload: (accountId: string, type: ResourceType, body: unknown) =>
-        post<unknown>(`${acctPath(accountId)}/${type}/upload`, body),
+    /** 获取资源 Token */
+    getToken: (accountId: string, type: ResourceType, name: string) =>
+        get<{ token: string; url: string }>(`${acctPath(accountId)}/${type}/token?name=${encodeURIComponent(name)}`),
 
     /** 删除资源 */
-    deleteData: (accountId: string, type: ResourceType, resourceId: string) =>
-        del<StatusResponse>(`${acctPath(accountId)}/${type}/${encodeURIComponent(resourceId)}`),
-
-    /** 重命名资源 */
-    rename: (accountId: string, type: ResourceType, resourceId: string, body: unknown) =>
-        post<unknown>(`${acctPath(accountId)}/${type}/${encodeURIComponent(resourceId)}/rename`, body),
+    deleteData: (accountId: string, type: ResourceType, name: string) =>
+        del<StatusResponse>(`${acctPath(accountId)}/${type}/delete?name=${encodeURIComponent(name)}`),
 
     /** 覆盖写入资源 */
-    write: (accountId: string, type: ResourceType, resourceId: string, payload: unknown) =>
-        post<StatusResponse>(`${acctPath(accountId)}/${type}/${encodeURIComponent(resourceId)}`, payload),
+    write: (accountId: string, type: ResourceType, name: string, payload: unknown) =>
+        post<StatusResponse>(`${acctPath(accountId)}/${type}/write?name=${encodeURIComponent(name)}`, payload),
 
-    /** 读取资源（直接 GET） */
-    read: (accountId: string, type: ResourceType, resourceId: string) =>
-        get<unknown>(`${acctPath(accountId)}/${type}/${encodeURIComponent(resourceId)}`),
+    /** 增量更新资源 (Patch) */
+    patch: (accountId: string, type: ResourceType, name: string, payload: unknown) =>
+        patch<StatusResponse>(`${acctPath(accountId)}/${type}/update?name=${encodeURIComponent(name)}`, payload),
+
+    /** 读取资源（使用 Token 获取） */
+    read: async (accountId: string, type: ResourceType, name: string) => {
+        // 1. Management API 获取短效 Token
+        const t = await get<{ token: string; url: string }>(`${acctPath(accountId)}/${type}/token?name=${encodeURIComponent(name)}`);
+        // 2. Client API 提取数据
+        const clientBase = getServerUrl().replace("27042", "27041"); 
+        const res = await fetch(`${clientBase}${t.url}`);
+        if (!res.ok) throw new ApiError(res.status, "读取资源失败");
+        return await res.json();
+    },
 
     /** 批量操作 */
     batch: (accountId: string, ops: BatchRequest) =>

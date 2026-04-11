@@ -11,6 +11,12 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { twoFA } from "@/lib/api";
 import {
+    Dialog,
+    DialogSurface,
+    DialogTitle,
+    DialogBody,
+    DialogContent,
+    DialogActions,
     Button, Input, Label, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
@@ -23,6 +29,8 @@ export default function LoginDialog() {
     const [twoFALoading, setTwoFALoading] = useState(false);
     const [twoFAError, setTwoFAError] = useState<string | null>(null);
 
+    // We keep dialog rendered but closed when not needed, so state is maintained or we can conditionally render it.
+    // However, conditional rendering is better to reset state on unmount.
     if (!requireReAuth) return null;
 
     async function handleSubmit(e: React.FormEvent) {
@@ -52,89 +60,81 @@ export default function LoginDialog() {
     }
 
     return (
-        <div className="login-dialog-overlay">
-            <div className="login-dialog-card">
-                <div className="login-dialog-header">
-                    <div className="login-dialog-title">会话已过期或权限不足</div>
-                    <div className="login-dialog-subtitle">请重新登录以继续操作</div>
-                </div>
-
-                {pending2FA ? (
-                    <form onSubmit={handle2FAVerify}>
-                        <div className="form-group">
-                            <Label htmlFor="reauth-totp">两步验证码</Label>
-                            <Input
-                                id="reauth-totp"
-                                value={totpCode}
-                                onChange={(_, d) => setTotpCode(d.value)}
-                                placeholder="请输入 6 位验证码"
-                                style={{ width: "100%" }}
-                                autoFocus
-                            />
+        <Dialog open={requireReAuth} modalType="alert">
+            <DialogSurface>
+                <DialogBody>
+                    <DialogTitle>会话已过期或权限不足</DialogTitle>
+                    <DialogContent style={{ display: "flex", flexDirection: "column", gap: "16px", paddingTop: "8px" }}>
+                        <div style={{ color: "var(--colorNeutralForeground2)" }}>
+                            请重新登录以继续操作。
                         </div>
-                        {twoFAError && (
-                            <MessageBar intent="error" style={{ marginBottom: 12 }}>
-                                <MessageBarBody>{twoFAError}</MessageBarBody>
-                            </MessageBar>
+                        {pending2FA ? (
+                            <form id="reauth-form" onSubmit={handle2FAVerify} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div>
+                                    <Label htmlFor="reauth-totp" style={{ marginBottom: "4px", display: "block" }}>两步验证码</Label>
+                                    <Input
+                                        id="reauth-totp"
+                                        value={totpCode}
+                                        onChange={(_, d) => setTotpCode(d.value)}
+                                        placeholder="请输入 6 位验证码"
+                                        style={{ width: "100%" }}
+                                        autoFocus
+                                    />
+                                </div>
+                                {twoFAError && (
+                                    <MessageBar intent="error">
+                                        <MessageBarBody>{twoFAError}</MessageBarBody>
+                                    </MessageBar>
+                                )}
+                            </form>
+                        ) : (
+                            <form id="reauth-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div>
+                                    <Label htmlFor="reauth-email" style={{ marginBottom: "4px", display: "block" }}>邮箱</Label>
+                                    <Input
+                                        id="reauth-email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(_, d) => setEmail(d.value)}
+                                        placeholder="user@example.com"
+                                        style={{ width: "100%" }}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="reauth-password" style={{ marginBottom: "4px", display: "block" }}>密码</Label>
+                                    <Input
+                                        id="reauth-password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(_, d) => setPassword(d.value)}
+                                        placeholder="请输入密码"
+                                        style={{ width: "100%" }}
+                                    />
+                                </div>
+                                {error && (
+                                    <MessageBar intent="error">
+                                        <MessageBarBody>{error}</MessageBarBody>
+                                    </MessageBar>
+                                )}
+                            </form>
                         )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button appearance="subtle" onClick={dismissReAuth}>
+                            退出
+                        </Button>
                         <Button
                             appearance="primary"
                             type="submit"
-                            disabled={twoFALoading || !totpCode}
-                            style={{ width: "100%" }}
+                            form="reauth-form"
+                            disabled={pending2FA ? (twoFALoading || !totpCode) : (loading || !email || !password)}
                         >
-                            {twoFALoading ? <Spinner size="tiny" /> : "验证"}
+                            {loading || twoFALoading ? <Spinner size="tiny" /> : (pending2FA ? "验证" : "重新登录")}
                         </Button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <Label htmlFor="reauth-email">邮箱</Label>
-                            <Input
-                                id="reauth-email"
-                                type="email"
-                                value={email}
-                                onChange={(_, d) => setEmail(d.value)}
-                                placeholder="user@example.com"
-                                style={{ width: "100%" }}
-                                autoFocus
-                            />
-                        </div>
-                        <div className="form-group">
-                            <Label htmlFor="reauth-password">密码</Label>
-                            <Input
-                                id="reauth-password"
-                                type="password"
-                                value={password}
-                                onChange={(_, d) => setPassword(d.value)}
-                                placeholder="请输入密码"
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                        {error && (
-                            <MessageBar intent="error" style={{ marginBottom: 12 }}>
-                                <MessageBarBody>{error}</MessageBarBody>
-                            </MessageBar>
-                        )}
-                        <div className="login-dialog-actions">
-                            <Button
-                                appearance="primary"
-                                type="submit"
-                                disabled={loading || !email || !password}
-                                style={{ flex: 1 }}
-                            >
-                                {loading ? <Spinner size="tiny" /> : "重新登录"}
-                            </Button>
-                            <Button
-                                appearance="subtle"
-                                onClick={dismissReAuth}
-                            >
-                                退出
-                            </Button>
-                        </div>
-                    </form>
-                )}
-            </div>
-        </div>
+                    </DialogActions>
+                </DialogBody>
+            </DialogSurface>
+        </Dialog>
     );
 }
