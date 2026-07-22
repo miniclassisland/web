@@ -508,16 +508,9 @@ export const data = {
     patch: (accountId: string, type: ResourceType, name: string, payload: unknown) =>
         patch<StatusResponse>(`${acctPath(accountId)}/${type}/update?name=${encodeURIComponent(name)}`, payload),
 
-    /** 读取资源（使用 Token 获取） */
-    read: async (accountId: string, type: ResourceType, name: string) => {
-        // 1. Management API 获取短效 Token
-        const t = await get<{ token: string; url: string }>(`${acctPath(accountId)}/${type}/token?name=${encodeURIComponent(name)}`);
-        // 2. Client API 提取数据
-        const clientBase = getServerUrl().replace("27042", "27041"); 
-        const res = await fetch(`${clientBase}${t.url}`);
-        if (!res.ok) throw new ApiError(res.status, "读取资源失败");
-        return await res.json();
-    },
+    /** 读取资源内容 (Management API) */
+    read: (accountId: string, type: ResourceType, name: string) =>
+        get<unknown>(`${acctPath(accountId)}/${type}/${encodeURIComponent(name)}`),
 
     /** 批量操作 */
     batch: (accountId: string, ops: BatchRequest) =>
