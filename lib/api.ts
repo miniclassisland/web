@@ -53,14 +53,32 @@ export function clearToken(): void {
 
 export class ApiError extends Error {
     status: number;
+    code?: string;
     detail: unknown;
+
     constructor(status: number, detail: unknown) {
         let msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+        let code: string | undefined;
+
+        if (detail && typeof detail === "object") {
+            const d = detail as Record<string, unknown>;
+            if (typeof d.code === "string") {
+                code = d.code;
+            }
+            if (typeof d.msg === "string") {
+                msg = d.msg;
+            } else if (typeof d.detail === "string") {
+                msg = d.detail;
+            }
+        }
+
         if (msg === "Failed to fetch" || (typeof msg === "string" && msg.includes("Failed to fetch"))) {
             msg = "未知的服务器回答，请联系管理员";
         }
+
         super(msg);
         this.status = status;
+        this.code = code;
         this.detail = detail;
     }
 }
@@ -106,13 +124,6 @@ async function request<T>(
         throw err;
     }
 
-    if (res.status === 503) {
-        if (typeof window !== "undefined") {
-            window.location.href = "https://admin.localminiclassisland.miniopensource.com/oobe";
-            return new Promise(() => {});
-        }
-    }
-
     if (res.status === 401 || res.status === 403) {
         // 如果是登录、2FA验证或恢复接口返回的 401/403，不要视作登录过期，应该当作常规错误处理，解析返回的具体错误内容
         const isAuthFlow = path === "/user/auth" || path === "/user/2fa/totp/verify" || path === "/user/2fa/totp/recover";
@@ -128,9 +139,13 @@ async function request<T>(
         let detail: unknown;
         try { detail = await res.json(); } catch { detail = await res.text(); }
 
+        let code: string | undefined;
         let msg = "请求失败";
         if (detail && typeof detail === "object") {
             const d = detail as Record<string, unknown>;
+            if (typeof d.code === "string") {
+                code = d.code;
+            }
             if (Array.isArray(d.detail)) {
                 // 自动提取 Pydantic/FastAPI 的校验错误列表
                 const errors = (d.detail as Array<{ loc?: unknown[]; msg?: string }>).map((err) => {
@@ -154,11 +169,25 @@ async function request<T>(
             msg = detail;
         }
 
+        const isOobe = res.status === 503 || code === "ERR_SYSTEM_OOBE" || msg.includes("System not initialized");
+        if (isOobe) {
+            if (typeof window !== "undefined") {
+                const pathName = window.location.pathname;
+                const isOobePage = pathName === "/oobe" || pathName.startsWith("/oobe");
+                const isOobeApi = path.startsWith("/api/oobe") || path.includes("/oobe");
+                if (!isOobePage && !isOobeApi) {
+                    const targetOobeUrl = process.env.NEXT_PUBLIC_ADMIN_OOBE_URL || "https://admin.localminiclassisland.miniopensource.com/oobe";
+                    window.location.href = targetOobeUrl;
+                    return new Promise(() => {});
+                }
+            }
+        }
+
         if (msg === "Failed to fetch" || (typeof msg === "string" && msg.includes("Failed to fetch"))) {
             msg = "未知的服务器回答，请联系管理员";
         }
 
-        throw new ApiError(res.status, msg);
+        throw new ApiError(res.status, detail);
     }
 
     const text = await res.text();
