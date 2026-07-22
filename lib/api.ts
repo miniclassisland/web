@@ -20,17 +20,17 @@ import type {
 // Management API (27042) / Admin API (27043)
 // ============================================================
 
-const STORAGE_KEY_TOKEN = "cims_auth_token";
+const STORAGE_KEY_TOKEN = "miniclassisland_auth_token";
 
 /** Management API 地址（认证、账户内操作） */
 export function getServerUrl(): string {
-    const url = process.env.NEXT_PUBLIC_CIMS_ENDPOINT || "";
+    const url = process.env.NEXT_PUBLIC_MINICLASSISLAND_ENDPOINT || "";
     return url.replace(/\/+$/, "");
 }
 
 /** Admin API 地址（超管端点） */
 export function getAdminUrl(): string {
-    const url = process.env.NEXT_PUBLIC_CIMS_ADMIN_ENDPOINT || "";
+    const url = process.env.NEXT_PUBLIC_MINICLASSISLAND_ADMIN_ENDPOINT || "";
     return url.replace(/\/+$/, "");
 }
 
@@ -55,7 +55,11 @@ export class ApiError extends Error {
     status: number;
     detail: unknown;
     constructor(status: number, detail: unknown) {
-        super(typeof detail === "string" ? detail : JSON.stringify(detail));
+        let msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+        if (msg === "Failed to fetch" || (typeof msg === "string" && msg.includes("Failed to fetch"))) {
+            msg = "未知的服务器回答，请联系管理员";
+        }
+        super(msg);
         this.status = status;
         this.detail = detail;
     }
@@ -67,7 +71,7 @@ export class ApiError extends Error {
  */
 function emitAuthExpired(): void {
     if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("cims:auth-expired"));
+        window.dispatchEvent(new CustomEvent("miniclassisland:auth-expired"));
     }
 }
 
@@ -90,17 +94,71 @@ async function request<T>(
         headers["Content-Type"] = "application/json";
     }
 
-    const res = await fetch(`${base}${path}`, { ...options, headers });
+    let res: Response;
+    try {
+        res = await fetch(`${base}${path}`, { ...options, headers });
+    } catch (err: unknown) {
+        const errObj = err as { message?: string; name?: string } | null;
+        const rawMsg = errObj?.message || String(err);
+        if (rawMsg.includes("Failed to fetch") || rawMsg.includes("fetch failed") || errObj?.name === "TypeError") {
+            throw new ApiError(0, "未知的服务器回答，请联系管理员");
+        }
+        throw err;
+    }
+
+    if (res.status === 503) {
+        if (typeof window !== "undefined") {
+            window.location.href = "https://admin.localminiclassisland.miniopensource.com/oobe";
+            return new Promise(() => {});
+        }
+    }
 
     if (res.status === 401 || res.status === 403) {
-        emitAuthExpired();
-        throw new ApiError(res.status, "未授权或权限不足，请重新登录");
+        // 如果是登录、2FA验证或恢复接口返回的 401/403，不要视作登录过期，应该当作常规错误处理，解析返回的具体错误内容
+        const isAuthFlow = path === "/user/auth" || path === "/user/2fa/totp/verify" || path === "/user/2fa/totp/recover";
+        if (!isAuthFlow) {
+            if (path !== "/token/deactivate") {
+                emitAuthExpired();
+            }
+            throw new ApiError(res.status, "未授权或权限不足，请重新登录");
+        }
     }
 
     if (!res.ok) {
         let detail: unknown;
         try { detail = await res.json(); } catch { detail = await res.text(); }
-        throw new ApiError(res.status, detail);
+
+        let msg = "请求失败";
+        if (detail && typeof detail === "object") {
+            const d = detail as Record<string, unknown>;
+            if (Array.isArray(d.detail)) {
+                // 自动提取 Pydantic/FastAPI 的校验错误列表
+                const errors = (d.detail as Array<{ loc?: unknown[]; msg?: string }>).map((err) => {
+                    const field = err.loc ? err.loc[err.loc.length - 1] : "";
+                    const rawMsg = err.msg || "校验失败";
+                    // 去除 Pydantic 错误中多余的前缀
+                    const cleanMsg = rawMsg.replace(/^Value error,\s*/i, "");
+                    return field ? `${field}: ${cleanMsg}` : cleanMsg;
+                });
+                msg = errors.join("; ");
+            } else if (typeof d.detail === "string") {
+                msg = d.detail;
+            } else if (typeof d.msg === "string") {
+                msg = d.msg;
+            } else if (typeof d.message === "string") {
+                msg = d.message;
+            } else {
+                msg = JSON.stringify(detail);
+            }
+        } else if (typeof detail === "string") {
+            msg = detail;
+        }
+
+        if (msg === "Failed to fetch" || (typeof msg === "string" && msg.includes("Failed to fetch"))) {
+            msg = "未知的服务器回答，请联系管理员";
+        }
+
+        throw new ApiError(res.status, msg);
     }
 
     const text = await res.text();
