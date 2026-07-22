@@ -49,17 +49,32 @@ export default function LoginPage() {
         clearError();
         if (!email) return;
 
+        let autoFilledPassword = password;
+        // 尝试从隐藏的占位密码输入框中继承浏览器自动填充的密码作为兜底
+        if (typeof document !== "undefined") {
+            const hiddenPwdInput = document.getElementById("placeholder-password") as HTMLInputElement | null;
+            if (hiddenPwdInput && hiddenPwdInput.value) {
+                autoFilledPassword = hiddenPwdInput.value;
+                setPassword(autoFilledPassword);
+            }
+        }
+
         setLocalLoading(true);
         try {
             const res = await authApi.checkMailAvailability(email) as { available?: boolean };
             if (res && res.available === false) {
                 setStep("login");
+                if (autoFilledPassword) {
+                    // 如果存在自动填充的密码，直接在当前步骤发起登录请求
+                    await login({ email, password: autoFilledPassword });
+                }
             } else {
                 setStep("register");
             }
         } catch (err: unknown) {
-            // 如果检查抛出错误（例如网络错误或 422），安全起见由于不可知，默认进入登录
-            setStep("login");
+            // 不再盲目进入登录页，而是将 API 检查的真实报错反馈给用户并保持在第一步
+            const msg = err instanceof Error ? err.message : "检查邮箱可用性失败";
+            setLocalError(msg);
         } finally {
             setLocalLoading(false);
         }
@@ -82,6 +97,10 @@ export default function LoginPage() {
     async function handle2FAVerify(e: React.FormEvent) {
         e.preventDefault();
         if (!pending2FA) return;
+        console.log("[DEBUG] Verify TOTP payload:", {
+            temp_token: pending2FA.temp_token,
+            code: totpCode,
+        });
         setTwoFALoading(true);
         setTwoFAError(null);
         try {
@@ -102,6 +121,10 @@ export default function LoginPage() {
     async function handle2FARecover(e: React.FormEvent) {
         e.preventDefault();
         if (!pending2FA) return;
+        console.log("[DEBUG] Recover TOTP payload:", {
+            temp_token: pending2FA.temp_token,
+            recovery_code: recoveryCode,
+        });
         setTwoFALoading(true);
         setTwoFAError(null);
         try {
@@ -130,7 +153,15 @@ export default function LoginPage() {
     return (
         <div className="login-container">
             <div className="login-card">
-                <div className="login-title">欢迎来到 MINI ClassIsland</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/icon.svg"
+                        alt="MINI ClassIsland Logo"
+                        style={{ width: 64, height: 64, marginBottom: 12, display: "block" }}
+                    />
+                    <div className="login-title" style={{ margin: 0 }}>欢迎来到 MINI ClassIsland</div>
+                </div>
                 <div className="login-subtitle">
                     {step === "email" && "输入您的邮箱以继续"}
                     {step === "login" && "欢迎回来，请登录"}
@@ -164,14 +195,25 @@ export default function LoginPage() {
                                     <Label htmlFor="email">邮箱</Label>
                                     <Input
                                         id="email"
+                                        name="email"
                                         type="email"
                                         value={email}
                                         onChange={(_, d) => setEmail(d.value)}
                                         placeholder="user@example.com"
                                         style={{ width: "100%" }}
+                                        autoComplete="username email"
                                         autoFocus
                                     />
                                 </div>
+                                {/* 隐藏密码框：仅作为辅助浏览器收集填充，采用无障碍物理隐藏以防止密码管理器产生定位死循环 */}
+                                <input
+                                    id="placeholder-password"
+                                    type="password"
+                                    name="password"
+                                    autoComplete="current-password"
+                                    style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden", pointerEvents: "none", zIndex: -1 }}
+                                    tabIndex={-1}
+                                />
                                 <Button
                                     appearance="primary"
                                     type="submit"
@@ -187,17 +229,27 @@ export default function LoginPage() {
                             <form onSubmit={handleLogin}>
                                 <div className="form-group">
                                     <Label htmlFor="login-email">邮箱</Label>
-                                    <Input id="login-email" type="email" value={email} readOnly disabled style={{ width: "100%" }} />
+                                    <Input
+                                        id="login-email"
+                                        name="email"
+                                        type="email"
+                                        value={email}
+                                        readOnly
+                                        style={{ width: "100%" }}
+                                        autoComplete="username email"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <Label htmlFor="password">密码</Label>
                                     <Input
                                         id="password"
+                                        name="password"
                                         type="password"
                                         value={password}
                                         onChange={(_, d) => setPassword(d.value)}
                                         placeholder="请输入密码"
                                         style={{ width: "100%" }}
+                                        autoComplete="current-password"
                                         autoFocus
                                     />
                                 </div>
@@ -221,7 +273,15 @@ export default function LoginPage() {
                             <form onSubmit={handleRegister}>
                                 <div className="form-group">
                                     <Label htmlFor="reg-email">邮箱</Label>
-                                    <Input id="reg-email" type="email" value={email} readOnly disabled style={{ width: "100%" }} />
+                                    <Input
+                                        id="reg-email"
+                                        name="email"
+                                        type="email"
+                                        value={email}
+                                        readOnly
+                                        style={{ width: "100%" }}
+                                        autoComplete="username email"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <Label htmlFor="displayName">显示名称（可选）</Label>
@@ -238,11 +298,13 @@ export default function LoginPage() {
                                     <Label htmlFor="reg-password">密码</Label>
                                     <Input
                                         id="reg-password"
+                                        name="password"
                                         type="password"
                                         value={password}
                                         onChange={(_, d) => setPassword(d.value)}
                                         placeholder="至少 12 个字符"
                                         style={{ width: "100%" }}
+                                        autoComplete="new-password"
                                     />
                                     <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>密码长度至少为 12 个字符，用户名将自动生成</div>
                                 </div>
@@ -329,10 +391,11 @@ export default function LoginPage() {
                         )}
                     </div>
                 )}
-            </div>
-            <div style={{ marginTop: 24, textAlign: "center", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, padding: "0 20px" }}>
-                <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
-                <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
+
+                <div style={{ marginTop: 32, paddingTop: 16, borderTop: "1px solid var(--border-color)", textAlign: "center", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                    <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
+                    <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
+                </div>
             </div>
         </div>
     );
