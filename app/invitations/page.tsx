@@ -10,14 +10,16 @@ import {
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
-import { Add24Regular, Dismiss24Regular, Copy24Regular } from "@fluentui/react-icons";
+import { Add24Regular, Dismiss24Regular, Copy24Regular, PeopleAdd24Regular } from "@fluentui/react-icons";
 
 export default function InvitationsPage() {
-    const { accountId } = useAccount();
+    const { accountId, refreshAccounts } = useAccount();
     const [list, setList] = useState<InvitationOut[]>([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [acceptOpen, setAcceptOpen] = useState(false);
+    const [acceptCode, setAcceptCode] = useState("");
     const [creating, setCreating] = useState(false);
     const [form, setForm] = useState<InvitationCreate>({ role_in_account: "member", max_uses: 1 });
 
@@ -26,22 +28,41 @@ export default function InvitationsPage() {
         setLoading(true);
         try {
             setList(await invitations.list(accountId));
-        } catch { setList([]); }
+        } catch {
+            setList([]);
+        }
         setLoading(false);
     }, [accountId]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     async function handleCreate() {
         setCreating(true);
         try {
             await invitations.create(accountId, form);
-            setMsg({ type: "success", text: "邀请已创建" });
+            setMsg({ type: "success", text: "邀请码已创建" });
             setDialogOpen(false);
             setForm({ role_in_account: "member", max_uses: 1 });
             loadData();
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "创建失败" });
+        }
+        setCreating(false);
+    }
+
+    async function handleAccept() {
+        if (!acceptCode.trim()) return;
+        setCreating(true);
+        try {
+            await invitations.accept(acceptCode.trim());
+            setMsg({ type: "success", text: "已成功接受邀请加入账户！" });
+            setAcceptOpen(false);
+            setAcceptCode("");
+            refreshAccounts();
+        } catch (err: unknown) {
+            setMsg({ type: "error", text: err instanceof Error ? err.message : "接受邀请失败" });
         }
         setCreating(false);
     }
@@ -67,12 +88,16 @@ export default function InvitationsPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">邀请管理</h1>
-                    <p className="page-subtitle">创建和管理账户邀请码</p>
+                    <p className="page-subtitle">创建、分发账户协作邀请码，或输入邀请码加入其他账户</p>
                 </div>
-                <Button appearance="primary" icon={<Add24Regular />}
-                    onClick={() => setDialogOpen(true)}>
-                    创建邀请
-                </Button>
+                <div className="flex gap-8">
+                    <Button appearance="secondary" icon={<PeopleAdd24Regular />} onClick={() => setAcceptOpen(true)}>
+                        使用邀请码加入账户
+                    </Button>
+                    <Button appearance="primary" icon={<Add24Regular />} onClick={() => setDialogOpen(true)}>
+                        创建邀请码
+                    </Button>
+                </div>
             </div>
 
             {msg && (
@@ -86,9 +111,9 @@ export default function InvitationsPage() {
                     <div className="empty-state"><Spinner size="medium" /></div>
                 ) : list.length === 0 ? (
                     <div className="empty-state">
-                        <div className="empty-state-text">暂无邀请</div>
+                        <div className="empty-state-text">暂无邀请记录</div>
                         <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 8 }}>
-                            点击「创建邀请」生成邀请码
+                            点击「创建邀请码」生成协作邀请码
                         </p>
                     </div>
                 ) : (
@@ -96,8 +121,8 @@ export default function InvitationsPage() {
                         <thead>
                             <tr>
                                 <th>邀请码</th>
-                                <th>角色</th>
-                                <th>使用次数</th>
+                                <th>授予角色</th>
+                                <th>已用 / 上限</th>
                                 <th>状态</th>
                                 <th>创建时间</th>
                                 <th>过期时间</th>
@@ -105,13 +130,18 @@ export default function InvitationsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {list.map(item => (
+                            {list.map((item) => (
                                 <tr key={item.id}>
                                     <td>
                                         <span className="flex items-center gap-4">
-                                            <code style={{ fontSize: 12, userSelect: "all" }}>{item.code}</code>
-                                            <Button appearance="subtle" size="small" icon={<Copy24Regular />}
-                                                onClick={() => copyCode(item.code)} title="复制" />
+                                            <span className="api-key-cell" style={{ userSelect: "all" }}>{item.code}</span>
+                                            <Button
+                                                appearance="subtle"
+                                                size="small"
+                                                icon={<Copy24Regular />}
+                                                onClick={() => copyCode(item.code)}
+                                                title="复制"
+                                            />
                                         </span>
                                     </td>
                                     <td>
@@ -133,9 +163,13 @@ export default function InvitationsPage() {
                                     </td>
                                     <td>
                                         {item.is_active && (
-                                            <Button appearance="subtle" size="small" icon={<Dismiss24Regular />}
+                                            <Button
+                                                appearance="subtle"
+                                                size="small"
+                                                icon={<Dismiss24Regular />}
                                                 onClick={() => handleRevoke(item.id)}
-                                                style={{ color: "var(--danger-color)" }}>
+                                                style={{ color: "var(--danger-color)" }}
+                                            >
                                                 撤销
                                             </Button>
                                         )}
@@ -151,15 +185,16 @@ export default function InvitationsPage() {
             <Dialog open={dialogOpen} onOpenChange={(_, d) => setDialogOpen(d.open)}>
                 <DialogSurface>
                     <DialogBody>
-                        <DialogTitle>创建邀请</DialogTitle>
+                        <DialogTitle>创建邀请码</DialogTitle>
                         <DialogContent>
                             <div style={{ display: "grid", gap: 16, paddingTop: 8 }}>
                                 <div>
-                                    <label style={{ fontSize: 13, fontWeight: 500, display: "block", marginBottom: 4 }}>
-                                        邀请角色
-                                    </label>
-                                    <Select value={form.role_in_account}
-                                        onChange={(_, d) => setForm(f => ({ ...f, role_in_account: d.value }))}>
+                                    <label className="form-label">授予角色</label>
+                                    <Select
+                                        value={form.role_in_account}
+                                        onChange={(_, d) => setForm((f) => ({ ...f, role_in_account: d.value }))}
+                                        style={{ width: "100%" }}
+                                    >
                                         {Object.entries(ACCOUNT_ROLE_LABELS)
                                             .filter(([k]) => k !== "owner")
                                             .map(([k, v]) => (
@@ -168,12 +203,14 @@ export default function InvitationsPage() {
                                     </Select>
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: 13, fontWeight: 500, display: "block", marginBottom: 4 }}>
-                                        最大使用次数
-                                    </label>
-                                    <Input type="number" min={1} max={100}
+                                    <label className="form-label">最大使用次数</label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={100}
                                         value={String(form.max_uses ?? 1)}
-                                        onChange={(_, d) => setForm(f => ({ ...f, max_uses: parseInt(d.value) || 1 }))}
+                                        onChange={(_, d) => setForm((f) => ({ ...f, max_uses: parseInt(d.value, 10) || 1 }))}
+                                        style={{ width: "100%" }}
                                     />
                                 </div>
                             </div>
@@ -182,6 +219,32 @@ export default function InvitationsPage() {
                             <Button appearance="secondary" onClick={() => setDialogOpen(false)}>取消</Button>
                             <Button appearance="primary" onClick={handleCreate} disabled={creating}>
                                 {creating ? <Spinner size="tiny" /> : "创建"}
+                            </Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
+
+            {/* 使用邀请码加入账户对话框 */}
+            <Dialog open={acceptOpen} onOpenChange={(_, d) => setAcceptOpen(d.open)}>
+                <DialogSurface>
+                    <DialogBody>
+                        <DialogTitle>使用邀请码加入账户</DialogTitle>
+                        <DialogContent>
+                            <div className="form-group" style={{ paddingTop: 8 }}>
+                                <label className="form-label">邀请码</label>
+                                <Input
+                                    value={acceptCode}
+                                    onChange={(_, d) => setAcceptCode(d.value)}
+                                    placeholder="粘贴管理员提供的邀请码..."
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button appearance="secondary" onClick={() => setAcceptOpen(false)}>取消</Button>
+                            <Button appearance="primary" onClick={handleAccept} disabled={creating || !acceptCode.trim()}>
+                                {creating ? <Spinner size="tiny" /> : "确认加入"}
                             </Button>
                         </DialogActions>
                     </DialogBody>

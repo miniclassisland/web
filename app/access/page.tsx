@@ -23,35 +23,44 @@ export default function AccessPage() {
         setLoading(true);
         try {
             setMembers(await access.list(accountId));
-        } catch { setMembers([]); }
+        } catch {
+            setMembers([]);
+        }
         setLoading(false);
     }, [accountId]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     async function handleSearch() {
-        if (!accountId || !searchQ.trim()) { loadData(); return; }
+        if (!accountId || !searchQ.trim()) {
+            loadData();
+            return;
+        }
         setLoading(true);
         try {
             setMembers(await access.search(accountId, searchQ.trim()));
-        } catch { setMembers([]); }
+        } catch {
+            setMembers([]);
+        }
         setLoading(false);
     }
 
-    async function handleRoleChange(memberId: string, newRole: string) {
+    async function handleRoleChange(userId: string, newRole: string) {
         try {
-            await access.update(accountId, memberId, { role_in_account: newRole });
-            setMsg({ type: "success", text: "角色已更新" });
+            await access.update(accountId, userId, { role_in_account: newRole });
+            setMsg({ type: "success", text: "成员角色已更新" });
             loadData();
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "更新失败" });
         }
     }
 
-    async function handleDelete(memberId: string) {
+    async function handleDelete(userId: string) {
         if (!confirm("确定要移除此成员吗？移除后该用户将无法访问此账户。")) return;
         try {
-            await access.delete(accountId, memberId);
+            await access.delete(accountId, userId);
             setMsg({ type: "success", text: "成员已移除" });
             loadData();
         } catch (err: unknown) {
@@ -64,7 +73,7 @@ export default function AccessPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">访问控制</h1>
-                    <p className="page-subtitle">管理账户下的具权用户</p>
+                    <p className="page-subtitle">管理当前账户下的协作成员与角色权限</p>
                 </div>
             </div>
 
@@ -75,10 +84,15 @@ export default function AccessPage() {
             )}
 
             <div className="card" style={{ marginBottom: 16 }}>
-                <form onSubmit={e => { e.preventDefault(); handleSearch(); }}
-                    className="flex items-center gap-8">
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSearch();
+                    }}
+                    className="flex items-center gap-8"
+                >
                     <Input
-                        placeholder="按 User ID 搜索…"
+                        placeholder="按用户名、显示名称、邮箱或 User ID 搜索…"
                         value={searchQ}
                         onChange={(_, d) => setSearchQ(d.value)}
                         contentBefore={<Search24Regular />}
@@ -86,7 +100,13 @@ export default function AccessPage() {
                     />
                     <Button appearance="primary" type="submit">搜索</Button>
                     {searchQ && (
-                        <Button appearance="subtle" onClick={() => { setSearchQ(""); loadData(); }}>
+                        <Button
+                            appearance="subtle"
+                            onClick={() => {
+                                setSearchQ("");
+                                loadData();
+                            }}
+                        >
                             清除
                         </Button>
                     )}
@@ -102,21 +122,32 @@ export default function AccessPage() {
                     <table className="data-table">
                         <thead>
                             <tr>
+                                <th>成员名称 / 用户名</th>
+                                <th>邮箱</th>
                                 <th>用户 ID</th>
-                                <th>角色</th>
+                                <th>账户内角色</th>
                                 <th>加入时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {members.map(m => (
+                            {members.map((m) => (
                                 <tr key={m.id}>
-                                    <td style={{ fontFamily: "monospace", fontSize: 12 }}>{m.user_id}</td>
                                     <td>
-                                        <Select size="small"
+                                        <div style={{ fontWeight: 600 }}>{m.display_name || m.username || "用户"}</div>
+                                        {m.username && (
+                                            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>@{m.username}</div>
+                                        )}
+                                    </td>
+                                    <td style={{ fontSize: 13 }}>{m.email || "-"}</td>
+                                    <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{m.user_id}</td>
+                                    <td>
+                                        <Select
+                                            size="small"
                                             value={m.role_in_account}
-                                            onChange={(_, d) => handleRoleChange(m.id, d.value)}
-                                            disabled={m.role_in_account === "owner"}>
+                                            onChange={(_, d) => handleRoleChange(m.user_id, d.value)}
+                                            disabled={m.role_in_account === "owner"}
+                                        >
                                             {Object.entries(ACCOUNT_ROLE_LABELS).map(([k, v]) => (
                                                 <option key={k} value={k}>{v}</option>
                                             ))}
@@ -127,9 +158,13 @@ export default function AccessPage() {
                                     </td>
                                     <td>
                                         {m.role_in_account !== "owner" && (
-                                            <Button appearance="subtle" size="small" icon={<Delete24Regular />}
-                                                onClick={() => handleDelete(m.id)}
-                                                style={{ color: "var(--danger-color)" }}>
+                                            <Button
+                                                appearance="subtle"
+                                                size="small"
+                                                icon={<Delete24Regular />}
+                                                onClick={() => handleDelete(m.user_id)}
+                                                style={{ color: "var(--danger-color)" }}
+                                            >
                                                 移除
                                             </Button>
                                         )}

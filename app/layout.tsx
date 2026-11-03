@@ -5,7 +5,7 @@ import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "MINI ClassIsland 管理面板",
-  description: "ClassIsland Management Service - 集控管理平台",
+  description: "MINI ClassIsland 集控管理平台",
   icons: {
     icon: "/icon.svg",
   },

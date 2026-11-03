@@ -1,22 +1,31 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { data } from "@/lib/api";
+import { data, accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
-import type { ManagementSettings, ManagementServerKind } from "@/lib/types";
-import { MANAGEMENT_SERVER_KIND_LABELS } from "@/lib/types";
+import type { AppDefaultSettings } from "@/lib/types";
 import {
     Button, Input, Select, Switch, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
-import { Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular } from "@fluentui/react-icons";
+import {
+    Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
+    Code24Regular, ArrowDownload24Regular,
+} from "@fluentui/react-icons";
 
 export default function SettingsPage() {
     const { accountId } = useAccount();
     const [fileList, setFileList] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
-    const [settings, setSettings] = useState<ManagementSettings>({});
+    const [settings, setSettings] = useState<AppDefaultSettings>({});
+    const [jsonMode, setJsonMode] = useState(false);
+    const [jsonText, setJsonText] = useState("{}");
+
+    // 引导文件生成参数
+    const [presetIdentity, setPresetIdentity] = useState("");
+    const [downloadingPreset, setDownloadingPreset] = useState(false);
+
     const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -24,33 +33,57 @@ export default function SettingsPage() {
     const [showCreate, setShowCreate] = useState(false);
     const [newFileName, setNewFileName] = useState("");
 
-    const loadFiles = useCallback(async () => {
-        setLoading(true);
+    const selectFile = useCallback(async (name: string) => {
         if (!accountId) return;
-        try { setFileList(await data.list(accountId, "DefaultSettings")); } catch { setFileList([]); }
-        setLoading(false);
-    }, [accountId]);
-
-    useEffect(() => { loadFiles(); }, [loadFiles]);
-
-    async function selectFile(name: string) {
         setSelectedFile(name);
         setDataLoading(true);
         setMsg(null);
         try {
             const content = await data.read(accountId, "DefaultSettings", name);
-            setSettings((content as ManagementSettings) || {});
-        } catch { setSettings({}); }
+            const parsed = (content as AppDefaultSettings) || {};
+            setSettings(parsed);
+            setJsonText(JSON.stringify(parsed, null, 2));
+        } catch {
+            setSettings({});
+            setJsonText("{}");
+        }
         setDataLoading(false);
-    }
+    }, [accountId]);
+
+    const loadFiles = useCallback(async () => {
+        setLoading(true);
+        if (!accountId) return;
+        try {
+            const list = await data.list(accountId, "DefaultSettings");
+            const arr = Array.isArray(list) ? list : [];
+            setFileList(arr);
+            if (arr.length > 0 && !selectedFile) {
+                selectFile(arr[0]);
+            }
+        } catch {
+            setFileList([]);
+        }
+        setLoading(false);
+    }, [accountId, selectedFile, selectFile]);
+
+    useEffect(() => {
+        loadFiles();
+    }, [loadFiles]);
 
     async function handleSave() {
         if (!selectedFile) return;
         setSaving(true);
         setMsg(null);
         try {
-            await data.write(accountId, "DefaultSettings", selectedFile, settings);
-            setMsg({ type: "success", text: "设置已保存" });
+            let payloadToSave = settings;
+            if (jsonMode) {
+                payloadToSave = JSON.parse(jsonText) as AppDefaultSettings;
+                setSettings(payloadToSave);
+            } else {
+                setJsonText(JSON.stringify(settings, null, 2));
+            }
+            await data.write(accountId, "DefaultSettings", selectedFile, payloadToSave);
+            setMsg({ type: "success", text: "客户端默认应用设置 (DefaultSettings) 已保存并递增版本号" });
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "保存失败" });
         }
@@ -59,9 +92,14 @@ export default function SettingsPage() {
 
     async function handleCreateFile(e: React.FormEvent) {
         e.preventDefault();
+        const name = newFileName.trim();
+        if (!name) return;
         try {
-            await data.create(accountId, "DefaultSettings", newFileName.trim());
-            setShowCreate(false); setNewFileName(""); loadFiles();
+            await data.create(accountId, "DefaultSettings", name);
+            setShowCreate(false);
+            setNewFileName("");
+            await loadFiles();
+            selectFile(name);
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "创建失败" });
         }
@@ -72,24 +110,44 @@ export default function SettingsPage() {
         try {
             await data.deleteData(accountId, "DefaultSettings", name);
             if (selectedFile === name) setSelectedFile(null);
-            loadFiles();
+            await loadFiles();
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "删除失败" });
         }
     }
 
-    function update<K extends keyof ManagementSettings>(key: K, value: ManagementSettings[K]) {
-        setSettings({ ...settings, [key]: value });
+    async function handleDownloadPreset() {
+        if (!accountId) return;
+        setDownloadingPreset(true);
+        try {
+            const preset = await accounts.downloadPreset(accountId, presetIdentity.trim());
+            const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "ManagementPreset.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err: unknown) {
+            setMsg({ type: "error", text: err instanceof Error ? err.message : "下载引导文件失败" });
+        }
+        setDownloadingPreset(false);
     }
 
-    const isServer = (settings.ManagementServerKind ?? 0) === 1;
+    function update<K extends keyof AppDefaultSettings>(key: K, value: AppDefaultSettings[K]) {
+        const next = { ...settings, [key]: value };
+        setSettings(next);
+        setJsonText(JSON.stringify(next, null, 2));
+    }
 
     return (
         <div className="fade-in">
             <div className="page-header">
                 <div>
                     <h1 className="page-title">默认设置管理</h1>
-                    <p className="page-subtitle">管理 ClassIsland 集控默认设置 (ManagementSettings)</p>
+                    <p className="page-subtitle">
+                        管理下发至 ClassIsland 客户端的应用外观、窗口停靠、提醒与语音参数 (DefaultSettings)
+                    </p>
                 </div>
                 <div className="flex gap-8">
                     <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建文件</Button>
@@ -97,99 +155,270 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {msg && <MessageBar intent={msg.type} style={{ marginBottom: 16 }}><MessageBarBody>{msg.text}</MessageBarBody></MessageBar>}
+            {msg && (
+                <MessageBar intent={msg.type} style={{ marginBottom: 16 }}>
+                    <MessageBarBody>{msg.text}</MessageBarBody>
+                </MessageBar>
+            )}
+
+            {/* 快速生成客户端集控引导文件 ManagementPreset.json */}
+            <div className="card" style={{ padding: "14px 20px" }}>
+                <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 12 }}>
+                    <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>客户端集控接入引导文件 (ManagementPreset.json)</div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                            将生成的 ManagementPreset.json 放置在客户端 ClassIsland 程序目录下，客户端启动时即可自动接入当前 MINI ClassIsland 账户。
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                        <Input
+                            placeholder="预设班级标识 (可选，如 class-101)"
+                            value={presetIdentity}
+                            onChange={(_, d) => setPresetIdentity(d.value)}
+                            style={{ width: 220 }}
+                        />
+                        <Button
+                            appearance="secondary"
+                            icon={<ArrowDownload24Regular />}
+                            onClick={handleDownloadPreset}
+                            disabled={downloadingPreset}
+                        >
+                            下载 ManagementPreset.json
+                        </Button>
+                    </div>
+                </div>
+            </div>
 
             <div className="flex gap-24">
                 <div style={{ width: 240, flexShrink: 0 }}>
                     <div className="card">
-                        <div className="card-title">设置文件</div>
-                        {loading ? <Spinner size="small" /> : fileList.map(f => (
-                            <div key={f} className={`sidebar-link ${selectedFile === f ? "active" : ""}`} onClick={() => selectFile(f)}>
-                                <span style={{ flex: 1 }}>{f}</span>
-                                <Button appearance="subtle" size="small" icon={<Delete24Regular />}
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteFile(f); }} style={{ color: "var(--danger-color)", minWidth: 24, padding: 2 }} />
-                            </div>
-                        ))}
+                        <div className="card-title">默认设置文件</div>
+                        {loading ? (
+                            <Spinner size="small" />
+                        ) : (
+                            fileList.map((f) => (
+                                <div
+                                    key={f}
+                                    className={`sidebar-link ${selectedFile === f ? "active" : ""}`}
+                                    onClick={() => selectFile(f)}
+                                >
+                                    <span style={{ flex: 1 }}>{f}</span>
+                                    <Button
+                                        appearance="subtle"
+                                        size="small"
+                                        icon={<Delete24Regular />}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteFile(f);
+                                        }}
+                                        style={{ color: "var(--danger-color)", minWidth: 24, padding: 2 }}
+                                    />
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 
                 <div style={{ flex: 1 }}>
                     {!selectedFile ? (
-                        <div className="card"><div className="empty-state"><div className="empty-state-text">请选择设置文件</div></div></div>
+                        <div className="card"><div className="empty-state"><div className="empty-state-text">请选择默认设置文件</div></div></div>
                     ) : dataLoading ? (
                         <div className="card"><div className="empty-state"><Spinner size="medium" /></div></div>
                     ) : (
                         <div className="card">
                             <div className="flex items-center justify-between mb-16">
-                                <div className="card-title">编辑设置: {selectedFile}</div>
-                                <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
-                                    {saving ? <Spinner size="tiny" /> : "保存"}
-                                </Button>
+                                <div className="card-title" style={{ margin: 0 }}>编辑默认设置: {selectedFile}</div>
+                                <div className="flex gap-8">
+                                    <Button
+                                        appearance="subtle"
+                                        icon={<Code24Regular />}
+                                        onClick={() => {
+                                            if (!jsonMode) setJsonText(JSON.stringify(settings, null, 2));
+                                            else {
+                                                try { setSettings(JSON.parse(jsonText)); } catch { /* ignore */ }
+                                            }
+                                            setJsonMode(!jsonMode);
+                                        }}
+                                    >
+                                        {jsonMode ? "切换可视化编辑" : "JSON 源码"}
+                                    </Button>
+                                    <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
+                                        {saving ? <Spinner size="tiny" /> : "保存"}
+                                    </Button>
+                                </div>
                             </div>
 
-                            {/* 基本开关 */}
-                            <div className="settings-item">
-                                <div className="settings-item-info">
-                                    <div className="settings-item-label">启用集控</div>
-                                    <div className="settings-item-hint">是否启用集控管理功能</div>
+                            {jsonMode ? (
+                                <div className="json-editor">
+                                    <textarea value={jsonText} onChange={(e) => setJsonText(e.target.value)} style={{ minHeight: 420 }} />
                                 </div>
-                                <Switch checked={!!settings.IsManagementEnabled}
-                                    onChange={(_, d) => update("IsManagementEnabled", d.checked)} />
-                            </div>
-
-                            {/* 服务器类型 */}
-                            <div className="settings-section" style={{ marginTop: 24 }}>
-                                <div className="settings-section-title">服务器配置</div>
-                                <div className="form-group">
-                                    <label className="form-label">管理服务器类型</label>
-                                    <Select value={String(settings.ManagementServerKind ?? 0)}
-                                        onChange={(_, d) => update("ManagementServerKind", parseInt(d.value) as ManagementServerKind)}
-                                        style={{ width: "100%" }}>
-                                        {([0, 1] as ManagementServerKind[]).map(k => (
-                                            <option key={k} value={k}>{MANAGEMENT_SERVER_KIND_LABELS[k]}</option>
-                                        ))}
-                                    </Select>
-                                </div>
-
-                                {isServer && (
-                                    <>
-                                        <div className="form-group">
-                                            <label className="form-label">集控服务器地址</label>
-                                            <Input value={settings.ManagementServer || ""}
-                                                onChange={(_, d) => update("ManagementServer", d.value)}
-                                                placeholder="如 https://cims.example.com" style={{ width: "100%" }} />
-                                            <div className="form-hint">ManagementServerKind 为 ManagementServer 时生效</div>
+                            ) : (
+                                <>
+                                    <div className="settings-section">
+                                        <div className="settings-section-title">主窗口与停靠位置</div>
+                                        <div className="grid-3">
+                                            <div className="form-group">
+                                                <label className="form-label">窗口停靠位置 (WindowDockingLocation)</label>
+                                                <Select
+                                                    value={String(settings.WindowDockingLocation ?? 1)}
+                                                    onChange={(_, d) => update("WindowDockingLocation", parseInt(d.value, 10))}
+                                                    style={{ width: "100%" }}
+                                                >
+                                                    <option value={0}>顶部左侧 (TopLeft)</option>
+                                                    <option value={1}>顶部居中 (TopCenter)</option>
+                                                    <option value={2}>顶部右侧 (TopRight)</option>
+                                                    <option value={3}>底部左侧 (BottomLeft)</option>
+                                                    <option value={4}>底部居中 (BottomCenter)</option>
+                                                    <option value={5}>底部右侧 (BottomRight)</option>
+                                                </Select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">窗口层级 (WindowLayer)</label>
+                                                <Select
+                                                    value={String(settings.WindowLayer ?? 1)}
+                                                    onChange={(_, d) => update("WindowLayer", parseInt(d.value, 10))}
+                                                    style={{ width: "100%" }}
+                                                >
+                                                    <option value={0}>置底 (Bottom)</option>
+                                                    <option value={1}>置顶 (Topmost)</option>
+                                                </Select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">界面缩放比例 (Scale)</label>
+                                                <Input
+                                                    type="number"
+                                                    step={0.05}
+                                                    min={0.5}
+                                                    max={3.0}
+                                                    value={String(settings.Scale ?? 1.0)}
+                                                    onChange={(_, d) => update("Scale", parseFloat(d.value) || 1.0)}
+                                                    style={{ width: "100%" }}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="form-group">
-                                            <label className="form-label">集控服务器 gRPC 地址</label>
-                                            <Input value={settings.ManagementServerGrpc || ""}
-                                                onChange={(_, d) => update("ManagementServerGrpc", d.value)}
-                                                placeholder="如 https://cims.example.com:50051" style={{ width: "100%" }} />
-                                        </div>
-                                    </>
-                                )}
 
-                                {!isServer && (
-                                    <div className="form-group">
-                                        <label className="form-label">清单 URL 模板</label>
-                                        <Input value={settings.ManifestUrlTemplate || ""}
-                                            onChange={(_, d) => update("ManifestUrlTemplate", d.value)}
-                                            placeholder="ManagementServerKind 为 Serverless 时使用" style={{ width: "100%" }} />
-                                        <div className="form-hint">ManagementServerKind 为 Serverless 时生效</div>
+                                        <div className="grid-2">
+                                            <div className="form-group">
+                                                <label className="form-label">水平偏移 X (WindowDockingOffsetX)</label>
+                                                <Input
+                                                    type="number"
+                                                    value={String(settings.WindowDockingOffsetX ?? 0)}
+                                                    onChange={(_, d) => update("WindowDockingOffsetX", parseInt(d.value, 10) || 0)}
+                                                    style={{ width: "100%" }}
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">垂直偏移 Y (WindowDockingOffsetY)</label>
+                                                <Input
+                                                    type="number"
+                                                    value={String(settings.WindowDockingOffsetY ?? 0)}
+                                                    onChange={(_, d) => update("WindowDockingOffsetY", parseInt(d.value, 10) || 0)}
+                                                    style={{ width: "100%" }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
 
-                            {/* 班级标识 */}
-                            <div className="settings-section">
-                                <div className="settings-section-title">班级配置</div>
-                                <div className="form-group">
-                                    <label className="form-label">班级标识符</label>
-                                    <Input value={settings.ClassIdentity || ""}
-                                        onChange={(_, d) => update("ClassIdentity", d.value)}
-                                        placeholder="可选，用于区分不同班级" style={{ width: "100%" }} />
-                                </div>
-                            </div>
+                                    <div className="settings-section">
+                                        <div className="settings-section-title">外观主题与色彩</div>
+                                        <div className="grid-2">
+                                            <div className="form-group">
+                                                <label className="form-label">明暗主题模式 (Theme)</label>
+                                                <Select
+                                                    value={String(settings.Theme ?? 0)}
+                                                    onChange={(_, d) => update("Theme", parseInt(d.value, 10))}
+                                                    style={{ width: "100%" }}
+                                                >
+                                                    <option value={0}>跟随系统 (System)</option>
+                                                    <option value={1}>浅色模式 (Light)</option>
+                                                    <option value={2}>深色模式 (Dark)</option>
+                                                </Select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">主强调色 (PrimaryColor)</label>
+                                                <div className="flex items-center gap-8">
+                                                    <input
+                                                        type="color"
+                                                        value={settings.PrimaryColor || "#0078D4"}
+                                                        onChange={(e) => update("PrimaryColor", e.target.value)}
+                                                        style={{ width: 40, height: 32, border: "1px solid var(--border-color)", borderRadius: 4 }}
+                                                    />
+                                                    <Input
+                                                        value={settings.PrimaryColor || "#0078D4"}
+                                                        onChange={(_, d) => update("PrimaryColor", d.value)}
+                                                        style={{ flex: 1 }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-section">
+                                        <div className="settings-section-title">提醒、语音与时间偏移</div>
+                                        <div className="settings-item">
+                                            <div className="settings-item-info">
+                                                <div className="settings-item-label">启用上下课与集控桌面提醒 (IsNotificationEnabled)</div>
+                                            </div>
+                                            <Switch
+                                                checked={settings.IsNotificationEnabled !== false}
+                                                onChange={(_, d) => update("IsNotificationEnabled", d.checked)}
+                                            />
+                                        </div>
+                                        <div className="settings-item">
+                                            <div className="settings-item-info">
+                                                <div className="settings-item-label">启用提醒全屏视觉特效 (IsNotificationEffectEnabled)</div>
+                                            </div>
+                                            <Switch
+                                                checked={settings.IsNotificationEffectEnabled !== false}
+                                                onChange={(_, d) => update("IsNotificationEffectEnabled", d.checked)}
+                                            />
+                                        </div>
+                                        <div className="settings-item">
+                                            <div className="settings-item-info">
+                                                <div className="settings-item-label">启用提醒音效 (IsNotificationSoundEnabled)</div>
+                                            </div>
+                                            <Switch
+                                                checked={settings.IsNotificationSoundEnabled !== false}
+                                                onChange={(_, d) => update("IsNotificationSoundEnabled", d.checked)}
+                                            />
+                                        </div>
+                                        <div className="settings-item">
+                                            <div className="settings-item-info">
+                                                <div className="settings-item-label">启用 TTS 语音播报 (IsSpeechEnabled)</div>
+                                            </div>
+                                            <Switch
+                                                checked={settings.IsSpeechEnabled !== false}
+                                                onChange={(_, d) => update("IsSpeechEnabled", d.checked)}
+                                            />
+                                        </div>
+
+                                        <div className="grid-2 mt-16">
+                                            <div className="form-group">
+                                                <label className="form-label">语音播报音量 (SpeechVolume, 0~1)</label>
+                                                <Input
+                                                    type="number"
+                                                    step={0.1}
+                                                    min={0}
+                                                    max={1}
+                                                    value={String(settings.SpeechVolume ?? 1.0)}
+                                                    onChange={(_, d) => update("SpeechVolume", parseFloat(d.value) || 1.0)}
+                                                    style={{ width: "100%" }}
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">时间偏移秒数 (TimeOffsetSeconds)</label>
+                                                <Input
+                                                    type="number"
+                                                    step={1}
+                                                    value={String(settings.TimeOffsetSeconds ?? 0)}
+                                                    onChange={(_, d) => update("TimeOffsetSeconds", parseFloat(d.value) || 0)}
+                                                    style={{ width: "100%" }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -197,19 +426,26 @@ export default function SettingsPage() {
 
             {showCreate && (
                 <Dialog open onOpenChange={() => setShowCreate(false)}>
-                    <DialogSurface><DialogBody>
-                        <DialogTitle>新建设置文件</DialogTitle>
-                        <DialogContent>
-                            <div className="form-group">
-                                <label className="form-label">文件名</label>
-                                <Input value={newFileName} onChange={(_, d) => setNewFileName(d.value)} placeholder="如 default" style={{ width: "100%" }} />
-                            </div>
-                        </DialogContent>
-                        <DialogActions>
-                            <Button appearance="secondary" onClick={() => setShowCreate(false)}>取消</Button>
-                            <Button appearance="primary" onClick={handleCreateFile} disabled={!newFileName.trim()}>创建</Button>
-                        </DialogActions>
-                    </DialogBody></DialogSurface>
+                    <DialogSurface>
+                        <DialogBody>
+                            <DialogTitle>新建默认设置文件</DialogTitle>
+                            <DialogContent>
+                                <div className="form-group">
+                                    <label className="form-label">文件名</label>
+                                    <Input
+                                        value={newFileName}
+                                        onChange={(_, d) => setNewFileName(d.value)}
+                                        placeholder="如 default"
+                                        style={{ width: "100%" }}
+                                    />
+                                </div>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button appearance="secondary" onClick={() => setShowCreate(false)}>取消</Button>
+                                <Button appearance="primary" onClick={handleCreateFile} disabled={!newFileName.trim()}>创建</Button>
+                            </DialogActions>
+                        </DialogBody>
+                    </DialogSurface>
                 </Dialog>
             )}
         </div>

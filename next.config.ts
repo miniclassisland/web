@@ -5,8 +5,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // 禁用严格模式的双重渲染
   reactStrictMode: true,
+  experimental: {
+    cpus: 1,
+    workerThreads: false,
+  },
 };
 
 export default nextConfig;

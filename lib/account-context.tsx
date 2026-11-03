@@ -11,7 +11,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import { accounts as accountsApi } from "./api";
 import type { AccountOut } from "./types";
 
-const STORAGE_KEY = "cims_current_account_id";
+const STORAGE_KEY = "miniclassisland_current_account_id";
 
 interface AccountState {
     /** 所有可用账户 */

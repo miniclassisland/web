@@ -4,15 +4,17 @@
 
 import type {
     UserRegisterRequest, UserLoginRequest, TokenResponse,
-    UserOut, UserUpdateRequest, AccountOut, AccountCreate, SlugUpdate,
-    EmailUpdate, UsernameUpdate, PasswordChange,
+    UserOut, UserUpdateRequest, AccountOut, AccountCreate, SlugUpdate, AccountNameUpdate,
+    EmailUpdate, UsernameUpdate, DisplayNameUpdate, PasswordChange,
     TotpEnableResponse, TotpConfirmRequest, TotpDisableRequest,
     TotpVerifyRequest, TotpRecoverRequest,
-    PairingCodeOut, PreRegOut, PreRegCreate, AccessMember, AccessRoleUpdate,
+    PairingCodeOut, PairingStatusResponse, RegistrationMode,
+    PreRegOut, PreRegCreate, AccessMember, AccessRoleUpdate,
     InvitationOut, InvitationCreate,
-    NotificationPayload, BatchRequest,
+    NotificationPayload, BatchRequest, ClientBatchRequest,
     StatusResponse, MessageResponse, LoginResult,
-    ResourceType, SettingsUpdate,
+    ResourceType, ClientDeviceOut, ClientProfileConfig,
+    ConfigUploadItem, AuditLogItem, ManagementSettings,
 } from "./types";
 
 // ============================================================
@@ -69,6 +71,14 @@ export class ApiError extends Error {
                 msg = d.msg;
             } else if (typeof d.detail === "string") {
                 msg = d.detail;
+            } else if (Array.isArray(d.detail)) {
+                const errors = (d.detail as Array<{ loc?: unknown[]; msg?: string }>).map((err) => {
+                    const field = err.loc ? err.loc[err.loc.length - 1] : "";
+                    const rawMsg = err.msg || "校验失败";
+                    const cleanMsg = rawMsg.replace(/^Value error,\s*/i, "");
+                    return field ? `${field}: ${cleanMsg}` : cleanMsg;
+                });
+                msg = errors.join("; ");
             }
         }
 
@@ -125,13 +135,14 @@ async function request<T>(
     }
 
     if (res.status === 401 || res.status === 403) {
-        // 如果是登录、2FA验证或恢复接口返回的 401/403，不要视作登录过期，应该当作常规错误处理，解析返回的具体错误内容
         const isAuthFlow = path === "/user/auth" || path === "/user/2fa/totp/verify" || path === "/user/2fa/totp/recover";
         if (!isAuthFlow) {
-            if (path !== "/token/deactivate") {
+            if (path !== "/token/deactivate" && res.status === 401) {
                 emitAuthExpired();
             }
-            throw new ApiError(res.status, "未授权或权限不足，请重新登录");
+            let errDetail: unknown = "未授权或权限不足，请重新登录";
+            try { errDetail = await res.json(); } catch { /* ignore */ }
+            throw new ApiError(res.status, errDetail);
         }
     }
 
@@ -147,11 +158,9 @@ async function request<T>(
                 code = d.code;
             }
             if (Array.isArray(d.detail)) {
-                // 自动提取 Pydantic/FastAPI 的校验错误列表
                 const errors = (d.detail as Array<{ loc?: unknown[]; msg?: string }>).map((err) => {
                     const field = err.loc ? err.loc[err.loc.length - 1] : "";
                     const rawMsg = err.msg || "校验失败";
-                    // 去除 Pydantic 错误中多余的前缀
                     const cleanMsg = rawMsg.replace(/^Value error,\s*/i, "");
                     return field ? `${field}: ${cleanMsg}` : cleanMsg;
                 });
@@ -176,7 +185,7 @@ async function request<T>(
                 const isOobePage = pathName === "/oobe" || pathName.startsWith("/oobe");
                 const isOobeApi = path.startsWith("/api/oobe") || path.includes("/oobe");
                 if (!isOobePage && !isOobeApi) {
-                    const targetOobeUrl = process.env.NEXT_PUBLIC_ADMIN_OOBE_URL || "https://admin.localminiclassisland.miniopensource.com/oobe";
+                    const targetOobeUrl = process.env.NEXT_PUBLIC_ADMIN_OOBE_URL || `${process.env.NEXT_PUBLIC_ADMIN_SITE_URL || "https://admin.miniclassisland.com"}/oobe`;
                     window.location.href = targetOobeUrl;
                     return new Promise(() => {});
                 }
@@ -202,21 +211,14 @@ function get<T>(path: string, base?: string): Promise<T> {
 function post<T>(path: string, body?: unknown, base?: string): Promise<T> {
     return request<T>(path, {
         method: "POST",
-        body: body ? JSON.stringify(body) : undefined,
-    }, base);
-}
-
-function put<T>(path: string, body?: unknown, base?: string): Promise<T> {
-    return request<T>(path, {
-        method: "PUT",
-        body: body ? JSON.stringify(body) : undefined,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
     }, base);
 }
 
 function patch<T>(path: string, body?: unknown, base?: string): Promise<T> {
     return request<T>(path, {
         method: "PATCH",
-        body: body ? JSON.stringify(body) : undefined,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
     }, base);
 }
 
@@ -249,23 +251,18 @@ export const token = {
 // ============================================================
 
 export const auth = {
-    /** 申请注册（Pending 状态，需管理员审核） */
     register: (data: UserRegisterRequest) =>
         post<MessageResponse>("/user/apply", data),
 
-    /** 登录 */
     login: (data: UserLoginRequest) =>
         post<LoginResult>("/user/auth", data),
 
-    /** 登出 */
     logout: () =>
         post<MessageResponse>("/token/deactivate"),
 
-    /** 检查邮箱是否可用 (未被注册) */
     checkMailAvailability: (email: string) =>
         get<unknown>(`/user/availability/mail?value=${encodeURIComponent(email)}`),
 
-    /** 检查用户名是否可用 */
     checkUsernameAvailability: (username: string) =>
         get<unknown>(`/user/availability/username?value=${encodeURIComponent(username)}`),
 };
@@ -275,19 +272,18 @@ export const auth = {
 // ============================================================
 
 export const userInfo = {
-    /** 获取当前用户信息 */
     get: () =>
         get<UserOut>("/user/info"),
 
-    /** 修改邮箱 */
     changeEmail: (data: EmailUpdate) =>
         post<unknown>("/user/info/email", data),
 
-    /** 修改用户名 */
     changeUsername: (data: UsernameUpdate) =>
         post<unknown>("/user/info/username", data),
 
-    /** 修改密码 */
+    changeDisplayName: (data: DisplayNameUpdate) =>
+        post<unknown>("/user/info/display-name", data),
+
     changePassword: (data: PasswordChange) =>
         post<unknown>("/user/info/password/change", data),
 };
@@ -318,57 +314,60 @@ export const twoFA = {
 // ============================================================
 
 export const accounts = {
-    /** 列出当前用户有权访问的所有账户 */
     list: () =>
         get<AccountOut[]>("/account/list"),
 
-    /** 搜索账户 */
     search: (q: string) =>
         post<AccountOut[]>(`/account/search?q=${encodeURIComponent(q)}`),
 
-    /** 申请创建新账户 */
     apply: (data: AccountCreate) =>
         post<AccountOut>("/account/apply", data),
 
-    /** 删除/停用账户 */
     delete: (accountId: string) =>
         del<unknown>(`/account/${encodeURIComponent(accountId)}`),
 
-    /** 获取账户信息 */
     info: (accountId: string) =>
         get<AccountOut>(`/account/${encodeURIComponent(accountId)}/info`),
 
-    /** 修改账户 slug */
     changeSlug: (accountId: string, data: SlugUpdate) =>
         post<AccountOut>(`/account/${encodeURIComponent(accountId)}/info/slug`, data),
+
+    changeName: (accountId: string, data: AccountNameUpdate) =>
+        post<AccountOut>(`/account/${encodeURIComponent(accountId)}/info/name`, data),
+
+    regenerateApiKey: (accountId: string) =>
+        post<AccountOut>(`/account/${encodeURIComponent(accountId)}/info/regenerate-api-key`),
+
+    downloadPreset: (accountId: string, classIdentity = "") =>
+        get<ManagementSettings>(`${acctPath(accountId)}/ManagementPreset.json${classIdentity ? `?class_identity=${encodeURIComponent(classIdentity)}` : ""}`),
 };
 
 // ============================================================
-// Pairing (Management API: /account/{accountId}/pairing/*)
+// Pairing & Registration Mode (Management API: /account/{accountId}/pairing/*)
 // ============================================================
 
 export const pairing = {
-    /** 列出配对码 */
+    getStatus: (accountId: string) =>
+        get<PairingStatusResponse>(`${acctPath(accountId)}/pairing/status`),
+
+    setMode: (accountId: string, mode: RegistrationMode) =>
+        post<{ status: string; registration_mode: RegistrationMode }>(`${acctPath(accountId)}/pairing/mode`, { mode }),
+
     listCodes: (accountId: string) =>
         get<PairingCodeOut[]>(`${acctPath(accountId)}/pairing/list`),
 
-    /** 搜索配对码 */
     search: (accountId: string, q?: string) =>
         get<PairingCodeOut[]>(`${acctPath(accountId)}/pairing/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
 
-    /** 批准配对码 */
-    approve: (accountId: string, pairingId: string) =>
-        post<unknown>(`${acctPath(accountId)}/pairing/${encodeURIComponent(pairingId)}/approve`),
+    approve: (accountId: string, pairingId: string, presetProfile?: ClientProfileConfig) =>
+        post<unknown>(`${acctPath(accountId)}/pairing/${encodeURIComponent(pairingId)}/approve`, presetProfile ? { preset_profile: presetProfile } : {}),
 
-    /** 拒绝配对码 */
     reject: (accountId: string, pairingId: string) =>
         post<unknown>(`${acctPath(accountId)}/pairing/${encodeURIComponent(pairingId)}/reject`),
 
-    /** 启用配对功能 */
     enable: (accountId: string) =>
         post<unknown>(`${acctPath(accountId)}/pairing/enable`),
 
-    /** 禁用配对功能 */
     disable: (accountId: string) =>
         post<unknown>(`${acctPath(accountId)}/pairing/disable`),
 };
@@ -378,45 +377,38 @@ export const pairing = {
 // ============================================================
 
 export const preRegistration = {
-    /** 列出预注册客户端 */
     list: (accountId: string) =>
         get<PreRegOut[]>(`${acctPath(accountId)}/pre-registration/list`),
 
-    /** 搜索预注册客户端 */
     search: (accountId: string, q?: string) =>
         get<PreRegOut[]>(`${acctPath(accountId)}/pre-registration/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
 
-    /** 获取预注册客户端详情 */
     get: (accountId: string, preRegId: string) =>
         get<PreRegOut>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}`),
 
-    /** 创建预注册客户端 */
     create: (accountId: string, data: PreRegCreate) =>
         post<PreRegOut>(`${acctPath(accountId)}/pre-registration/create`, data),
 
-    /** 删除预注册客户端 */
+    batchCreate: (accountId: string, items: PreRegCreate[]) =>
+        post<PreRegOut[]>(`${acctPath(accountId)}/pre-registration/batch-create`, { items }),
+
     delete: (accountId: string, preRegId: string) =>
         del<void>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}`),
 
-    /** 重命名预注册客户端 */
-    rename: (accountId: string, preRegId: string, body: { label: string }) =>
-        post<unknown>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/rename`, body),
+    rename: (accountId: string, preRegId: string, body: { label?: string; class_identity?: string; mac_address?: string }) =>
+        post<PreRegOut>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/rename`, body),
 
-    /** 启用预注册客户端 */
     enable: (accountId: string, preRegId: string) =>
         post<unknown>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/enable`),
 
-    /** 禁用预注册客户端 */
     disable: (accountId: string, preRegId: string) =>
         post<unknown>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/disable`),
 
-    /** 修改预注册客户端档案组 */
-    config: (accountId: string, preRegId: string, body: unknown) =>
+    config: (accountId: string, preRegId: string, body: ClientProfileConfig) =>
         post<unknown>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/config`, body),
 
-    /** 下载引导配置 */
     downloadPreset: (accountId: string, preRegId: string) =>
-        get<unknown>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/ManagementPreset.json`),
+        get<ManagementSettings>(`${acctPath(accountId)}/pre-registration/${encodeURIComponent(preRegId)}/ManagementPreset.json`),
 };
 
 // ============================================================
@@ -424,27 +416,21 @@ export const preRegistration = {
 // ============================================================
 
 export const access = {
-    /** 列出具权用户 */
     list: (accountId: string) =>
         get<AccessMember[]>(`${acctPath(accountId)}/access/list`),
 
-    /** 搜索具权用户 */
     search: (accountId: string, q?: string) =>
         get<AccessMember[]>(`${acctPath(accountId)}/access/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
 
-    /** 获取具权用户信息 */
     get: (accountId: string, userId: string) =>
         get<AccessMember>(`${acctPath(accountId)}/access/${encodeURIComponent(userId)}`),
 
-    /** 修改成员角色 */
     update: (accountId: string, userId: string, data: AccessRoleUpdate) =>
         post<AccessMember>(`${acctPath(accountId)}/access/${encodeURIComponent(userId)}`, data),
 
-    /** 重命名具权用户 */
-    rename: (accountId: string, userId: string, body: unknown) =>
+    rename: (accountId: string, userId: string, body: { display_name?: string; name?: string }) =>
         post<unknown>(`${acctPath(accountId)}/access/${encodeURIComponent(userId)}/rename`, body),
 
-    /** 移除成员 */
     delete: (accountId: string, userId: string) =>
         del<void>(`${acctPath(accountId)}/access/${encodeURIComponent(userId)}`),
 };
@@ -454,27 +440,24 @@ export const access = {
 // ============================================================
 
 export const invitations = {
-    /** 列出邀请 */
     list: (accountId: string) =>
         get<InvitationOut[]>(`${acctPath(accountId)}/invitation/list`),
 
-    /** 搜索邀请 */
     search: (accountId: string, q?: string) =>
         get<InvitationOut[]>(`${acctPath(accountId)}/invitation/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
 
-    /** 获取邀请详情 */
     get: (accountId: string, invitationId: string) =>
         get<InvitationOut>(`${acctPath(accountId)}/invitation/${encodeURIComponent(invitationId)}`),
 
-    /** 创建邀请 */
     create: (accountId: string, data?: InvitationCreate) =>
         post<InvitationOut>(`${acctPath(accountId)}/invitation/create`, data || {}),
 
-    /** 重命名邀请 */
-    rename: (accountId: string, invitationId: string, body: unknown) =>
+    accept: (code: string) =>
+        post<{ status: string; account_id: string; role_in_account: string }>(`/account/invitation/accept`, { code }),
+
+    rename: (accountId: string, invitationId: string, body: { role_in_account?: string; is_active?: boolean }) =>
         post<unknown>(`${acctPath(accountId)}/invitation/${encodeURIComponent(invitationId)}/rename`, body),
 
-    /** 删除邀请 */
     delete: (accountId: string, invitationId: string) =>
         del<void>(`${acctPath(accountId)}/invitation/${encodeURIComponent(invitationId)}`),
 };
@@ -484,37 +467,38 @@ export const invitations = {
 // ============================================================
 
 export const data = {
-    /** 创建资源 (Backend uses GET /create?name=... for empty creation) */
     create: (accountId: string, type: ResourceType, name: string) =>
         get<StatusResponse>(`${acctPath(accountId)}/${type}/create?name=${encodeURIComponent(name)}`),
 
-    /** 列出资源 */
     list: (accountId: string, type: ResourceType) =>
         get<string[]>(`${acctPath(accountId)}/${type}/list`),
 
-    /** 获取资源 Token */
     getToken: (accountId: string, type: ResourceType, name: string) =>
         get<{ token: string; url: string }>(`${acctPath(accountId)}/${type}/token?name=${encodeURIComponent(name)}`),
 
-    /** 删除资源 */
     deleteData: (accountId: string, type: ResourceType, name: string) =>
         del<StatusResponse>(`${acctPath(accountId)}/${type}/delete?name=${encodeURIComponent(name)}`),
 
-    /** 覆盖写入资源 */
     write: (accountId: string, type: ResourceType, name: string, payload: unknown) =>
         post<StatusResponse>(`${acctPath(accountId)}/${type}/write?name=${encodeURIComponent(name)}`, payload),
 
-    /** 增量更新资源 (Patch) */
     patch: (accountId: string, type: ResourceType, name: string, payload: unknown) =>
         patch<StatusResponse>(`${acctPath(accountId)}/${type}/update?name=${encodeURIComponent(name)}`, payload),
 
-    /** 读取资源内容 (Management API) */
     read: (accountId: string, type: ResourceType, name: string) =>
         get<unknown>(`${acctPath(accountId)}/${type}/${encodeURIComponent(name)}`),
 
-    /** 批量操作 */
     batch: (accountId: string, ops: BatchRequest) =>
         post<unknown>(`${acctPath(accountId)}/batch`, ops),
+};
+
+// ============================================================
+// Credentials Helper
+// ============================================================
+
+export const credentials = {
+    encode: (accountId: string, password: string) =>
+        post<{ credential: string }>(`${acctPath(accountId)}/credentials/encode`, { password }),
 };
 
 // ============================================================
@@ -522,61 +506,88 @@ export const data = {
 // ============================================================
 
 export const clients = {
-    /** 列出已注册客户端 */
     list: (accountId: string) =>
-        get<string[]>(`${acctPath(accountId)}/client/list`),
+        get<ClientDeviceOut[]>(`${acctPath(accountId)}/client/list`),
 
-    /** 搜索客户端 */
     search: (accountId: string, q?: string) =>
-        get<unknown>(`${acctPath(accountId)}/client/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+        get<ClientDeviceOut[]>(`${acctPath(accountId)}/client/search${q ? `?q=${encodeURIComponent(q)}` : ""}`),
 
-    /** 客户端详情 */
     details: (accountId: string, clientId: string) =>
-        get<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}`),
+        get<ClientDeviceOut>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}`),
 
-    /** 删除客户端 */
     delete: (accountId: string, clientId: string) =>
         del<void>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}`),
 
-    /** 重命名客户端 */
-    rename: (accountId: string, clientId: string, body: unknown) =>
+    rename: (accountId: string, clientId: string, body: { display_name?: string; client_id?: string }) =>
         post<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/rename`, body),
 
-    /** 获取客户端在线状态 */
     status: (accountId: string, clientId: string) =>
-        get<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/status`),
+        get<{ uid: string; status: string; is_disabled: boolean }>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/status`),
 
-    /** 断开客户端连接 */
     disconnect: (accountId: string, clientId: string) =>
-        post<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/disconnect`),
+        post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/disconnect`),
 
-    /** 禁用客户端 */
     disable: (accountId: string, clientId: string) =>
-        post<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/disable`),
+        post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/disable`),
 
-    /** 启用客户端 */
     enable: (accountId: string, clientId: string) =>
-        post<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/enable`),
+        post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/enable`),
 
-    /** 修改客户端档案组 */
-    config: (accountId: string, clientId: string, body: unknown) =>
-        post<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/config`, body),
+    getProfileConfig: (accountId: string, clientId: string) =>
+        get<{ client_uid: string; profile_config: ClientProfileConfig; has_custom_profile: boolean }>(
+            `${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/config`
+        ),
 
-    /** 重启客户端 */
+    config: (accountId: string, clientId: string, body: ClientProfileConfig) =>
+        post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/config`, body),
+
+    batch: (accountId: string, req: ClientBatchRequest) =>
+        post<{ status: string; results: Array<{ uid: string; status: string }> }>(`${acctPath(accountId)}/client/batch`, req),
+
     restart: (accountId: string, clientId: string) =>
         post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/restart`),
 
-    /** 强制同步数据 */
     forceSync: (accountId: string, clientId: string) =>
         post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/update-data`),
 
-    /** 发送通知 */
     sendNotification: (accountId: string, clientId: string, payload: NotificationPayload) =>
         post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/send-notification`, payload),
 
-    /** 请求客户端上报配置 */
+    broadcastNotification: (accountId: string, payload: NotificationPayload, clientUids?: string[]) =>
+        post<{ status: string; sent_count: number; total_targets: number }>(
+            `${acctPath(accountId)}/client/broadcast/send-notification`,
+            { ...payload, client_uids: clientUids || null }
+        ),
+
     getConfig: (accountId: string, clientId: string, configType: number) =>
-        get<unknown>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/get-config?config_type=${configType}`),
+        get<{ status: string; request_guid: string; config_type: number; config_type_name: string }>(
+            `${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/get-config?config_type=${configType}`
+        ),
+
+    listConfigUploads: (accountId: string, clientId: string) =>
+        get<ConfigUploadItem[]>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/config-uploads`),
+
+    getConfigUploadDetail: (accountId: string, requestGuid: string) =>
+        get<ConfigUploadItem>(`${acctPath(accountId)}/config-upload/${encodeURIComponent(requestGuid)}`),
+};
+
+// ============================================================
+// Audit Logs (Management API: /account/{accountId}/audit/*)
+// ============================================================
+
+export const audit = {
+    list: (accountId: string, params?: { client_uid?: string; event_type?: number; limit?: number; offset?: number }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.client_uid) searchParams.set("client_uid", params.client_uid);
+        if (params?.event_type !== undefined) searchParams.set("event_type", String(params.event_type));
+        if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+        if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+        const qs = searchParams.toString();
+        return get<AuditLogItem[]>(`${acctPath(accountId)}/audit/list${qs ? `?${qs}` : ""}`);
+    },
+
+    clear: (accountId: string, clientUid?: string) =>
+        del<{ status: string }>(`${acctPath(accountId)}/audit/clear${clientUid ? `?client_uid=${encodeURIComponent(clientUid)}` : ""}`),
 };
 
 // ============================================================
@@ -595,69 +606,51 @@ export const bulk = {
 const adminBase = () => getAdminUrl();
 
 export const adminApi = {
-    /** 列出所有账户 */
     listAccounts: () =>
         get<AccountOut[]>("/account", adminBase()),
 
-    /** 列出所有用户（分页） */
     listUsers: (offset = 0, limit = 20) =>
         get<UserOut[]>(`/user/list?offset=${offset}&limit=${limit}`, adminBase()),
 
-    /** 搜索用户 */
     searchUsers: (q: string) =>
         get<UserOut[]>(`/user/search?q=${encodeURIComponent(q)}`, adminBase()),
 
-    /** 直接创建用户（跳过审核） */
     createUser: (data: UserRegisterRequest) =>
         post<UserOut>("/user/create", data, adminBase()),
 
-    /** 查询单个用户 */
     getUser: (userId: string) =>
         get<UserOut>(`/user/${encodeURIComponent(userId)}`, adminBase()),
 
-    /** 更新用户 */
     updateUser: (userId: string, data: UserUpdateRequest) =>
         post<UserOut>(`/user/${encodeURIComponent(userId)}`, data, adminBase()),
 
-    /** 删除用户 */
     deleteUser: (userId: string) =>
         del<unknown>(`/user/${encodeURIComponent(userId)}`, adminBase()),
 
-    /** 重命名用户 */
     renameUser: (userId: string, data: { name: string }) =>
         post<unknown>(`/user/${encodeURIComponent(userId)}/rename`, data, adminBase()),
 
-    /** 重置用户密码（无需旧密码） */
     resetPassword: (userId: string, data: { new_password: string }) =>
         post<unknown>(`/user/${encodeURIComponent(userId)}/password/reset`, data, adminBase()),
 
-    /** 修改用户密码（需旧密码） */
     changePassword: (userId: string, data: PasswordChange) =>
         post<unknown>(`/user/${encodeURIComponent(userId)}/password/change`, data, adminBase()),
 
-    /** 待审核用户列表 */
     listPendingUsers: (offset = 0, limit = 50) =>
         get<UserOut[]>(`/user/pending/list?offset=${offset}&limit=${limit}`, adminBase()),
 
-    /** 批准用户 */
     approveUser: (userId: string) =>
         post<unknown>(`/user/pending/approve/${encodeURIComponent(userId)}`, undefined, adminBase()),
 
-    /** 拒绝用户 */
     rejectUser: (userId: string) =>
         post<unknown>(`/user/pending/reject/${encodeURIComponent(userId)}`, undefined, adminBase()),
 
-    /** 系统设置 */
     getSettings: () =>
         get<Record<string, unknown>>("/settings", adminBase()),
 
     updateSettings: (data: Record<string, unknown>) =>
         post<unknown>("/settings", data, adminBase()),
 
-    /**
-     * 探测当前 token 是否有超管权限。
-     * 成功返回 true, 403 返回 false, 其它错误抛出。
-     */
     async probeSuperAdmin(): Promise<boolean> {
         try {
             await get<unknown>("/", adminBase());

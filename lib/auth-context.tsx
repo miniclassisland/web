@@ -1,50 +1,38 @@
 "use client";
 
 /**
- * 认证上下文 + SuperAdmin 检测 + 401 内联登录支持。
- *
- * - 登录后探测 Admin API 判断是否超管。
- * - 监听 cims:auth-expired 事件触发内联登录卡片。
- * - 重新登录后自动关闭卡片，页面无需再次跳转。
- * - 注册后进入 Pending 状态，不会自动登录。
+ * 认证上下文 + 当前用户信息 + SuperAdmin 检测 + 401 内联登录支持。
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { auth as authApi, adminApi, getToken, setToken, clearToken } from "./api";
-import type { UserLoginRequest, UserRegisterRequest, LoginResult, TokenResponse, TwoFARequired } from "./types";
+import { auth as authApi, userInfo, adminApi, getToken, setToken, clearToken } from "./api";
+import type {
+    UserLoginRequest,
+    UserRegisterRequest,
+    LoginResult,
+    TokenResponse,
+    TwoFARequired,
+    UserOut,
+} from "./types";
 
 interface AuthState {
-    /** 是否已登录 */
     isAuthenticated: boolean;
-    /** 当前 token */
     token: string | null;
-    /** 是否超级管理员 */
+    user: UserOut | null;
     isSuperAdmin: boolean;
-    /** 是否正在 2FA 验证流程中 */
     pending2FA: TwoFARequired | null;
-    /** 需要重新认证（token 失效） */
     requireReAuth: boolean;
-    /** 正在加载 */
     loading: boolean;
-    /** 错误消息 */
     error: string | null;
-    /** 注册成功消息 */
     registerSuccess: string | null;
-    /** 登录 */
     login: (data: UserLoginRequest) => Promise<void>;
-    /** 注册（Pending 状态） */
     register: (data: UserRegisterRequest) => Promise<void>;
-    /** 登出 */
     logout: () => Promise<void>;
-    /** 完成 2FA 后设置 token */
+    refreshUser: () => Promise<void>;
     complete2FA: (token: string) => void;
-    /** 清除 2FA 状态 */
     cancel2FA: () => void;
-    /** 清除错误 */
     clearError: () => void;
-    /** 重新认证（内联登录完成后） */
     handleReAuth: (data: UserLoginRequest) => Promise<void>;
-    /** 关闭重新认证对话框 */
     dismissReAuth: () => void;
 }
 
@@ -52,6 +40,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [token, setTokenState] = useState<string | null>(null);
+    const [user, setUser] = useState<UserOut | null>(null);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [pending2FA, setPending2FA] = useState<TwoFARequired | null>(null);
     const [requireReAuth, setRequireReAuth] = useState(false);
@@ -59,39 +48,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [error, setError] = useState<string | null>(null);
     const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
-    // 初始化：从 localStorage 读取 token
     useEffect(() => {
         setTokenState(getToken());
     }, []);
 
     const isAuthenticated = !!token;
 
-    // 探测超管权限
-    const checkSuperAdmin = useCallback(async () => {
-        try {
-            const result = await adminApi.probeSuperAdmin();
-            setIsSuperAdmin(result);
-        } catch {
+    const refreshUser = useCallback(async () => {
+        if (!getToken()) {
+            setUser(null);
             setIsSuperAdmin(false);
+            return;
+        }
+        try {
+            const u = await userInfo.get();
+            setUser(u);
+            if (u.role_code === "superadmin") {
+                setIsSuperAdmin(true);
+            } else {
+                const probe = await adminApi.probeSuperAdmin();
+                setIsSuperAdmin(probe);
+            }
+        } catch {
+            const probe = await adminApi.probeSuperAdmin();
+            setIsSuperAdmin(probe);
         }
     }, []);
 
-    // token 变化时探测超管
     useEffect(() => {
         if (token) {
-            checkSuperAdmin();
+            refreshUser();
         } else {
+            setUser(null);
             setIsSuperAdmin(false);
         }
-    }, [token, checkSuperAdmin]);
+    }, [token, refreshUser]);
 
-    // 监听 401 事件
     useEffect(() => {
         function onAuthExpired() {
             setRequireReAuth(true);
         }
-        window.addEventListener("cims:auth-expired", onAuthExpired);
-        return () => window.removeEventListener("cims:auth-expired", onAuthExpired);
+        window.addEventListener("miniclassisland:auth-expired", onAuthExpired);
+        return () => window.removeEventListener("miniclassisland:auth-expired", onAuthExpired);
     }, []);
 
     const login = useCallback(async (data: UserLoginRequest) => {
@@ -121,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRegisterSuccess(null);
         try {
             const result = await authApi.register(data);
-            // 注册后进入 Pending 状态，不直接登录
             setRegisterSuccess(result.message || "注册成功，等待管理员审核");
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "注册失败";
@@ -134,9 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = useCallback(async () => {
         try {
             await authApi.logout();
-        } catch { /* 忽略登出错误 */ }
+        } catch { /* ignore */ }
         clearToken();
         setTokenState(null);
+        setUser(null);
         setPending2FA(null);
         setIsSuperAdmin(false);
         setRequireReAuth(false);
@@ -157,7 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRegisterSuccess(null);
     }, []);
 
-    // 内联重新认证
     const handleReAuth = useCallback(async (data: UserLoginRequest) => {
         setLoading(true);
         setError(null);
@@ -186,24 +183,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{
-            isAuthenticated,
-            token,
-            isSuperAdmin,
-            pending2FA,
-            requireReAuth,
-            loading,
-            error,
-            registerSuccess,
-            login,
-            register,
-            logout,
-            complete2FA,
-            cancel2FA,
-            clearError: clearErrorCb,
-            handleReAuth,
-            dismissReAuth,
-        }}>
+        <AuthContext.Provider
+            value={{
+                isAuthenticated,
+                token,
+                user,
+                isSuperAdmin,
+                pending2FA,
+                requireReAuth,
+                loading,
+                error,
+                registerSuccess,
+                login,
+                register,
+                logout,
+                refreshUser,
+                complete2FA,
+                cancel2FA,
+                clearError: clearErrorCb,
+                handleReAuth,
+                dismissReAuth,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );

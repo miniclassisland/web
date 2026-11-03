@@ -173,7 +173,7 @@ export default function JsonResourceEditor({
                                     style={{
                                         width: "100%",
                                         minHeight: 400,
-                                        fontFamily: "'Cascadia Code', 'Courier New', monospace",
+                                        fontFamily: "var(--font-mono)",
                                         fontSize: 13,
                                         lineHeight: 1.6,
                                     }}

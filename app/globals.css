@@ -1,35 +1,37 @@
 /* ===== 全局样式 ===== */
 
-/* HarmonyOS Sans 字体族 */
+/* Google Sans Flex 字体族 */
 @font-face {
-  font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Light.ttf') format('truetype');
-  font-weight: 300;
+  font-family: 'Google Sans Flex';
+  src: url('/fonts/GoogleSansFlex-VariableFont.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Noto Sans SC 字体族 */
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('/fonts/NotoSansSC-VariableFont.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Google Sans Code 等宽字体族 */
+@font-face {
+  font-family: 'Google Sans Code';
+  src: url('/fonts/GoogleSansCode-VariableFont.ttf') format('truetype');
+  font-weight: 300 800;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'HarmonyOS Sans SC';
-  src: url('/fonts/HarmonyOS_Sans_SC_Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
+  font-family: 'Google Sans Code';
+  src: url('/fonts/GoogleSansCode-Italic-VariableFont.ttf') format('truetype');
+  font-weight: 300 800;
+  font-style: italic;
   font-display: swap;
 }
 
@@ -37,13 +39,15 @@
 :root {
   --sidebar-width: 260px;
   --topbar-height: 48px;
-  --font-family: 'HarmonyOS Sans SC', -apple-system, BlinkMacSystemFont,
+  --font-family: 'Google Sans Flex', 'Noto Sans SC', -apple-system, BlinkMacSystemFont,
     'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Google Sans Code', 'Noto Sans SC', monospace;
   --bg-primary: #f5f5f5;
   --bg-sidebar: #fafafa;
   --bg-card: #ffffff;
   --text-primary: #242424;
   --text-secondary: #616161;
+  --text-tertiary: #999;
   --border-color: #e0e0e0;
   --accent-color: #0078d4;
   --accent-hover: #106ebe;
@@ -413,7 +417,7 @@ body {
 /* 时间轴编辑器 */
 .timeline-editor {
   position: relative;
-  padding-left: 60px;
+  padding-left: 16px;
 }
 
 .timeline-item {
@@ -449,8 +453,8 @@ body {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  min-width: 100px;
-  font-family: 'Cascadia Code', monospace;
+  min-width: 110px;
+  font-variant-numeric: tabular-nums;
 }
 
 .timeline-content {
@@ -497,7 +501,7 @@ body {
   font-size: 12px;
   color: var(--text-secondary);
   min-width: 110px;
-  font-family: 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .classplan-row-content {
@@ -588,6 +592,10 @@ body {
   justify-content: space-between;
 }
 
+.justify-center {
+  justify-content: center;
+}
+
 .gap-4 {
   gap: 4px;
 }
@@ -636,11 +644,12 @@ body {
   margin-bottom: 16px;
 }
 
-/* JSON 编辑器 */
-.json-editor textarea {
+/* JSON 编辑器（仅在代码/JSON编辑处使用等宽字体） */
+.json-editor textarea,
+.code-block {
   width: 100%;
   min-height: 300px;
-  font-family: 'Cascadia Code', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
   padding: 16px;
@@ -722,7 +731,7 @@ body {
   }
 }
 
-/* ===== 用户菜单（Cloudflare 风格） ===== */
+/* ===== 用户菜单 ===== */
 
 .user-menu-wrapper {
   position: relative;
@@ -858,7 +867,6 @@ body {
 .user-menu-slug {
   font-size: 11px;
   color: var(--text-secondary);
-  font-family: 'Cascadia Code', monospace;
 }
 
 .user-menu-item {
@@ -888,12 +896,12 @@ body {
 }
 
 .user-menu-item-admin {
-  color: #c239b3;
+  color: var(--accent-color);
   font-weight: 500;
 }
 
 .user-menu-item-admin:hover {
-  background: #fdf0fc;
+  background: #e1efff;
 }
 
 .user-menu-item-danger {
@@ -975,74 +983,16 @@ body {
   }
 }
 
-
-
-
-
-
-
-/* ===== SuperAdmin 面板 ===== */
-
-:root {
-  --admin-accent: #c239b3;
-  --admin-accent-hover: #a82d9c;
-}
-
-.admin-sidebar {
-  background: #1a1a2e;
-  border-right-color: #2a2a4a;
-}
-
-.admin-sidebar .sidebar-header {
-  border-bottom-color: #2a2a4a;
-}
-
-.admin-sidebar .sidebar-title {
-  color: #e0e0ff;
-}
-
-.admin-sidebar .sidebar-section-label {
-  color: #8888aa;
-}
-
-.admin-sidebar .sidebar-link {
-  color: #c0c0dd;
-}
-
-.admin-sidebar .sidebar-link:hover {
-  background: #2a2a4a;
-  color: #fff;
-}
-
-.admin-sidebar .sidebar-link.active {
-  background: rgba(194, 57, 179, 0.2);
-  color: var(--admin-accent);
-}
-
-.admin-topbar {
-  background: #f8f4f9;
-  border-bottom-color: #e8d8e8;
-}
-
-.admin-stat-card {
-  border-left: 3px solid var(--admin-accent);
-}
-
 /* API Key 单元格 */
 .api-key-cell {
-  font-family: 'Cascadia Code', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   background: #f5f5f5;
   padding: 2px 6px;
   border-radius: 4px;
 }
 
-/* justify-center utility */
-.justify-center {
-  justify-content: center;
-}
-
-/* ===== 账户列表页（Cloudflare 风格账户选择器） ===== */
+/* ===== 账户列表页 ===== */
 
 .accounts-list-page {
   min-height: 100vh;
@@ -1190,7 +1140,6 @@ body {
 .account-card-id {
   font-size: 11px;
   color: var(--text-secondary);
-  font-family: 'Cascadia Code', monospace;
   opacity: 0.7;
 }
 
@@ -1226,7 +1175,32 @@ body {
   flex: 1;
 }
 
-/* text-tertiary helper */
-:root {
-  --text-tertiary: #999;
+/* 标签页按钮组 */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
 }

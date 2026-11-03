@@ -30,7 +30,7 @@ export interface MessageResponse {
 
 export interface StatusResponse {
     status: string;
-    message: string;
+    message?: string;
 }
 
 // ============================================================
@@ -45,11 +45,13 @@ export interface UserOut {
     role_code: string;
     is_active: boolean;
     can_create_account?: boolean;
+    totp_enabled?: boolean;
     created_at: string;
 }
 
 export interface UserUpdateRequest {
     display_name?: string | null;
+    username?: string | null;
     role_code?: string | null;
     is_active?: boolean | null;
     can_create_account?: boolean | null;
@@ -63,10 +65,22 @@ export interface UsernameUpdate {
     username: string;
 }
 
+export interface DisplayNameUpdate {
+    display_name: string;
+}
+
 export interface PasswordChange {
     old_password: string;
     new_password: string;
 }
+
+export type RegistrationMode = "open" | "pairing" | "pre_reg";
+
+export const REGISTRATION_MODE_LABELS: Record<RegistrationMode, string> = {
+    open: "开放接入 (无需配对与白名单)",
+    pairing: "配对码审批接入 (需管理员审批)",
+    pre_reg: "预注册白名单接入 (仅限已登记设备)",
+};
 
 export interface AccountOut {
     id: string;
@@ -74,16 +88,23 @@ export interface AccountOut {
     slug: string;
     api_key: string;
     is_active: boolean;
+    registration_mode?: RegistrationMode;
     created_at: string;
 }
 
 export interface AccountCreate {
     name: string;
     slug?: string;
+    registration_mode?: RegistrationMode;
 }
 
 export interface SlugUpdate {
     slug: string;
+}
+
+export interface AccountNameUpdate {
+    name: string;
+    registration_mode?: RegistrationMode;
 }
 
 // ============================================================
@@ -115,6 +136,21 @@ export interface TotpRecoverRequest {
 }
 
 // ============================================================
+// 客户端档案分配配置 (7 大资源)
+// ============================================================
+
+export interface ClientProfileConfig {
+    ClassPlan?: string;
+    TimeLayout?: string;
+    Subjects?: string;
+    DefaultSettings?: string;
+    Policy?: string;
+    Components?: string;
+    Credentials?: string;
+    [key: string]: string | undefined;
+}
+
+// ============================================================
 // 配对码
 // ============================================================
 
@@ -122,9 +158,20 @@ export interface PairingCodeOut {
     id: string;
     code: string;
     client_uid?: string;
+    client_id?: string;
+    client_mac?: string;
+    client_ip?: string;
+    status?: "pending" | "approved" | "rejected";
     approved?: boolean;
     used?: boolean;
+    preset_profile?: ClientProfileConfig | null;
     created_at?: string;
+    expires_at?: string;
+}
+
+export interface PairingStatusResponse {
+    pairing_enabled: boolean;
+    registration_mode: RegistrationMode;
 }
 
 // ============================================================
@@ -136,7 +183,18 @@ export interface PreRegOut {
     account_id: string;
     label: string;
     class_identity: string;
+    mac_address?: string | null;
+    is_enabled?: boolean;
+    preset_profile?: ClientProfileConfig | null;
+    bound_client_uid?: string | null;
     created_at: string;
+}
+
+export interface PreRegCreate {
+    label: string;
+    class_identity: string;
+    mac_address?: string | null;
+    preset_profile?: ClientProfileConfig | null;
 }
 
 // ============================================================
@@ -149,6 +207,9 @@ export interface AccessMember {
     account_id: string;
     role_in_account: string;
     joined_at: string;
+    username?: string;
+    display_name?: string;
+    email?: string;
 }
 
 export interface AccessRoleUpdate {
@@ -184,15 +245,6 @@ export interface InvitationCreate {
     role_in_account?: string;
     max_uses?: number;
     expires_at?: string | null;
-}
-
-// ============================================================
-// 预注册创建
-// ============================================================
-
-export interface PreRegCreate {
-    label: string;
-    class_identity: string;
 }
 
 // ============================================================
@@ -247,6 +299,12 @@ export interface BatchRequest {
     operations: BatchOperation[];
 }
 
+export interface ClientBatchRequest {
+    client_uids: string[];
+    action: "force_sync" | "restart" | "disconnect" | "enable" | "disable" | "delete" | "assign_profile";
+    profile_config?: ClientProfileConfig | null;
+}
+
 // ============================================================
 // 资源类型
 // ============================================================
@@ -259,6 +317,16 @@ export type ResourceType =
     | "DefaultSettings"
     | "Components"
     | "Credentials";
+
+export const RESOURCE_TYPES: ResourceType[] = [
+    "Subjects",
+    "TimeLayout",
+    "ClassPlan",
+    "Policy",
+    "Credentials",
+    "Components",
+    "DefaultSettings",
+];
 
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
     ClassPlan: "课表",
@@ -300,6 +368,7 @@ export interface Subject {
     Initial: string;
     TeacherName: string;
     IsOutDoor: boolean;
+    AttachedObjects?: Record<string, unknown>;
     AttachableSettings?: Record<string, unknown>;
 }
 
@@ -313,14 +382,18 @@ export const TIME_TYPE_LABELS: Record<TimeType, string> = {
     3: "行动",
 };
 
-/** 时间表项 */
+/** 时间表项 (兼容 StartSecond/EndSecond DateTime 与 StartTime/EndTime) */
 export interface TimeLayoutItem {
-    StartTime: string; // TimeSpan 格式，如 "08:00:00"
-    EndTime: string;
+    StartSecond?: string;
+    EndSecond?: string;
+    StartTime?: string;
+    EndTime?: string;
     TimeType: TimeType;
     IsHideDefault?: boolean;
     DefaultClassId?: string;
     BreakName?: string;
+    ActionSet?: Record<string, unknown> | null;
+    AttachedObjects?: Record<string, unknown>;
     AttachableSettings?: Record<string, unknown>;
 }
 
@@ -328,6 +401,7 @@ export interface TimeLayoutItem {
 export interface TimeLayout {
     Name: string;
     Layouts: TimeLayoutItem[];
+    AttachedObjects?: Record<string, unknown>;
     AttachableSettings?: Record<string, unknown>;
 }
 
@@ -336,6 +410,7 @@ export interface ClassInfo {
     SubjectId: string;
     IsChangedClass?: boolean;
     IsEnabled?: boolean;
+    AttachedObjects?: Record<string, unknown>;
     AttachableSettings?: Record<string, unknown>;
 }
 
@@ -355,7 +430,9 @@ export interface ClassPlan {
     IsEnabled: boolean;
     IsOverlay?: boolean;
     OverlaySourceId?: string | null;
+    OverlaySetupTime?: string;
     AssociatedGroup?: string;
+    AttachedObjects?: Record<string, unknown>;
     AttachableSettings?: Record<string, unknown>;
 }
 
@@ -375,6 +452,7 @@ export interface Profile {
     IsOverlayClassPlanEnabled?: boolean;
     OverlayClassPlanId?: string | null;
     SelectedClassPlanGroupId?: string;
+    TempOverlayClassPlanSetupTime?: string;
 }
 
 /** 管理策略 */
@@ -398,7 +476,7 @@ export const MANAGEMENT_SERVER_KIND_LABELS: Record<ManagementServerKind, string>
     1: "集控服务器 (ManagementServer)",
 };
 
-/** 默认设置 (ManagementSettings) */
+/** 引导设置 (ManagementSettings / ManagementPreset.json) */
 export interface ManagementSettings {
     IsManagementEnabled?: boolean;
     ManagementServerKind?: ManagementServerKind;
@@ -408,13 +486,42 @@ export interface ManagementSettings {
     ClassIdentity?: string;
 }
 
+/** 客户端应用默认设置 (ClassIsland.Models.Settings) */
+export interface AppDefaultSettings {
+    IsWelcomeWindowShowed?: boolean;
+    WindowDockingLocation?: number;
+    WindowDockingOffsetX?: number;
+    WindowDockingOffsetY?: number;
+    WindowDockingMonitorIndex?: number;
+    WindowLayer?: number;
+    IsMouseClickingEnabled?: boolean;
+    Scale?: number;
+    Theme?: number;
+    ColorSource?: number;
+    PrimaryColor?: string;
+    SecondaryColor?: string;
+    IsNotificationEnabled?: boolean;
+    IsNotificationEffectEnabled?: boolean;
+    IsNotificationSoundEnabled?: boolean;
+    IsNotificationTopmostEnabled?: boolean;
+    IsSpeechEnabled?: boolean;
+    SpeechVolume?: number;
+    SpeechSource?: number;
+    TimeOffsetSeconds?: number;
+    IsTimeAutoAdjustEnabled?: boolean;
+    IsSplashEnabled?: boolean;
+    CurrentComponentConfig?: string;
+    SelectedProfile?: string;
+    [key: string]: unknown;
+}
+
 /** 授权等级: 0=无, 1=用户认证, 2=管理员认证 */
 export type AuthorizeLevel = 0 | 1 | 2;
 
 export const AUTHORIZE_LEVEL_LABELS: Record<AuthorizeLevel, string> = {
-    0: "无需认证",
-    1: "用户认证",
-    2: "管理员认证",
+    0: "无需认证 (None)",
+    1: "用户认证 (User)",
+    2: "管理员认证 (Admin)",
 };
 
 /** 凭据配置 (ManagementCredentialConfig) */
@@ -427,6 +534,8 @@ export interface ManagementCredentialConfig {
     EditProfileAuthorizeLevel?: AuthorizeLevel;
     EditSettingsAuthorizeLevel?: AuthorizeLevel;
     ExitApplicationAuthorizeLevel?: AuthorizeLevel;
+    EditComponentsAuthorizeLevel?: AuthorizeLevel;
+    PluginManagementAuthorizeLevel?: AuthorizeLevel;
     ChangeLessonsAuthorizeLevel?: AuthorizeLevel;
 }
 
@@ -480,18 +589,116 @@ export interface ComponentSettingsItem {
     LastWidthCache?: number;
 }
 
+/** 主界面行设置 (MainWindowLineSettings) */
+export interface ComponentLineSettings {
+    Children: ComponentSettingsItem[];
+    IslandSeparationMode?: number;
+    IsMainLine?: boolean;
+    IsEnabled?: boolean;
+    HideOnRule?: boolean;
+    IsResourceOverridingEnabled?: boolean;
+    MainWindowSecondaryFontSize?: number;
+    MainWindowBodyFontSize?: number;
+    MainWindowEmphasizedFontSize?: number;
+    MainWindowLargeFontSize?: number;
+    IsCustomForegroundColorEnabled?: boolean;
+    ForegroundColor?: string;
+    IsCustomBackgroundColorEnabled?: boolean;
+    BackgroundColor?: string;
+    IsCustomBackgroundOpacityEnabled?: boolean;
+    BackgroundOpacity?: number;
+    IsCustomCornerRadiusEnabled?: boolean;
+    CustomCornerRadius?: number;
+    Opacity?: number;
+}
+
+/** 组件配置档案 (ComponentProfile) */
+export interface ComponentProfile {
+    Lines: ComponentLineSettings[];
+}
+
+/** 上游内置组件列表 */
+export const BUILTIN_COMPONENTS: Array<{ id: string; name: string; desc: string }> = [
+    { id: "df398495-e1f4-4e4e-b62c-512000e55029", name: "课程表", desc: "显示今日课程表与当前进度" },
+    { id: "9781b66c-647c-463b-bd42-8879901c2d08", name: "时钟", desc: "显示当前数字时间" },
+    { id: "c01377d5-9072-4c72-975a-c71b161b61d0", name: "日期", desc: "显示今日日期与星期" },
+    { id: "a5a2e554-1c59-4b11-9472-b15e8767d814", name: "天气", desc: "显示实时天气与气象预警" },
+    { id: "856510b1-9464-4822-b472-5e997e61001b", name: "倒计时", desc: "显示指定事件距离天数" },
+    { id: "f63f108c-227c-414b-9e65-2e6f18471f7b", name: "滚动文本", desc: "横向滚动展示通知标语" },
+    { id: "341b6d16-8f5b-46b2-9551-208b6511e2a0", name: "分隔线", desc: "在组件之间插入视觉分隔符" },
+    { id: "48c55091-1f5a-4d6e-91c8-a0b528c45646", name: "分组容器", desc: "容纳多个子组件的布局容器" },
+    { id: "78998996-96f9-47f4-a1e8-4f8c0965e7e6", name: "轮播容器", desc: "定时轮播展示内部子组件" },
+];
+
 // ============================================================
-// 客户端
+// 客户端设备与远程上报/审计
 // ============================================================
 
-export interface ClientInfo {
+export interface ClientDeviceOut {
     uid: string;
-    client_id?: string;
-    class_identity?: string;
-    registered_at?: string;
-    last_seen?: string;
-    is_online?: boolean;
+    client_id: string;
+    display_name: string;
+    mac: string;
+    ip: string | null;
+    is_disabled: boolean;
+    status: "online" | "offline";
+    registered_at: string | null;
+    last_seen_at: string | null;
+    profile_config: ClientProfileConfig;
+    has_custom_profile: boolean;
+}
+
+export interface ClientInfo extends Partial<ClientDeviceOut> {
+    uid: string;
     [key: string]: unknown;
+}
+
+export const CONFIG_TYPE_LABELS: Record<number, string> = {
+    1: "应用设置 (AppSettings)",
+    2: "当前档案 (Profile)",
+    3: "组件配置 (Components)",
+    4: "自动化配置 (Automations)",
+    5: "运行日志 (Logs)",
+    6: "已安装插件 (Plugins)",
+};
+
+export interface ConfigUploadItem {
+    request_guid: string;
+    client_uid: string | null;
+    config_type: number;
+    config_type_name: string;
+    status: "pending" | "completed";
+    uploaded_at: string | null;
+    payload_preview?: string;
+    payload?: string;
+    parsed_payload?: unknown;
+}
+
+export const AUDIT_EVENT_LABELS: Record<number, string> = {
+    0: "未指定事件",
+    1: "授权成功 (AuthorizeSuccess)",
+    2: "授权失败 (AuthorizeFailed)",
+    3: "应用启动 (AppStarted)",
+    4: "正常退出 (AppExited)",
+    5: "应用崩溃 (AppCrashed)",
+    6: "设置变更 (AppSettingsChanged)",
+    7: "插件安装 (PluginInstalled)",
+    8: "插件卸载 (PluginUninstalled)",
+    9: "集控加入 (ManagementJoined)",
+    10: "集控退出 (ManagementExited)",
+    11: "配置同步完成 (ConfigUpdated)",
+    12: "课表换课 (ClassPlanChanged)",
+    13: "规则状态变更 (RulesetChanged)",
+};
+
+export interface AuditLogItem {
+    id: number;
+    client_uid: string;
+    event_type: number;
+    event_name: string;
+    timestamp_utc: number;
+    logged_at: string | null;
+    decoded: Record<string, unknown>;
 }
 
 // ============================================================

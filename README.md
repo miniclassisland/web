@@ -1,3 +1,15 @@
-# ClassIsland WebUI
+# MINI ClassIsland Web
 
-This is the web user interface for ClassIsland Management Server.
+Web management panel (`miniclassisland-web`) for **MINI ClassIsland**.
+
+## Development
+
+```bash
+npm run dev
+```
+
+## Production Static Export
+
+```bash
+npm run build
+```

@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * 右上角用户菜单（Cloudflare 风格）。
+ * 右上角用户菜单（MINI ClassIsland 顶栏）。
  *
  * 弹出卡片包含：用户头像/角色、当前账户信息、
- * 账户切换器、SuperAdmin 面板入口（条件显示）、安全设置和登出。
+ * 账户切换器、超级管理面板入口（条件显示）、安全设置和登出。
  */
 
 import React, { useState, useRef } from "react";
@@ -18,6 +18,20 @@ import {
     ArrowSwap20Regular,
 } from "@fluentui/react-icons";
 
+function resolveAdminSiteUrl(): string {
+    const envUrl = process.env.NEXT_PUBLIC_ADMIN_SITE_URL;
+    if (envUrl) return envUrl.replace(/\/+$/, "");
+    if (typeof window === "undefined") return "";
+    const { protocol, hostname, port, host } = window.location;
+    if (port === "27042") {
+        return `${protocol}//${hostname}:27043`;
+    }
+    if (!hostname.startsWith("admin.")) {
+        return `${protocol}//admin.${host}`;
+    }
+    return "";
+}
+
 export default function UserMenu() {
     const { isSuperAdmin, logout, token } = useAuth();
     const { accounts, currentAccount, switchAccount } = useAccount();
@@ -25,7 +39,6 @@ export default function UserMenu() {
     const [showSwitcher, setShowSwitcher] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // 点击外部关闭
     React.useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -45,7 +58,6 @@ export default function UserMenu() {
 
     return (
         <div className="user-menu-wrapper" ref={menuRef}>
-            {/* 触发按钮 */}
             <button
                 className="user-menu-trigger"
                 onClick={() => { setOpen(!open); setShowSwitcher(false); }}
@@ -62,12 +74,10 @@ export default function UserMenu() {
                 <ChevronDown16Regular />
             </button>
 
-            {/* 弹出面板 */}
             {open && (
                 <div className="user-menu-popover">
                     {!showSwitcher ? (
                         <>
-                            {/* 用户信息区 */}
                             <div className="user-menu-header">
                                 <div className="user-menu-avatar-lg">
                                     <Person24Regular />
@@ -84,7 +94,6 @@ export default function UserMenu() {
 
                             <div className="user-menu-divider" />
 
-                            {/* 当前账户 */}
                             {currentAccount && (
                                 <div className="user-menu-section">
                                     <div className="user-menu-section-label">当前账户</div>
@@ -95,7 +104,6 @@ export default function UserMenu() {
                                 </div>
                             )}
 
-                            {/* 账户切换 */}
                             {accounts.length > 1 && (
                                 <button
                                     className="user-menu-item"
@@ -108,26 +116,24 @@ export default function UserMenu() {
 
                             <div className="user-menu-divider" />
 
-                            {/* SuperAdmin 入口 */}
                             {isSuperAdmin && (
                                 <button
                                     className="user-menu-item user-menu-item-admin"
                                     onClick={() => {
                                         setOpen(false);
-                                        const adminUrl = process.env.NEXT_PUBLIC_ADMIN_SITE_URL;
-                                        if (adminUrl && token) {
+                                        const adminUrl = resolveAdminSiteUrl();
+                                        if (token) {
                                             window.location.href = `${adminUrl}/auth?token=${encodeURIComponent(token)}`;
                                         } else {
-                                            window.location.href = "/admin";
+                                            window.location.href = adminUrl || "/";
                                         }
                                     }}
                                 >
                                     <ShieldKeyhole24Regular />
-                                    <span>管理员面板</span>
+                                    <span>超级管理面板</span>
                                 </button>
                             )}
 
-                            {/* 安全设置 */}
                             <a
                                 className="user-menu-item"
                                 href="/security"
@@ -139,7 +145,6 @@ export default function UserMenu() {
 
                             <div className="user-menu-divider" />
 
-                            {/* 登出 */}
                             <button
                                 className="user-menu-item user-menu-item-danger"
                                 onClick={() => { logout(); setOpen(false); }}
@@ -149,7 +154,6 @@ export default function UserMenu() {
                             </button>
                         </>
                     ) : (
-                        /* 账户切换列表 */
                         <>
                             <div className="user-menu-header">
                                 <button
@@ -165,8 +169,7 @@ export default function UserMenu() {
                                 {accounts.map(acct => (
                                     <button
                                         key={acct.id}
-                                        className={`user-menu-account-item ${currentAccount?.id === acct.id ? "active" : ""
-                                            }`}
+                                        className={`user-menu-account-item ${currentAccount?.id === acct.id ? "active" : ""}`}
                                         onClick={() => {
                                             switchAccount(acct.id);
                                             setShowSwitcher(false);

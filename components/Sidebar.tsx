@@ -9,7 +9,7 @@ import {
     Board24Regular, ShieldTask24Regular, Apps24Regular,
     Key24Regular, PersonAccounts24Regular,
     Send24Regular, PeopleAdd24Regular, Laptop24Regular,
-    DataBarVertical24Regular,
+    DataBarVertical24Regular, DocumentSearch24Regular,
 } from "@fluentui/react-icons";
 
 interface NavItem {
@@ -47,6 +47,7 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: "客户端管理", href: "/clients", icon: <PlugConnected24Regular /> },
             { label: "通知推送", href: "/notifications", icon: <Send24Regular /> },
+            { label: "审计日志", href: "/audit", icon: <DocumentSearch24Regular /> },
         ],
     },
     {
@@ -79,8 +80,8 @@ export default function Sidebar() {
         <aside className="sidebar">
             <div className="sidebar-header">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.svg" alt="ClassIsland" className="sidebar-logo" />
-                <div className="sidebar-title">CIMS 管理面板</div>
+                <img src="/logo.svg" alt="MINI ClassIsland" className="sidebar-logo" />
+                <div className="sidebar-title">MINI ClassIsland 管理面板</div>
             </div>
             <nav className="sidebar-nav">
                 {NAV_SECTIONS.map((section) => (
