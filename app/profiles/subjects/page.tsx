@@ -13,6 +13,7 @@ import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 type SubjectsData = Record<string, Subject>;
 
@@ -237,6 +238,18 @@ export default function SubjectsPage() {
                                     编辑科目文件: {selectedFile} ({Object.keys(subjects).length} 门科目)
                                 </div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`Subjects-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `Subjects-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "Subjects.json" },
+                                        ]}
+                                        onFetchData={async () => (jsonMode ? JSON.parse(jsonText) : subjects)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}

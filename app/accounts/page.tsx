@@ -10,9 +10,10 @@ import {
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import {
-    Edit24Regular, Delete24Regular, ArrowClockwise24Regular, ArrowDownload24Regular, Copy24Regular,
+    Edit24Regular, Delete24Regular, ArrowClockwise24Regular, Copy24Regular,
 } from "@fluentui/react-icons";
 import { useRouter } from "next/navigation";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 export default function AccountsPage() {
     const { accountId, currentAccount, refreshAccounts } = useAccount();
@@ -94,22 +95,6 @@ export default function AccountsPage() {
         setSaving(false);
     }
 
-    async function handleDownloadPreset() {
-        if (!accountId) return;
-        try {
-            const preset = await accounts.downloadPreset(accountId);
-            const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "ManagementPreset.json";
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "下载失败" });
-        }
-    }
-
     async function handleDeleteAccount() {
         if (!accountInfo || deleteConfirm !== accountInfo.name) return;
         setDeleting(true);
@@ -124,6 +109,8 @@ export default function AccountsPage() {
         }
     }
 
+    const slugName = accountInfo?.slug || currentAccount?.slug || "account";
+
     return (
         <div className="fade-in">
             <div className="page-header">
@@ -131,9 +118,13 @@ export default function AccountsPage() {
                     <h1 className="page-title">账户概览</h1>
                     <p className="page-subtitle">查看和管理当前 MINI ClassIsland 账户信息与引导凭证</p>
                 </div>
-                <Button appearance="primary" icon={<ArrowDownload24Regular />} onClick={handleDownloadPreset}>
-                    下载 ManagementPreset.json
-                </Button>
+                <DownloadPresetPopoverButton
+                    buttonText="下载通用配置 (仅接口地址)"
+                    appearance="primary"
+                    defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                    onFetchData={() => accounts.downloadPreset(accountId)}
+                    onError={(text) => setMsg({ type: "error", text })}
+                />
             </div>
 
             {msg && (

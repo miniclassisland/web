@@ -4,8 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
 import { useRouter } from "next/navigation";
-import { clients, data, pairing, audit } from "@/lib/api";
+import { clients, data, pairing, audit, accounts } from "@/lib/api";
 import type { ResourceType } from "@/lib/types";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import {
     PlugConnected24Regular,
     Link24Regular,
@@ -103,6 +104,8 @@ export default function DashboardPage() {
 
     if (!isAuthenticated || !accountId) return null;
 
+    const slugName = currentAccount?.slug || "account";
+
     return (
         <div className="fade-in">
             <div className="page-header">
@@ -112,6 +115,12 @@ export default function DashboardPage() {
                         MINI ClassIsland 集控概览 {currentAccount ? `— ${currentAccount.name}` : ""}
                     </p>
                 </div>
+                <DownloadPresetPopoverButton
+                    buttonText="下载通用配置 (仅接口地址)"
+                    appearance="primary"
+                    defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                    onFetchData={() => accounts.downloadPreset(accountId)}
+                />
             </div>
 
             <div className="grid-4">

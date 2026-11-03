@@ -20,6 +20,7 @@ import {
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular, Code24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 type ClassPlansData = Record<string, ClassPlan>;
 type TimeLayoutsData = Record<string, TimeLayout>;
@@ -373,6 +374,18 @@ export default function ClassPlanPage() {
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>JSON 源码编辑: {selectedFile}</div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`ClassPlan-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `ClassPlan-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "ClassPlans.json" },
+                                        ]}
+                                        onFetchData={async () => JSON.parse(jsonText)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}
@@ -403,6 +416,18 @@ export default function ClassPlanPage() {
                                     style={{ fontWeight: 600, fontSize: 16 }}
                                 />
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`ClassPlan-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `ClassPlan-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "ClassPlans.json" },
+                                        ]}
+                                        onFetchData={async () => plans}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}

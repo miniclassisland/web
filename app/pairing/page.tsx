@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { pairing, data } from "@/lib/api";
+import { pairing, data, accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
 import type {
     PairingCodeOut,
@@ -22,9 +22,10 @@ import {
 import {
     Checkmark24Regular, Dismiss24Regular, ArrowSync24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 export default function PairingPage() {
-    const { accountId } = useAccount();
+    const { accountId, currentAccount } = useAccount();
     const [codes, setCodes] = useState<PairingCodeOut[]>([]);
     const [regMode, setRegMode] = useState<RegistrationMode>("open");
     const [loading, setLoading] = useState(true);
@@ -132,6 +133,8 @@ export default function PairingPage() {
         }
     }
 
+    const slugName = currentAccount?.slug || "account";
+
     return (
         <div className="fade-in">
             <div className="page-header">
@@ -139,9 +142,18 @@ export default function PairingPage() {
                     <h1 className="page-title">配对码与接入审批</h1>
                     <p className="page-subtitle">配置账户终端接入安全策略，并审批新终端的配对请求</p>
                 </div>
-                <Button appearance="secondary" icon={<ArrowSync24Regular />} onClick={loadData}>
-                    刷新列表
-                </Button>
+                <div className="flex gap-8">
+                    <DownloadPresetPopoverButton
+                        buttonText="下载通用配置 (仅接口地址)"
+                        appearance="secondary"
+                        defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                        onFetchData={() => accounts.downloadPreset(accountId)}
+                        onError={(text) => setMsg({ type: "error", text })}
+                    />
+                    <Button appearance="secondary" icon={<ArrowSync24Regular />} onClick={loadData}>
+                        刷新列表
+                    </Button>
+                </div>
             </div>
 
             {msg && (

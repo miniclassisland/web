@@ -14,6 +14,7 @@ import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     Key24Regular, Code24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 const AUTH_LEVEL_FIELDS: { key: keyof ManagementCredentialConfig; label: string; hint: string }[] = [
     { key: "EditAuthorizeSettingsAuthorizeLevel", label: "编辑授权设置 (EditAuthorizeSettingsAuthorizeLevel)", hint: "修改认证与授权配置所需的权限等级" },
@@ -222,6 +223,18 @@ export default function CredentialsPage() {
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>编辑凭据: {selectedFile}</div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`Credentials-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `Credentials-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "Credentials.json" },
+                                        ]}
+                                        onFetchData={async () => (jsonMode ? JSON.parse(jsonText) : cred)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}

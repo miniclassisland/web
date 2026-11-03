@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { clients, data, audit } from "@/lib/api";
+import { clients, data, audit, accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
 import type {
     NotificationPayload,
@@ -30,11 +30,12 @@ import {
     CheckmarkCircle24Regular, DismissCircle24Regular,
     DocumentSearch24Regular, CloudArrowDown24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 type DetailTab = "info" | "profile" | "snapshots" | "audit" | "notify";
 
 export default function ClientsPage() {
-    const { accountId } = useAccount();
+    const { accountId, currentAccount } = useAccount();
     const [clientList, setClientList] = useState<ClientDeviceOut[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -430,6 +431,7 @@ export default function ClientsPage() {
     const onlineCount = clientList.filter((c) => c.status === "online").length;
     const customProfileCount = clientList.filter((c) => c.has_custom_profile).length;
     const disabledCount = clientList.filter((c) => c.is_disabled).length;
+    const slugName = currentAccount?.slug || "account";
 
     return (
         <div className="fade-in">
@@ -441,6 +443,13 @@ export default function ClientsPage() {
                     </p>
                 </div>
                 <div className="flex gap-8">
+                    <DownloadPresetPopoverButton
+                        buttonText="下载通用配置 (仅接口地址)"
+                        appearance="secondary"
+                        defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                        onFetchData={() => accounts.downloadPreset(accountId)}
+                        onError={(text) => setMsg({ type: "error", text })}
+                    />
                     <Button appearance="secondary" icon={<Settings24Regular />} onClick={openDefaultProfileModal}>
                         默认下发档案配置
                     </Button>

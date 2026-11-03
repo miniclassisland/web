@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { preRegistration, data } from "@/lib/api";
+import { preRegistration, data, accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
 import type {
     PreRegOut,
@@ -16,12 +16,13 @@ import {
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
 import {
-    Add24Regular, Delete24Regular, ArrowDownload24Regular,
+    Add24Regular, Delete24Regular,
     Edit24Regular, Settings24Regular, DocumentAdd24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 export default function PreRegistrationPage() {
-    const { accountId } = useAccount();
+    const { accountId, currentAccount } = useAccount();
     const [list, setList] = useState<PreRegOut[]>([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -100,13 +101,13 @@ export default function PreRegistrationPage() {
     }, [loadData, loadResources]);
 
     async function handleCreate() {
-        if (!form.label.trim() || !form.class_identity.trim()) return;
+        if (!form.label.trim() || (!form.class_identity.trim() && !form.mac_address?.trim())) return;
         setCreating(true);
         try {
             await preRegistration.create(accountId, {
                 label: form.label.trim(),
                 class_identity: form.class_identity.trim(),
-                mac_address: form.mac_address?.trim() || null,
+                mac_address: form.mac_address?.trim() || "",
             });
             setMsg({ type: "success", text: "预注册客户端已创建" });
             setDialogOpen(false);
@@ -128,11 +129,11 @@ export default function PreRegistrationPage() {
         const items: PreRegCreate[] = [];
         for (const line of lines) {
             const parts = line.split(",").map((p) => p.trim());
-            if (parts.length >= 2 && parts[0] && parts[1]) {
+            if (parts.length >= 2 && parts[0] && (parts[1] || parts[2])) {
                 items.push({
                     label: parts[0],
-                    class_identity: parts[1],
-                    mac_address: parts[2] || null,
+                    class_identity: parts[1] || "",
+                    mac_address: parts[2] || "",
                 });
             }
         }
@@ -207,20 +208,7 @@ export default function PreRegistrationPage() {
         }
     }
 
-    async function handleDownload(item: PreRegOut) {
-        try {
-            const preset = await preRegistration.downloadPreset(accountId, item.id);
-            const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "ManagementPreset.json";
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "下载失败" });
-        }
-    }
+    const slugName = currentAccount?.slug || "account";
 
     return (
         <div className="fade-in">
@@ -232,6 +220,13 @@ export default function PreRegistrationPage() {
                     </p>
                 </div>
                 <div className="flex gap-8">
+                    <DownloadPresetPopoverButton
+                        buttonText="下载通用配置 (仅接口地址)"
+                        appearance="secondary"
+                        defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                        onFetchData={() => accounts.downloadPreset(accountId)}
+                        onError={(text) => setMsg({ type: "error", text })}
+                    />
                     <Button appearance="secondary" icon={<DocumentAdd24Regular />} onClick={() => setBatchOpen(true)}>
                         批量导入
                     </Button>
@@ -305,14 +300,14 @@ export default function PreRegistrationPage() {
                                     </td>
                                     <td>
                                         <div className="flex gap-4" style={{ flexWrap: "wrap" }}>
-                                            <Button
+                                            <DownloadPresetPopoverButton
+                                                buttonText="下载引导配置"
                                                 appearance="subtle"
                                                 size="small"
-                                                icon={<ArrowDownload24Regular />}
-                                                onClick={() => handleDownload(item)}
-                                            >
-                                                下载引导配置
-                                            </Button>
+                                                defaultFileName={`ManagementPreset-${slugName}-${item.class_identity || item.label || item.id.slice(0, 6)}.json`}
+                                                onFetchData={() => preRegistration.downloadPreset(accountId, item.id)}
+                                                onError={(text) => setMsg({ type: "error", text })}
+                                            />
                                             <Button
                                                 appearance="subtle"
                                                 size="small"
@@ -396,7 +391,7 @@ export default function PreRegistrationPage() {
                             <Button
                                 appearance="primary"
                                 onClick={handleCreate}
-                                disabled={creating || !form.label.trim() || !form.class_identity.trim()}
+                                disabled={creating || !form.label.trim() || (!form.class_identity.trim() && !form.mac_address?.trim())}
                             >
                                 {creating ? <Spinner size="tiny" /> : "创建"}
                             </Button>

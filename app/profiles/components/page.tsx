@@ -19,6 +19,7 @@ import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 /** 将任意后端读取的组件配置标准化为上游 ComponentProfile ({ Lines: [...] }) */
 function normalizeComponentProfile(raw: unknown): ComponentProfile {
@@ -409,6 +410,18 @@ export default function ComponentsPage() {
                                     编辑组件档案: {selectedFile}
                                 </div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`Components-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `Components-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "Components.json" },
+                                        ]}
+                                        onFetchData={async () => (jsonMode ? JSON.parse(jsonText) : profile)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}

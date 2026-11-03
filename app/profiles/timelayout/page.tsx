@@ -14,6 +14,7 @@ import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular, ArrowSort24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 type TimeLayoutsData = Record<string, TimeLayout>;
 type SubjectsData = Record<string, Subject>;
@@ -370,6 +371,18 @@ export default function TimeLayoutPage() {
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>JSON 源码编辑: {selectedFile}</div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`TimeLayout-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `TimeLayout-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "TimeLayouts.json" },
+                                        ]}
+                                        onFetchData={async () => JSON.parse(jsonText)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}
@@ -434,6 +447,18 @@ export default function TimeLayoutPage() {
                                     >
                                         按时间排序
                                     </Button>
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`TimeLayout-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `TimeLayout-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "TimeLayouts.json" },
+                                        ]}
+                                        onFetchData={async () => layouts}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}

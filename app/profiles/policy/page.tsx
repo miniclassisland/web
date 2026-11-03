@@ -12,6 +12,7 @@ import {
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular, Code24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 const POLICY_FIELDS: { key: keyof ManagementPolicy; label: string; hint: string }[] = [
     { key: "DisableProfileClassPlanEditing", label: "禁止编辑课表 (DisableProfileClassPlanEditing)", hint: "阻止客户端本地用户修改课表与临时换课" },
@@ -181,6 +182,18 @@ export default function PolicyPage() {
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>编辑策略: {selectedFile}</div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`Policy-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `Policy-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "Policy.json" },
+                                        ]}
+                                        onFetchData={async () => (jsonMode ? JSON.parse(jsonText) : policy)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}

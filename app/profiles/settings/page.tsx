@@ -11,11 +11,12 @@ import {
 } from "@fluentui/react-components";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
-    Code24Regular, ArrowDownload24Regular,
+    Code24Regular,
 } from "@fluentui/react-icons";
+import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 export default function SettingsPage() {
-    const { accountId } = useAccount();
+    const { accountId, currentAccount } = useAccount();
     const [fileList, setFileList] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [settings, setSettings] = useState<AppDefaultSettings>({});
@@ -24,7 +25,6 @@ export default function SettingsPage() {
 
     // 引导文件生成参数
     const [presetIdentity, setPresetIdentity] = useState("");
-    const [downloadingPreset, setDownloadingPreset] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
@@ -116,29 +116,13 @@ export default function SettingsPage() {
         }
     }
 
-    async function handleDownloadPreset() {
-        if (!accountId) return;
-        setDownloadingPreset(true);
-        try {
-            const preset = await accounts.downloadPreset(accountId, presetIdentity.trim());
-            const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "ManagementPreset.json";
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "下载引导文件失败" });
-        }
-        setDownloadingPreset(false);
-    }
-
     function update<K extends keyof AppDefaultSettings>(key: K, value: AppDefaultSettings[K]) {
         const next = { ...settings, [key]: value };
         setSettings(next);
         setJsonText(JSON.stringify(next, null, 2));
     }
+
+    const slugName = currentAccount?.slug || "account";
 
     return (
         <div className="fade-in">
@@ -161,30 +145,36 @@ export default function SettingsPage() {
                 </MessageBar>
             )}
 
-            {/* 快速生成客户端集控引导文件 ManagementPreset.json */}
+            {/* 快速生成客户端集控接入引导文件 */}
             <div className="card" style={{ padding: "14px 20px" }}>
                 <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 12 }}>
                     <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>客户端集控接入引导文件 (ManagementPreset.json)</div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>客户端集控接入引导文件</div>
                         <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                            将生成的 ManagementPreset.json 放置在客户端 ClassIsland 程序目录下，客户端启动时即可自动接入当前 MINI ClassIsland 账户。
+                            点击下载按钮可在气泡中选择保存为具名区分文件或客户端默认加载名。
                         </div>
                     </div>
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                        <DownloadPresetPopoverButton
+                            buttonText="下载通用配置 (仅接口地址)"
+                            appearance="primary"
+                            defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                            onFetchData={() => accounts.downloadPreset(accountId, "")}
+                            onError={(text) => setMsg({ type: "error", text })}
+                        />
                         <Input
                             placeholder="预设班级标识 (可选，如 class-101)"
                             value={presetIdentity}
                             onChange={(_, d) => setPresetIdentity(d.value)}
                             style={{ width: 220 }}
                         />
-                        <Button
+                        <DownloadPresetPopoverButton
+                            buttonText="下载带标识配置"
                             appearance="secondary"
-                            icon={<ArrowDownload24Regular />}
-                            onClick={handleDownloadPreset}
-                            disabled={downloadingPreset}
-                        >
-                            下载 ManagementPreset.json
-                        </Button>
+                            defaultFileName={`ManagementPreset-${slugName}-${presetIdentity.trim() || "custom"}.json`}
+                            onFetchData={() => accounts.downloadPreset(accountId, presetIdentity.trim())}
+                            onError={(text) => setMsg({ type: "error", text })}
+                        />
                     </div>
                 </div>
             </div>
@@ -229,6 +219,18 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>编辑默认设置: {selectedFile}</div>
                                 <div className="flex gap-8">
+                                    <DownloadPresetPopoverButton
+                                        buttonText="导出 JSON"
+                                        appearance="secondary"
+                                        defaultFileName={`DefaultSettings-${selectedFile}.json`}
+                                        suggestedNames={[
+                                            { label: "具名区分文件 (推荐)", fileName: `DefaultSettings-${selectedFile}.json` },
+                                            { label: "档案原名", fileName: `${selectedFile}.json` },
+                                            { label: "客户端标准资源名", fileName: "DefaultSettings.json" },
+                                        ]}
+                                        onFetchData={async () => (jsonMode ? JSON.parse(jsonText) : settings)}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <Button
                                         appearance="subtle"
                                         icon={<Code24Regular />}
