@@ -323,8 +323,8 @@ export default function ClassPlanPage() {
                 </div>
             </div>
 
-            <div className="flex gap-24">
-                <div style={{ width: 260, flexShrink: 0 }}>
+            <div className="profile-split-layout">
+                <div className="profile-split-sidebar">
                     <div className="card mb-16">
                         <div className="card-title">课表文件</div>
                         {loading ? (
@@ -563,21 +563,7 @@ export default function ClassPlanPage() {
                                                 >
                                                     <div className="classplan-row-time">{formatItemTime(timeItem)}</div>
                                                     <span
-                                                        className="timeline-type-badge"
-                                                        style={{
-                                                            background:
-                                                                timeItem.TimeType === 0
-                                                                    ? "#e1efff"
-                                                                    : timeItem.TimeType === 1
-                                                                    ? "#dff6dd"
-                                                                    : "#f0f0f0",
-                                                            color:
-                                                                timeItem.TimeType === 0
-                                                                    ? "#0078d4"
-                                                                    : timeItem.TimeType === 1
-                                                                    ? "#107c10"
-                                                                    : "#666",
-                                                        }}
+                                                        className={`timeline-type-badge type-${timeItem.TimeType}`}
                                                     >
                                                         {isClassSlot
                                                             ? `第 ${classIdx + 1} 节`

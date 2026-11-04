@@ -97,7 +97,7 @@ export default function NotificationsPage() {
             )}
 
             {/* 实时预览横幅 */}
-            <div className="card" style={{ background: form.IsEmergency ? "#fde7e9" : "#1f1f1f", color: form.IsEmergency ? "#d13438" : "#ffffff", textAlign: "center", padding: "16px 24px" }}>
+            <div className={`card notification-preview-banner ${form.IsEmergency ? "is-emergency" : ""}`}>
                 <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}>ClassIsland 提醒横幅预览</div>
                 <div style={{ fontSize: 18, fontWeight: 700 }}>{form.MessageMask || "（遮罩标题）"}</div>
                 <div style={{ fontSize: 14, marginTop: 4, opacity: 0.9 }}>{form.MessageContent || "（正文内容将在此滚动或居中展示）"}</div>

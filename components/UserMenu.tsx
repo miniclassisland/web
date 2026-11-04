@@ -8,9 +8,11 @@
  */
 
 import React, { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
 import { useThemeMode, THEME_MODE_LABELS, type ThemeMode } from "@/lib/theme-context";
+import { token as tokenApi } from "@/lib/api";
 import { ROLE_LABELS, SYSTEM_ROLES } from "@/lib/types";
 import {
     Person24Regular, ShieldKeyhole24Regular,
@@ -18,6 +20,7 @@ import {
     ChevronDown16Regular, Checkmark16Regular,
     ArrowSwap20Regular, WeatherSunny20Regular,
     WeatherMoon20Regular, Desktop20Regular,
+    Home24Regular,
 } from "@fluentui/react-icons";
 
 function resolveAdminSiteUrl(): string {
@@ -35,6 +38,7 @@ function resolveAdminSiteUrl(): string {
 }
 
 export default function UserMenu() {
+    const router = useRouter();
     const { isSuperAdmin, logout, token } = useAuth();
     const { accounts, currentAccount, switchAccount } = useAccount();
     const { mode, setMode } = useThemeMode();
@@ -113,15 +117,26 @@ export default function UserMenu() {
                                 </div>
                             )}
 
-                            {accounts.length > 1 && (
+                            {accounts.length > 0 && (
                                 <button
                                     className="user-menu-item"
                                     onClick={() => setShowSwitcher(true)}
                                 >
                                     <ArrowSwap20Regular />
-                                    <span>切换账户</span>
+                                    <span>切换账户中心 ({accounts.length})</span>
                                 </button>
                             )}
+
+                            <button
+                                className="user-menu-item"
+                                onClick={() => {
+                                    setOpen(false);
+                                    router.push("/");
+                                }}
+                            >
+                                <Home24Regular />
+                                <span>返回用户中心主页</span>
+                            </button>
 
                             <div className="user-menu-divider" />
 
@@ -150,14 +165,20 @@ export default function UserMenu() {
                             {isSuperAdmin && (
                                 <button
                                     className="user-menu-item user-menu-item-admin"
-                                    onClick={() => {
+                                    onClick={async () => {
                                         setOpen(false);
                                         const adminUrl = resolveAdminSiteUrl();
                                         if (token) {
-                                            window.location.href = `${adminUrl}/auth?token=${encodeURIComponent(token)}`;
-                                        } else {
-                                            window.location.href = adminUrl || "/";
+                                            try {
+                                                const { code } = await tokenApi.exchange();
+                                                window.location.href = `${adminUrl}/auth#code=${encodeURIComponent(code)}`;
+                                                return;
+                                            } catch {
+                                                window.location.href = adminUrl || "/";
+                                                return;
+                                            }
                                         }
+                                        window.location.href = adminUrl || "/";
                                     }}
                                 >
                                     <ShieldKeyhole24Regular />
@@ -205,6 +226,7 @@ export default function UserMenu() {
                                             switchAccount(acct.id);
                                             setShowSwitcher(false);
                                             setOpen(false);
+                                            router.push("/dashboard");
                                         }}
                                     >
                                         <div>

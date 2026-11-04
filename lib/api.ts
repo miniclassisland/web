@@ -4,7 +4,8 @@
 
 import type {
     UserRegisterRequest, UserLoginRequest, TokenResponse,
-    UserOut, UserUpdateRequest, AccountOut, AccountCreate, SlugUpdate, AccountNameUpdate,
+    UserOut, UserUpdateRequest, AccountOut, AccountCreate,
+    AccountIdUpdate, SlugUpdate, AccountNameUpdate, AccountInfoUpdate,
     EmailUpdate, UsernameUpdate, DisplayNameUpdate, PasswordChange,
     TotpEnableResponse, TotpConfirmRequest, TotpDisableRequest,
     TotpVerifyRequest, TotpRecoverRequest,
@@ -23,6 +24,7 @@ import type {
 // ============================================================
 
 const STORAGE_KEY_TOKEN = "miniclassisland_auth_token";
+const STORAGE_KEY_ACCOUNT = "miniclassisland_current_account_id";
 
 /** Management API 地址（认证、账户内操作） */
 export function getServerUrl(): string {
@@ -47,6 +49,7 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
     localStorage.removeItem(STORAGE_KEY_TOKEN);
+    localStorage.removeItem(STORAGE_KEY_ACCOUNT);
 }
 
 // ============================================================
@@ -279,6 +282,12 @@ export const token = {
 
     deactivate: () =>
         post<MessageResponse>("/token/deactivate"),
+
+    exchange: () =>
+        post<{ code: string }>("/token/exchange"),
+
+    redeem: (code: string) =>
+        post<TokenResponse>("/token/redeem", { code }),
 };
 
 // ============================================================
@@ -363,6 +372,12 @@ export const accounts = {
 
     info: (accountId: string) =>
         get<AccountOut>(`/account/${encodeURIComponent(accountId)}/info`),
+
+    updateInfo: (accountId: string, data: AccountInfoUpdate) =>
+        post<AccountOut>(`/account/${encodeURIComponent(accountId)}/info`, data),
+
+    changeId: (accountId: string, data: AccountIdUpdate) =>
+        post<AccountOut>(`/account/${encodeURIComponent(accountId)}/info/id`, data),
 
     changeSlug: (accountId: string, data: SlugUpdate) =>
         post<AccountOut>(`/account/${encodeURIComponent(accountId)}/info/slug`, data),
@@ -530,7 +545,7 @@ export const data = {
         get<unknown>(`${acctPath(accountId)}/${type}/${encodeURIComponent(name)}`),
 
     batch: (accountId: string, ops: BatchRequest) =>
-        post<unknown>(`${acctPath(accountId)}/batch`, ops),
+        post<unknown>(`${acctPath(accountId)}/batch`, { ...ops, target_account_id: accountId }),
 };
 
 // ============================================================
@@ -636,8 +651,11 @@ export const audit = {
 // ============================================================
 
 export const bulk = {
-    execute: (ops: BatchRequest) =>
-        post<unknown>("/account/bulk", ops),
+    execute: (ops: BatchRequest, accountId?: string) =>
+        post<unknown>(
+            accountId ? `${acctPath(accountId)}/batch` : "/bulk",
+            accountId ? { ...ops, target_account_id: accountId } : ops
+        ),
 };
 
 // ============================================================
@@ -694,7 +712,7 @@ export const adminApi = {
 
     async probeSuperAdmin(): Promise<boolean> {
         try {
-            await get<unknown>("/", adminBase());
+            await get<unknown>("/settings", adminBase());
             return true;
         } catch (e) {
             if (e instanceof ApiError && (e.status === 403 || e.status === 401)) {

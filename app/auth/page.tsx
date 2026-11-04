@@ -2,29 +2,42 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { setToken } from "@/lib/api";
+import { setToken, clearToken, token as tokenApi, userInfo } from "@/lib/api";
 import { Spinner } from "@fluentui/react-components";
 
 export default function AuthTransferPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // Run on client side only, avoids Next.js build failures with Static Export
-        if (typeof window !== "undefined") {
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get("token");
-            if (token) {
-                setToken(token);
+        if (typeof window === "undefined") return;
+
+        async function processTransfer() {
+            const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+            const code = hashParams.get("code");
+
+            // Immediately scrub sensitive parameters from address bar and browser history
+            window.history.replaceState(null, "", "/auth");
+
+            try {
+                if (code) {
+                    const res = await tokenApi.redeem(code);
+                    setToken(res.token);
+                    await userInfo.get();
+                    router.replace("/");
+                    return;
+                }
+            } catch {
+                clearToken();
             }
-            // Navigate to the dashboard or admin entry
-            // Using replace to prevent back navigation loop
-            router.replace("/admin");
+            router.replace("/login");
         }
+
+        processTransfer();
     }, [router]);
 
     return (
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-            <Spinner label="正在验证并登录管理面板..." />
+            <Spinner label="正在安全验证并跳转管理面板..." />
         </div>
     );
 }

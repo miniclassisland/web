@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
-import type { AccountOut, SlugUpdate, QuotaOut } from "@/lib/types";
+import type { AccountOut, SlugUpdate, QuotaOut, RegistrationMode } from "@/lib/types";
 import { REGISTRATION_MODE_LABELS, QUOTA_META } from "@/lib/types";
 import {
-    Button, Input, Spinner,
+    Button, Input, Spinner, Select,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import {
@@ -16,10 +16,12 @@ import { useRouter } from "next/navigation";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 
 export default function AccountsPage() {
-    const { accountId, currentAccount, refreshAccounts } = useAccount();
+    const { accountId, currentAccount, refreshAccounts, switchAccount } = useAccount();
     const router = useRouter();
     const [accountInfo, setAccountInfo] = useState<AccountOut | null>(null);
     const [loading, setLoading] = useState(true);
+    const [editingId, setEditingId] = useState(false);
+    const [newId, setNewId] = useState("");
     const [editingName, setEditingName] = useState(false);
     const [newName, setNewName] = useState("");
     const [editingSlug, setEditingSlug] = useState(false);
@@ -50,6 +52,24 @@ export default function AccountsPage() {
         loadData();
     }, [loadData]);
 
+    async function handleIdChange(e: React.FormEvent) {
+        e.preventDefault();
+        if (!accountId || !newId.trim()) return;
+        setSaving(true);
+        setMsg(null);
+        try {
+            const updated = await accounts.changeId(accountId, { new_id: newId.trim() });
+            setAccountInfo(updated);
+            setEditingId(false);
+            setMsg({ type: "success", text: `账户 ID 已更新为 ${updated.id}` });
+            await refreshAccounts();
+            switchAccount(updated.id);
+        } catch (err: unknown) {
+            setMsg({ type: "error", text: err instanceof Error ? err.message : "更新账户 ID 失败" });
+        }
+        setSaving(false);
+    }
+
     async function handleNameChange(e: React.FormEvent) {
         e.preventDefault();
         if (!accountId || !newName.trim()) return;
@@ -78,6 +98,21 @@ export default function AccountsPage() {
             setAccountInfo(updated);
             setEditingSlug(false);
             setMsg({ type: "success", text: "账户 Slug 已更新" });
+            refreshAccounts();
+        } catch (err: unknown) {
+            setMsg({ type: "error", text: err instanceof Error ? err.message : "更新失败" });
+        }
+        setSaving(false);
+    }
+
+    async function handleRegModeChange(mode: RegistrationMode) {
+        if (!accountId) return;
+        setSaving(true);
+        setMsg(null);
+        try {
+            const updated = await accounts.updateInfo(accountId, { registration_mode: mode });
+            setAccountInfo(updated);
+            setMsg({ type: "success", text: `终端接入策略已切换为：${REGISTRATION_MODE_LABELS[mode]}` });
             refreshAccounts();
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "更新失败" });
@@ -184,7 +219,40 @@ export default function AccountsPage() {
 
                         <div className="detail-row">
                             <div className="detail-label">账户 ID</div>
-                            <div className="detail-value" style={{ fontSize: 13 }}>{accountInfo.id}</div>
+                            <div className="detail-value">
+                                {editingId ? (
+                                    <form onSubmit={handleIdChange} className="flex items-center gap-8">
+                                        <Input
+                                            value={newId}
+                                            onChange={(_, d) => setNewId(d.value)}
+                                            placeholder="3-64 位字母/数字/连字符/下划线"
+                                            size="small"
+                                            style={{ minWidth: 260 }}
+                                        />
+                                        <Button appearance="primary" size="small" type="submit" disabled={saving || !newId.trim()}>
+                                            保存
+                                        </Button>
+                                        <Button appearance="subtle" size="small" onClick={() => setEditingId(false)}>
+                                            取消
+                                        </Button>
+                                    </form>
+                                ) : (
+                                    <span className="flex items-center gap-8">
+                                        <span className="api-key-cell" style={{ fontSize: 13 }}>{accountInfo.id}</span>
+                                        <Button
+                                            appearance="subtle"
+                                            size="small"
+                                            icon={<Edit24Regular />}
+                                            onClick={() => {
+                                                setNewId(accountInfo.id);
+                                                setEditingId(true);
+                                            }}
+                                        >
+                                            修改 ID
+                                        </Button>
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="detail-row">
@@ -254,9 +322,17 @@ export default function AccountsPage() {
                         <div className="detail-row">
                             <div className="detail-label">终端接入策略</div>
                             <div className="detail-value">
-                                <span className="badge badge-info">
-                                    {REGISTRATION_MODE_LABELS[accountInfo.registration_mode || "open"]}
-                                </span>
+                                <Select
+                                    size="small"
+                                    value={accountInfo.registration_mode || "open"}
+                                    onChange={(_, d) => handleRegModeChange(d.value as RegistrationMode)}
+                                    disabled={saving}
+                                    style={{ maxWidth: 320 }}
+                                >
+                                    {(Object.keys(REGISTRATION_MODE_LABELS) as RegistrationMode[]).map((m) => (
+                                        <option key={m} value={m}>{REGISTRATION_MODE_LABELS[m]}</option>
+                                    ))}
+                                </Select>
                             </div>
                         </div>
 

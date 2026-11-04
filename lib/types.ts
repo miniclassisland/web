@@ -98,12 +98,24 @@ export interface AccountCreate {
     registration_mode?: RegistrationMode;
 }
 
+export interface AccountIdUpdate {
+    new_id: string;
+}
+
 export interface SlugUpdate {
     slug: string;
 }
 
 export interface AccountNameUpdate {
     name: string;
+    registration_mode?: RegistrationMode;
+}
+
+export interface AccountInfoUpdate {
+    new_id?: string;
+    name?: string;
+    slug?: string;
+    is_active?: boolean;
     registration_mode?: RegistrationMode;
 }
 
@@ -343,6 +355,7 @@ export interface BatchOperation {
 
 export interface BatchRequest {
     operations: BatchOperation[];
+    target_account_id?: string;
 }
 
 export interface ClientBatchRequest {

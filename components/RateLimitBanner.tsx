@@ -85,9 +85,10 @@ export default function RateLimitBanner() {
                             <Button
                                 size="small"
                                 appearance="secondary"
+                                disabled={remaining > 0}
                                 onClick={() => window.location.reload()}
                             >
-                                立即刷新重试
+                                {remaining > 0 ? `请等待 (${remaining}s)` : "立即刷新重试"}
                             </Button>
                             <Button
                                 size="small"

@@ -17,9 +17,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const { isAuthenticated } = useAuth();
     const { accountId } = useAccount();
     const pathname = usePathname();
+    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     const isExcluded = SHELL_EXCLUDED_PATHS.some((p) => pathname.startsWith(p));
-    const isAccountListPage = pathname === "/" || pathname === "/accounts/new";
+
+    React.useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [pathname, accountId]);
 
     React.useEffect(() => {
         if (!isAuthenticated && !isExcluded) {
@@ -29,7 +33,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }
     }, [isAuthenticated, isExcluded, pathname]);
 
-    const showFullShell = isAuthenticated && accountId && !isExcluded && !isAccountListPage;
+    const showFullShell = isAuthenticated && !isExcluded;
 
     if (!isAuthenticated && !isExcluded) {
         return null;
@@ -42,10 +46,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
             {showFullShell ? (
                 <div className="app-layout">
-                    <Sidebar />
+                    {mobileMenuOpen && (
+                        <div
+                            className="sidebar-backdrop"
+                            onClick={() => setMobileMenuOpen(false)}
+                            aria-hidden="true"
+                        />
+                    )}
+                    <Sidebar
+                        mobileOpen={mobileMenuOpen}
+                        onCloseMobile={() => setMobileMenuOpen(false)}
+                    />
                     <div className="main-area">
-                        <TopBar />
-                        <main key={accountId} className="content-area fade-in">{children}</main>
+                        <TopBar onToggleMobileMenu={() => setMobileMenuOpen((v) => !v)} />
+                        <main key={accountId || "user-center"} className="content-area fade-in">{children}</main>
                     </div>
                 </div>
             ) : (

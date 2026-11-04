@@ -20,11 +20,46 @@
 # production
 /build
 
-# misc
+# misc & certificates/keys
 .DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
 *.pem
+*.key
+*.crt
+*.cer
+*.csr
+*.der
+*.p8
+*.pk8
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.snk
+id_rsa*
+id_ed25519*
+*id_ecdsa*
+*id_dsa*
+*.token
+*.orig
+*.rej
+*.service
+*.db
+*.sqlite
+*.sqlite3
+*-journal
+dump.rdb
+.pytest_cache/
 
-# debug
+# debug & logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -32,6 +67,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+*.env*.local
+!.env.example
 
 # vercel
 .vercel

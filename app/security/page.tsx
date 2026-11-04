@@ -298,21 +298,13 @@ export default function SecurityPage() {
 
                         <div className="settings-section">
                             <div className="settings-section-title">2. 备份恢复码</div>
-                            <div className="card" style={{ background: "#fff4ce", border: "1px solid #ffd700" }}>
-                                <p style={{ fontWeight: 500, marginBottom: 8, color: "#975700" }}>
+                            <div className="card warning-banner-card">
+                                <p className="warning-banner-title">
                                     请妥善保管以下恢复码，每个恢复码只能使用一次
                                 </p>
-                                <div
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(2, 1fr)",
-                                        gap: 6,
-                                        fontFamily: "var(--font-mono)",
-                                        fontSize: 13,
-                                    }}
-                                >
+                                <div className="recovery-codes-grid">
                                     {setupData.recovery_codes.map((code, i) => (
-                                        <div key={i} style={{ padding: "4px 8px", background: "var(--bg-card)", color: "var(--text-primary)", borderRadius: 4 }}>
+                                        <div key={i} className="recovery-code-item">
                                             {code}
                                         </div>
                                     ))}

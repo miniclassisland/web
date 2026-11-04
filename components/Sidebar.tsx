@@ -2,7 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAccount } from "@/lib/account-context";
+import { useAuth } from "@/lib/auth-context";
+import { token as tokenApi } from "@/lib/api";
+import { Select } from "@fluentui/react-components";
 import {
     Home24Regular, PlugConnected24Regular, Link24Regular,
     Settings24Regular, Book24Regular, Clock24Regular,
@@ -10,12 +14,15 @@ import {
     Key24Regular, PersonAccounts24Regular,
     Send24Regular, PeopleAdd24Regular, Laptop24Regular,
     DataBarVertical24Regular, DocumentSearch24Regular,
+    Add24Regular, ArrowLeft16Regular, ArrowRight16Regular,
+    ShieldKeyhole24Regular, Dismiss24Regular,
 } from "@fluentui/react-icons";
 
 interface NavItem {
     label: string;
     href: string;
     icon: React.ReactNode;
+    exact?: boolean;
 }
 
 interface NavSection {
@@ -23,7 +30,18 @@ interface NavSection {
     items: NavItem[];
 }
 
-const NAV_SECTIONS: NavSection[] = [
+const USER_CENTER_SECTIONS: NavSection[] = [
+    {
+        title: "用户中心",
+        items: [
+            { label: "账户主页", href: "/", icon: <Home24Regular />, exact: true },
+            { label: "创建新账户", href: "/accounts/new", icon: <Add24Regular />, exact: true },
+            { label: "个人资料与安全", href: "/security", icon: <DataBarVertical24Regular /> },
+        ],
+    },
+];
+
+const ACCOUNT_CENTER_SECTIONS: NavSection[] = [
     {
         title: "概览",
         items: [
@@ -58,38 +76,136 @@ const NAV_SECTIONS: NavSection[] = [
         ],
     },
     {
-        title: "账户",
+        title: "账户配置",
         items: [
-            { label: "账户概览", href: "/accounts", icon: <PersonAccounts24Regular /> },
+            { label: "账户基础信息", href: "/accounts", icon: <PersonAccounts24Regular />, exact: true },
             { label: "访问控制", href: "/access", icon: <PeopleAdd24Regular /> },
             { label: "邀请管理", href: "/invitations", icon: <PeopleAdd24Regular /> },
         ],
     },
     {
-        title: "安全",
+        title: "个人与安全",
         items: [
-            { label: "安全设置", href: "/security", icon: <DataBarVertical24Regular /> },
+            { label: "个人资料与安全", href: "/security", icon: <DataBarVertical24Regular /> },
         ],
     },
 ];
 
-export default function Sidebar() {
+function resolveAdminSiteUrl(): string {
+    const envUrl = process.env.NEXT_PUBLIC_ADMIN_SITE_URL;
+    if (envUrl) return envUrl.replace(/\/+$/, "");
+    if (typeof window === "undefined") return "";
+    const { protocol, hostname, port, host } = window.location;
+    if (port === "27042") {
+        return `${protocol}//${hostname}:27043`;
+    }
+    if (port === "3000") {
+        return `${protocol}//${hostname}:3001`;
+    }
+    if (hostname.startsWith("dash.")) {
+        const baseHost = host.replace(/^dash\./i, "");
+        return `${protocol}//admin.${baseHost}`;
+    }
+    if (!hostname.startsWith("admin.")) {
+        return `${protocol}//admin.${host}`;
+    }
+    return "";
+}
+
+export default function Sidebar({
+    mobileOpen = false,
+    onCloseMobile,
+}: {
+    mobileOpen?: boolean;
+    onCloseMobile?: () => void;
+}) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { accounts, accountId, currentAccount, switchAccount } = useAccount();
+    const { isSuperAdmin, token } = useAuth();
+
+    const isUserCenter =
+        pathname === "/" ||
+        pathname.startsWith("/accounts/new") ||
+        (pathname.startsWith("/security") && !accountId);
+
+    const sections = isUserCenter ? USER_CENTER_SECTIONS : ACCOUNT_CENTER_SECTIONS;
+
+    function handleJumpToAccount(targetAccountId: string) {
+        switchAccount(targetAccountId);
+        onCloseMobile?.();
+        router.push("/dashboard");
+    }
 
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
             <div className="sidebar-header">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/logo.svg" alt="MINI ClassIsland" className="sidebar-logo" />
-                <div className="sidebar-title">MINI ClassIsland 管理面板</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="sidebar-title">
+                        {isUserCenter ? "MINI ClassIsland 用户中心" : "MINI ClassIsland 账户中心"}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
+                        {isUserCenter ? "User Center & Accounts" : (currentAccount?.slug || "Account Management")}
+                    </div>
+                </div>
+                {onCloseMobile && (
+                    <button
+                        type="button"
+                        className="mobile-drawer-close"
+                        onClick={onCloseMobile}
+                        aria-label="关闭导航菜单"
+                    >
+                        <Dismiss24Regular />
+                    </button>
+                )}
             </div>
+
+            {!isUserCenter && (
+                <div className="sidebar-tenant-box">
+                    <Link
+                        href="/"
+                        className="sidebar-back-link"
+                    >
+                        <ArrowLeft16Regular />
+                        <span>返回用户中心 (所有账户)</span>
+                    </Link>
+
+                    <div className="sidebar-section-label" style={{ paddingLeft: 0, marginTop: 8 }}>
+                        当前账户中心
+                    </div>
+                    {accounts.length > 0 ? (
+                        <Select
+                            size="small"
+                            value={accountId || ""}
+                            onChange={(_, d) => {
+                                if (d.value) {
+                                    switchAccount(d.value);
+                                }
+                            }}
+                            style={{ width: "100%" }}
+                        >
+                            {accounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                    {a.name} ({a.slug})
+                                </option>
+                            ))}
+                        </Select>
+                    ) : (
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>暂无可用账户</div>
+                    )}
+                </div>
+            )}
+
             <nav className="sidebar-nav">
-                {NAV_SECTIONS.map((section) => (
+                {sections.map((section) => (
                     <div key={section.title} className="sidebar-section">
                         <div className="sidebar-section-label">{section.title}</div>
                         {section.items.map((item) => {
-                            const isActive = pathname === item.href ||
-                                (item.href !== "/" && pathname.startsWith(item.href));
+                            const isActive = item.exact
+                                ? pathname === item.href
+                                : pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                             return (
                                 <Link
                                     key={item.href}
@@ -101,8 +217,60 @@ export default function Sidebar() {
                                 </Link>
                             );
                         })}
+                        {isUserCenter && isSuperAdmin && section.title === "用户中心" && (
+                            <button
+                                type="button"
+                                className="sidebar-link"
+                                style={{ width: "100%", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                                onClick={async () => {
+                                    const adminUrl = resolveAdminSiteUrl();
+                                    if (token) {
+                                        try {
+                                            const { code } = await tokenApi.exchange();
+                                            window.location.href = `${adminUrl}/auth#code=${encodeURIComponent(code)}`;
+                                            return;
+                                        } catch {
+                                            window.location.href = adminUrl || "/";
+                                            return;
+                                        }
+                                    }
+                                    window.location.href = adminUrl || "/";
+                                }}
+                            >
+                                <ShieldKeyhole24Regular />
+                                <span>超级管理面板</span>
+                            </button>
+                        )}
                     </div>
                 ))}
+
+                {isUserCenter && (
+                    <div className="sidebar-section">
+                        <div className="sidebar-section-label">选择跳转账户中心 ({accounts.length})</div>
+                        {accounts.length === 0 ? (
+                            <div style={{ padding: "8px 12px", fontSize: 12, color: "var(--text-tertiary)" }}>
+                                暂无已关联账户
+                            </div>
+                        ) : (
+                            accounts.map((acct) => (
+                                <button
+                                    key={acct.id}
+                                    type="button"
+                                    className={`sidebar-account-jump ${accountId === acct.id ? "active" : ""}`}
+                                    onClick={() => handleJumpToAccount(acct.id)}
+                                    title={`进入「${acct.name}」(${acct.slug}) 账户中心`}
+                                >
+                                    <PersonAccounts24Regular style={{ flexShrink: 0 }} />
+                                    <div className="sidebar-account-jump-info">
+                                        <div className="sidebar-account-jump-name">{acct.name}</div>
+                                        <div className="sidebar-account-jump-slug">{acct.slug}</div>
+                                    </div>
+                                    <ArrowRight16Regular className="sidebar-account-jump-arrow" />
+                                </button>
+                            ))
+                        )}
+                    </div>
+                )}
             </nav>
         </aside>
     );

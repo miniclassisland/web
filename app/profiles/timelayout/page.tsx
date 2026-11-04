@@ -314,8 +314,8 @@ export default function TimeLayoutPage() {
                 </MessageBar>
             )}
 
-            <div className="flex gap-24">
-                <div style={{ width: 260, flexShrink: 0 }}>
+            <div className="profile-split-layout">
+                <div className="profile-split-sidebar">
                     <div className="card mb-16">
                         <div className="card-title">时间表文件</div>
                         {loading ? (

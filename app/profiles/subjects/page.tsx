@@ -192,8 +192,8 @@ export default function SubjectsPage() {
                 </MessageBar>
             )}
 
-            <div className="flex gap-24">
-                <div style={{ width: 240, flexShrink: 0 }}>
+            <div className="profile-split-layout">
+                <div className="profile-split-sidebar">
                     <div className="card">
                         <div className="card-title">科目文件</div>
                         {loading ? (

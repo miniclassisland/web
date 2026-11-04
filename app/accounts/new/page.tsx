@@ -37,24 +37,29 @@ export default function NewAccountPage() {
     }
 
     return (
-        <div className="login-container fade-in">
-            <div className="login-card">
-                <div className="login-title">创建 MINI ClassIsland 账户</div>
-                <div className="login-subtitle">创建一个新的学校或组织集控空间</div>
+        <div className="fade-in">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">创建 MINI ClassIsland 账户</h1>
+                    <p className="page-subtitle">创建一个新的学校或组织集控账户中心，完成后将自动进入该账户中心</p>
+                </div>
+            </div>
 
-                {error && (
-                    <MessageBar intent="error" style={{ marginBottom: 16 }}>
-                        <MessageBarBody>{error}</MessageBarBody>
-                    </MessageBar>
-                )}
+            {error && (
+                <MessageBar intent="error" style={{ marginBottom: 16 }}>
+                    <MessageBarBody>{error}</MessageBarBody>
+                </MessageBar>
+            )}
 
+            <div className="card" style={{ maxWidth: 560 }}>
+                <div className="card-title">新账户基本信息</div>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label className="form-label">账户 / 组织名称</label>
+                        <label className="form-label">账户 / 组织名称 *</label>
                         <Input
                             value={name}
                             onChange={(_, d) => setName(d.value)}
-                            placeholder="例如：第一中学"
+                            placeholder="例如：第一中学电教中心"
                             style={{ width: "100%" }}
                             autoFocus
                         />
@@ -67,24 +72,22 @@ export default function NewAccountPage() {
                             placeholder="例如：no1-school (留空自动生成)"
                             style={{ width: "100%" }}
                         />
-                        <div className="form-hint">3-64 位小写字母、数字或连字符</div>
+                        <div className="form-hint">3-64 位小写字母、数字或连字符，用于终端接入子域名与多租户隔离标识</div>
                     </div>
                     <div className="flex gap-8 mt-16">
                         <Button
                             appearance="secondary"
                             type="button"
                             onClick={() => router.push("/")}
-                            style={{ flex: 1 }}
                         >
-                            返回
+                            返回用户中心
                         </Button>
                         <Button
                             appearance="primary"
                             type="submit"
                             disabled={loading || !name.trim()}
-                            style={{ flex: 1 }}
                         >
-                            {loading ? <Spinner size="tiny" /> : "创建账户"}
+                            {loading ? <Spinner size="tiny" /> : "创建并进入账户中心"}
                         </Button>
                     </div>
                 </form>

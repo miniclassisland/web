@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
-import { invitations } from "@/lib/api";
+import { invitations, userInfo } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import {
-    Button, Spinner, Input,
+    Button, Spinner, Input, Badge,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
@@ -17,55 +17,49 @@ import {
     CheckmarkCircle16Regular,
     DismissCircle16Regular,
     PeopleAdd24Regular,
+    Search24Regular,
+    ShieldTask24Regular,
+    Person24Regular,
+    Settings24Regular,
 } from "@fluentui/react-icons";
-import type { AccountOut } from "@/lib/types";
+import type { AccountOut, UserOut } from "@/lib/types";
+import { REGISTRATION_MODE_LABELS, ROLE_LABELS } from "@/lib/types";
 
-function AccountCard({ account, onSelect }: { account: AccountOut; onSelect: () => void }) {
-    return (
-        <button className="account-card" onClick={onSelect} type="button">
-            <div className="account-card-icon">
-                <PersonAccounts24Regular />
-            </div>
-            <div className="account-card-info">
-                <div className="account-card-name">{account.name}</div>
-                <div className="account-card-meta">
-                    <span className="account-card-slug">{account.slug}</span>
-                    <span
-                        className={`badge ${account.is_active ? "badge-success" : "badge-danger"}`}
-                        style={{ fontSize: 11, padding: "1px 6px" }}
-                    >
-                        {account.is_active ? (
-                            <>
-                                <CheckmarkCircle16Regular style={{ fontSize: 12, marginRight: 2 }} /> 活跃
-                            </>
-                        ) : (
-                            <>
-                                <DismissCircle16Regular style={{ fontSize: 12, marginRight: 2 }} /> 停用
-                            </>
-                        )}
-                    </span>
-                </div>
-                <div className="account-card-id">ID: {account.id}</div>
-            </div>
-            <div className="account-card-arrow">
-                <ArrowRight16Regular />
-            </div>
-        </button>
-    );
-}
-
-export default function AccountListPage() {
-    const { isAuthenticated, logout } = useAuth();
+export default function UserCenterHomePage() {
+    const { isAuthenticated, isSuperAdmin } = useAuth();
     const { accounts, loading, switchAccount, refreshAccounts } = useAccount();
     const router = useRouter();
+    const [profile, setProfile] = useState<UserOut | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
     const [joinOpen, setJoinOpen] = useState(false);
     const [inviteCode, setInviteCode] = useState("");
     const [joining, setJoining] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        userInfo.get().then(setProfile).catch(() => {});
+    }, [isAuthenticated]);
+
+    const filteredAccounts = useMemo(() => {
+        if (!searchQuery.trim()) return accounts;
+        const q = searchQuery.trim().toLowerCase();
+        return accounts.filter(
+            (a) =>
+                a.name.toLowerCase().includes(q) ||
+                a.slug.toLowerCase().includes(q) ||
+                a.id.toLowerCase().includes(q)
+        );
+    }, [accounts, searchQuery]);
+
     function handleSelect(account: AccountOut) {
         switchAccount(account.id);
         router.push("/dashboard");
+    }
+
+    function handleOpenAccountSettings(account: AccountOut) {
+        switchAccount(account.id);
+        router.push("/accounts");
     }
 
     async function handleJoinByCode() {
@@ -87,17 +81,102 @@ export default function AccountListPage() {
 
     if (!isAuthenticated) return null;
 
-    return (
-        <div className="login-container fade-in">
-            <div className="login-card" style={{ padding: "32px 24px", width: 460 }}>
-                <div className="login-title">选择 MINI ClassIsland 账户</div>
-                <div className="login-subtitle">选择一个账户以进入集控管理面板</div>
+    const displayName = profile?.display_name || profile?.username || "管理员";
+    const roleLabel = profile?.role_code
+        ? (ROLE_LABELS[profile.role_code] || profile.role_code)
+        : (isSuperAdmin ? "超级管理员" : "普通用户");
 
-                {msg && (
-                    <MessageBar intent={msg.type} style={{ marginBottom: 16 }}>
-                        <MessageBarBody>{msg.text}</MessageBarBody>
-                    </MessageBar>
-                )}
+    return (
+        <div className="fade-in">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">欢迎回来，{displayName}</h1>
+                    <p className="page-subtitle">
+                        用户中心主页 · 从左侧导航栏或下方列表选择任一账户，即可进入对应的集控账户中心
+                    </p>
+                </div>
+                <div className="flex items-center gap-8">
+                    <Button
+                        appearance="secondary"
+                        icon={<PeopleAdd24Regular />}
+                        onClick={() => setJoinOpen(true)}
+                    >
+                        使用邀请码加入
+                    </Button>
+                    <Button
+                        appearance="primary"
+                        icon={<Add24Regular />}
+                        onClick={() => router.push("/accounts/new")}
+                    >
+                        创建新账户
+                    </Button>
+                </div>
+            </div>
+
+            {msg && (
+                <MessageBar intent={msg.type} style={{ marginBottom: 16 }}>
+                    <MessageBarBody>{msg.text}</MessageBarBody>
+                </MessageBar>
+            )}
+
+            {/* 用户概览统计栏 */}
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-label">可访问账户中心</span>
+                        <span className="stat-card-icon"><PersonAccounts24Regular /></span>
+                    </div>
+                    <div className="stat-card-value">{accounts.length}</div>
+                    <div className="stat-card-footer">可在左侧菜单直接点击切换进入</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-label">当前登录账号</span>
+                        <span className="stat-card-icon"><Person24Regular /></span>
+                    </div>
+                    <div className="stat-card-value" style={{ fontSize: 18 }}>
+                        {profile?.email || profile?.username || displayName}
+                    </div>
+                    <div className="stat-card-footer">系统角色：{roleLabel}</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-label">两步验证 (2FA)</span>
+                        <span className="stat-card-icon"><ShieldTask24Regular /></span>
+                    </div>
+                    <div className="stat-card-value" style={{ fontSize: 18 }}>
+                        <span className={`badge ${profile?.totp_enabled ? "badge-success" : "badge-warning"}`}>
+                            {profile?.totp_enabled ? "已开启 TOTP 保护" : "未开启两步验证"}
+                        </span>
+                    </div>
+                    <div className="stat-card-footer">
+                        <a
+                            href="/security"
+                            style={{ color: "var(--accent-color)", textDecoration: "none", fontWeight: 500 }}
+                        >
+                            前往个人资料与安全设置 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {/* 账户中心列表卡片 (Cloudflare 风格表格视图) */}
+            <div className="card">
+                <div className="card-title">
+                    <span>您的集控账户中心 ({filteredAccounts.length})</span>
+                    <div className="flex items-center gap-8">
+                        <Input
+                            size="small"
+                            placeholder="搜索账户名称、Slug 或账户 ID..."
+                            value={searchQuery}
+                            onChange={(_, d) => setSearchQuery(d.value)}
+                            contentBefore={<Search24Regular />}
+                            style={{ width: 280 }}
+                        />
+                    </div>
+                </div>
 
                 {loading ? (
                     <div className="accounts-list-loading">
@@ -109,7 +188,7 @@ export default function AccountListPage() {
                         <PersonAccounts24Regular style={{ fontSize: 48, color: "var(--text-tertiary)" }} />
                         <p className="accounts-list-empty-text">暂无可用账户</p>
                         <p className="accounts-list-empty-hint">
-                            您还没有加入任何账户，可以创建新账户或使用邀请码加入现有账户。
+                            您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。
                         </p>
                         <div className="flex gap-8">
                             <Button
@@ -117,7 +196,7 @@ export default function AccountListPage() {
                                 icon={<Add24Regular />}
                                 onClick={() => router.push("/accounts/new")}
                             >
-                                创建账户
+                                创建新账户
                             </Button>
                             <Button
                                 appearance="secondary"
@@ -128,58 +207,114 @@ export default function AccountListPage() {
                             </Button>
                         </div>
                     </div>
+                ) : filteredAccounts.length === 0 ? (
+                    <div className="empty-state">
+                        <div className="empty-state-text">未找到匹配的账户</div>
+                    </div>
                 ) : (
-                    <>
-                        <div className="accounts-list-grid">
-                            {accounts.map((account) => (
-                                <AccountCard
-                                    key={account.id}
-                                    account={account}
-                                    onSelect={() => handleSelect(account)}
-                                />
-                            ))}
-                        </div>
-                        <div className="flex justify-center gap-8 mt-16">
-                            <Button
-                                size="small"
-                                appearance="secondary"
-                                icon={<Add24Regular />}
-                                onClick={() => router.push("/accounts/new")}
-                            >
-                                创建新账户
-                            </Button>
-                            <Button
-                                size="small"
-                                appearance="secondary"
-                                icon={<PeopleAdd24Regular />}
-                                onClick={() => setJoinOpen(true)}
-                            >
-                                使用邀请码加入
-                            </Button>
-                        </div>
-                    </>
+                    <div className="table-container">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>账户名称</th>
+                                    <th>子域名标识 (Slug)</th>
+                                    <th>账户 ID</th>
+                                    <th>终端接入策略</th>
+                                    <th>状态</th>
+                                    <th style={{ textAlign: "right" }}>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredAccounts.map((account) => (
+                                    <tr
+                                        key={account.id}
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => handleSelect(account)}
+                                    >
+                                        <td>
+                                            <div className="flex items-center gap-8">
+                                                <div className="account-card-icon" style={{ width: 32, height: 32, fontSize: 16 }}>
+                                                    <PersonAccounts24Regular />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                                        {account.name}
+                                                    </div>
+                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                                                        创建于 {new Date(account.created_at).toLocaleDateString("zh-CN")}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="account-card-slug">{account.slug}</span>
+                                        </td>
+                                        <td>
+                                            <span className="api-key-cell" style={{ fontSize: 12 }}>{account.id}</span>
+                                        </td>
+                                        <td>
+                                            <Badge appearance="outline" color="informative">
+                                                {REGISTRATION_MODE_LABELS[account.registration_mode || "open"]}
+                                            </Badge>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${account.is_active ? "badge-success" : "badge-danger"}`}>
+                                                {account.is_active ? (
+                                                    <>
+                                                        <CheckmarkCircle16Regular style={{ fontSize: 12, marginRight: 2 }} /> 活跃
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <DismissCircle16Regular style={{ fontSize: 12, marginRight: 2 }} /> 停用
+                                                    </>
+                                                )}
+                                            </span>
+                                        </td>
+                                        <td
+                                            style={{ textAlign: "right" }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div className="flex items-center justify-between gap-8" style={{ justifyContent: "flex-end" }}>
+                                                <Button
+                                                    size="small"
+                                                    appearance="subtle"
+                                                    icon={<Settings24Regular />}
+                                                    onClick={() => handleOpenAccountSettings(account)}
+                                                >
+                                                    基础信息
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    appearance="primary"
+                                                    icon={<ArrowRight16Regular />}
+                                                    iconPosition="after"
+                                                    onClick={() => handleSelect(account)}
+                                                >
+                                                    进入账户中心
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
+            </div>
 
-                <div style={{ marginTop: 24, textAlign: "center" }}>
-                    <Button appearance="subtle" onClick={() => logout()}>
-                        退出登录
-                    </Button>
-                </div>
-
-                <div
-                    style={{
-                        marginTop: 32,
-                        paddingTop: 16,
-                        borderTop: "1px solid var(--border-color)",
-                        textAlign: "center",
-                        fontSize: 11,
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.6,
-                    }}
-                >
-                    <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
-                    <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
-                </div>
+            <div
+                style={{
+                    marginTop: 24,
+                    paddingTop: 16,
+                    borderTop: "1px solid var(--border-color)",
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.6,
+                }}
+            >
+                <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
+                <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
             </div>
 
             <Dialog open={joinOpen} onOpenChange={(_, d) => setJoinOpen(d.open)}>

@@ -284,9 +284,9 @@ export default function ComponentsPage() {
                 </MessageBar>
             )}
 
-            <div className="flex gap-24">
+            <div className="profile-split-layout">
                 {/* 左侧文件与组件行列表 */}
-                <div style={{ width: 280, flexShrink: 0 }}>
+                <div className="profile-split-sidebar">
                     <div className="card mb-16">
                         <div className="card-title">组件文件</div>
                         {loading ? (

@@ -97,10 +97,6 @@ export default function LoginPage() {
     async function handle2FAVerify(e: React.FormEvent) {
         e.preventDefault();
         if (!pending2FA) return;
-        console.log("[DEBUG] Verify TOTP payload:", {
-            temp_token: pending2FA.temp_token,
-            code: totpCode,
-        });
         setTwoFALoading(true);
         setTwoFAError(null);
         try {
@@ -121,10 +117,6 @@ export default function LoginPage() {
     async function handle2FARecover(e: React.FormEvent) {
         e.preventDefault();
         if (!pending2FA) return;
-        console.log("[DEBUG] Recover TOTP payload:", {
-            temp_token: pending2FA.temp_token,
-            recovery_code: recoveryCode,
-        });
         setTwoFALoading(true);
         setTwoFAError(null);
         try {
