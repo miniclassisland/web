@@ -38,41 +38,52 @@ function getSystemDark(): boolean {
 }
 
 export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
-    const [hydrated, setHydrated] = useState(false);
-    const [mode, setModeState] = useState<ThemeMode>("system");
-    const [systemDark, setSystemDark] = useState<boolean>(false);
+    const [mode, setModeState] = useState<ThemeMode>(() => {
+        if (typeof window === "undefined") return "system";
+        try {
+            const saved = localStorage.getItem(THEME_STORAGE_KEY);
+            if (saved === "light" || saved === "dark" || saved === "system") {
+                return saved;
+            }
+        } catch {
+            /* ignore */
+        }
+        return "system";
+    });
+    const [systemDark, setSystemDark] = useState<boolean>(() => getSystemDark());
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const saved = localStorage.getItem(THEME_STORAGE_KEY);
-        if (saved === "light" || saved === "dark" || saved === "system") {
-            setModeState(saved);
+        try {
+            const saved = localStorage.getItem(THEME_STORAGE_KEY);
+            if (saved === "light" || saved === "dark" || saved === "system") {
+                setModeState(saved);
+            }
+        } catch {
+            /* ignore */
         }
         if (window.matchMedia) {
             const mq = window.matchMedia("(prefers-color-scheme: dark)");
             setSystemDark(mq.matches);
-            setHydrated(true);
             const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
             mq.addEventListener("change", handler);
             return () => mq.removeEventListener("change", handler);
         }
         setSystemDark(getSystemDark());
-        setHydrated(true);
+        return undefined;
     }, []);
 
-    const resolvedTheme: ResolvedTheme = !hydrated
-        ? "light"
-        : mode === "system"
+    const resolvedTheme: ResolvedTheme = mode === "system"
         ? (systemDark ? "dark" : "light")
         : mode;
 
     useEffect(() => {
-        if (!hydrated || typeof document === "undefined") return;
+        if (typeof document === "undefined") return;
         const root = document.documentElement;
         root.setAttribute("data-theme", resolvedTheme);
         root.setAttribute("data-theme-mode", mode);
         root.style.colorScheme = resolvedTheme;
-    }, [hydrated, resolvedTheme, mode]);
+    }, [resolvedTheme, mode]);
 
     const setMode = useCallback((next: ThemeMode) => {
         setModeState(next);

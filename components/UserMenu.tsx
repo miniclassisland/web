@@ -25,7 +25,7 @@ import {
 
 export default function UserMenu() {
     const router = useRouter();
-    const { isSuperAdmin, logout, token } = useAuth();
+    const { user, isSuperAdmin, logout, token } = useAuth();
     const { accounts, currentAccount, switchAccount } = useAccount();
     const { mode, setMode } = useThemeMode();
     const [open, setOpen] = useState(false);
@@ -45,9 +45,10 @@ export default function UserMenu() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [open]);
 
-    const roleLabel = currentAccount
-        ? (isSuperAdmin ? ROLE_LABELS[SYSTEM_ROLES.SUPERADMIN] : ROLE_LABELS[SYSTEM_ROLES.NORMAL])
-        : "";
+    const userDisplayLabel = user?.display_name || user?.username || user?.email || "当前用户";
+    const roleLabel = user
+        ? (ROLE_LABELS[user.role_code] || user.role_code)
+        : (isSuperAdmin ? ROLE_LABELS[SYSTEM_ROLES.SUPERADMIN] : ROLE_LABELS[SYSTEM_ROLES.NORMAL]);
 
     const themeOptions: { key: ThemeMode; label: string; icon: React.ReactNode }[] = [
         { key: "system", label: "自动", icon: <Desktop20Regular style={{ width: 14, height: 14 }} /> },
@@ -65,11 +66,9 @@ export default function UserMenu() {
                 <div className="user-menu-avatar">
                     <Person24Regular />
                 </div>
-                {currentAccount && (
-                    <span className="user-menu-account-name">
-                        {currentAccount.name}
-                    </span>
-                )}
+                <span className="user-menu-account-name">
+                    {userDisplayLabel}
+                </span>
                 <ChevronDown16Regular />
             </button>
 
@@ -83,7 +82,7 @@ export default function UserMenu() {
                                 </div>
                                 <div className="user-menu-info">
                                     <div className="user-menu-name">
-                                        {currentAccount?.name || "未选择账户"}
+                                        {userDisplayLabel}
                                     </div>
                                     <div className="user-menu-role">
                                         {roleLabel}

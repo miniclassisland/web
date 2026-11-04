@@ -9,6 +9,7 @@ import {
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import Link from "next/link";
+import SponsorBanner from "@/components/SponsorBanner";
 
 type AuthStep = "email" | "login" | "register" | "2fa";
 
@@ -413,9 +414,7 @@ export default function LoginPage() {
                     <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
                 </div>
             </div>
-            <div className="login-sponsor-banner" role="region" aria-label="赞助致谢">
-                感谢智教联盟对本项目的赞助和支持
-            </div>
+            <SponsorBanner variant="card" />
         </div>
     );
 }
