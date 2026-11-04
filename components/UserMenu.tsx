@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
 import { useThemeMode, THEME_MODE_LABELS, type ThemeMode } from "@/lib/theme-context";
-import { token as tokenApi } from "@/lib/api";
+import { token as tokenApi, getAdminSiteUrl } from "@/lib/api";
 import { ROLE_LABELS, SYSTEM_ROLES } from "@/lib/types";
 import {
     Person24Regular, ShieldKeyhole24Regular,
@@ -22,20 +22,6 @@ import {
     WeatherMoon20Regular, Desktop20Regular,
     Home24Regular,
 } from "@fluentui/react-icons";
-
-function resolveAdminSiteUrl(): string {
-    const envUrl = process.env.NEXT_PUBLIC_ADMIN_SITE_URL;
-    if (envUrl) return envUrl.replace(/\/+$/, "");
-    if (typeof window === "undefined") return "";
-    const { protocol, hostname, port, host } = window.location;
-    if (port === "27042") {
-        return `${protocol}//${hostname}:27043`;
-    }
-    if (!hostname.startsWith("admin.")) {
-        return `${protocol}//admin.${host}`;
-    }
-    return "";
-}
 
 export default function UserMenu() {
     const router = useRouter();
@@ -167,7 +153,7 @@ export default function UserMenu() {
                                     className="user-menu-item user-menu-item-admin"
                                     onClick={async () => {
                                         setOpen(false);
-                                        const adminUrl = resolveAdminSiteUrl();
+                                        const adminUrl = getAdminSiteUrl();
                                         if (token) {
                                             try {
                                                 const { code } = await tokenApi.exchange();

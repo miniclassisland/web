@@ -29,6 +29,24 @@ export default function LoginPage() {
     const [localError, setLocalError] = useState<string | null>(null);
     const [twoFAError, setTwoFAError] = useState<string | null>(null);
     const [twoFALoading, setTwoFALoading] = useState(false);
+    const [sessionExpired, setSessionExpired] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const fromQuery = params.get("expired") === "1";
+            let fromStorage = false;
+            try {
+                fromStorage = sessionStorage.getItem("miniclassisland_session_expired") === "1";
+                if (fromStorage) {
+                    sessionStorage.removeItem("miniclassisland_session_expired");
+                }
+            } catch { /* ignore */ }
+            if (fromQuery || fromStorage) {
+                setSessionExpired(true);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (pending2FA) setStep("2fa");
@@ -160,6 +178,12 @@ export default function LoginPage() {
                     {step === "register" && "创建一个新账户"}
                     {step === "2fa" && "安全验证"}
                 </div>
+
+                {sessionExpired && (
+                    <MessageBar intent="warning" style={{ marginBottom: 12 }}>
+                        <MessageBarBody>您的登录会话已过期，请重新登录。</MessageBarBody>
+                    </MessageBar>
+                )}
 
                 {error && (
                     <MessageBar intent="error" style={{ marginBottom: 12 }}>
@@ -388,6 +412,9 @@ export default function LoginPage() {
                     <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
                     <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
                 </div>
+            </div>
+            <div className="login-sponsor-banner" role="region" aria-label="赞助致谢">
+                感谢智教联盟对本项目的赞助和支持
             </div>
         </div>
     );

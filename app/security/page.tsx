@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { twoFA, userInfo } from "@/lib/api";
+import { twoFA, userInfo, invitations } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useAccount } from "@/lib/account-context";
+import { useRouter } from "next/navigation";
 import type { TotpEnableResponse } from "@/lib/types";
 import {
     Button, Input, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import QRCode from "qrcode";
-import { ShieldKeyhole24Regular, Person24Regular, Key24Regular } from "@fluentui/react-icons";
+import { ShieldKeyhole24Regular, Person24Regular, Key24Regular, PeopleAdd24Regular } from "@fluentui/react-icons";
 
 function QRCodeImage({ text }: { text: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,6 +52,8 @@ function QRCodeImage({ text }: { text: string }) {
 
 export default function SecurityPage() {
     const { user, refreshUser } = useAuth();
+    const { refreshAccounts, switchAccount } = useAccount();
+    const router = useRouter();
     const [step, setStep] = useState<"idle" | "setup" | "confirm" | "disable">("idle");
     const [setupData, setSetupData] = useState<TotpEnableResponse | null>(null);
     const [confirmCode, setConfirmCode] = useState("");
@@ -63,6 +67,28 @@ export default function SecurityPage() {
     const [email, setEmail] = useState("");
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
+
+    // 使用邀请码加入账户
+    const [inviteCode, setInviteCode] = useState("");
+    const [joining, setJoining] = useState(false);
+
+    async function handleJoinByCode(e: React.FormEvent) {
+        e.preventDefault();
+        if (!inviteCode.trim()) return;
+        setJoining(true);
+        setMsg(null);
+        try {
+            const res = await invitations.accept(inviteCode.trim());
+            await refreshAccounts();
+            setInviteCode("");
+            switchAccount(res.account_id);
+            router.push("/dashboard");
+        } catch (err: unknown) {
+            setMsg({ type: "error", text: err instanceof Error ? err.message : "加入账户失败" });
+        } finally {
+            setJoining(false);
+        }
+    }
 
     useEffect(() => {
         if (user) {
@@ -243,6 +269,32 @@ export default function SecurityPage() {
                         </Button>
                     </form>
                 </div>
+            </div>
+
+            {/* 使用邀请码加入账户卡片 */}
+            <div className="card">
+                <div className="card-title flex items-center gap-8">
+                    <PeopleAdd24Regular />
+                    使用邀请码加入集控账户
+                </div>
+                <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 12 }}>
+                    如果您收到了其他组织或学校的集控账户邀请码，可在此输入邀请码加入该账户中心。
+                </p>
+                <form onSubmit={handleJoinByCode} className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                    <Input
+                        value={inviteCode}
+                        onChange={(_, d) => setInviteCode(d.value)}
+                        placeholder="请输入邀请码..."
+                        style={{ width: 320, maxWidth: "100%" }}
+                    />
+                    <Button
+                        appearance="primary"
+                        type="submit"
+                        disabled={joining || !inviteCode.trim()}
+                    >
+                        {joining ? <Spinner size="tiny" /> : "加入账户"}
+                    </Button>
+                </form>
             </div>
 
             {/* 2FA 卡片 */}

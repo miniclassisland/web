@@ -15,12 +15,9 @@ export default function TopBar({
     onToggleMobileMenu?: () => void;
 }) {
     const pathname = usePathname();
-    const { currentAccount, accountId } = useAccount();
+    const { currentAccount } = useAccount();
 
-    const isUserCenter =
-        pathname === "/" ||
-        pathname.startsWith("/accounts/new") ||
-        (pathname.startsWith("/security") && !accountId);
+    const isUserCenter = pathname === "/" || pathname.startsWith("/security");
 
     const displayTitle =
         title ||

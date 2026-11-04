@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
-import { invitations, userInfo } from "@/lib/api";
+import { accounts as accountsApi, userInfo } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import {
     Button, Spinner, Input, Badge,
-    Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
+    Popover, PopoverTrigger, PopoverSurface,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import {
@@ -16,7 +16,6 @@ import {
     ArrowRight16Regular,
     CheckmarkCircle16Regular,
     DismissCircle16Regular,
-    PeopleAdd24Regular,
     Search24Regular,
     ShieldTask24Regular,
     Person24Regular,
@@ -33,10 +32,13 @@ export default function UserCenterHomePage() {
     const router = useRouter();
     const [profile, setProfile] = useState<UserOut | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [joinOpen, setJoinOpen] = useState(false);
-    const [inviteCode, setInviteCode] = useState("");
-    const [joining, setJoining] = useState(false);
+    const [createOpen, setCreateOpen] = useState(false);
+    const [newAccountName, setNewAccountName] = useState("");
+    const [newAccountSlug, setNewAccountSlug] = useState("");
+    const [creating, setCreating] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
     const [wizardOpen, setWizardOpen] = useState(false);
+    const [wizardTargetAccountId, setWizardTargetAccountId] = useState<string | undefined>(undefined);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     useEffect(() => {
@@ -49,6 +51,7 @@ export default function UserCenterHomePage() {
         if (accounts.length === 0 && typeof window !== "undefined") {
             const done = localStorage.getItem("miniclassisland_onboarding_completed");
             if (!done) {
+                setWizardTargetAccountId(undefined);
                 setWizardOpen(true);
             }
         }
@@ -75,21 +78,32 @@ export default function UserCenterHomePage() {
         router.push("/accounts");
     }
 
-    async function handleJoinByCode() {
-        if (!inviteCode.trim()) return;
-        setJoining(true);
+    async function handleCreateAccount(openWizardAfter: boolean) {
+        if (!newAccountName.trim()) return;
+        setCreating(true);
+        setCreateError(null);
         setMsg(null);
         try {
-            const res = await invitations.accept(inviteCode.trim());
+            const created = await accountsApi.apply({
+                name: newAccountName.trim(),
+                slug: newAccountSlug.trim() || undefined,
+            });
             await refreshAccounts();
-            setJoinOpen(false);
-            setInviteCode("");
-            switchAccount(res.account_id);
-            router.push("/dashboard");
+            switchAccount(created.id);
+            setCreateOpen(false);
+            setNewAccountName("");
+            setNewAccountSlug("");
+            if (openWizardAfter) {
+                setWizardTargetAccountId(created.id);
+                setWizardOpen(true);
+            } else {
+                router.push("/dashboard");
+            }
         } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "加入账户失败" });
+            setCreateError(err instanceof Error ? err.message : "创建账户失败");
+        } finally {
+            setCreating(false);
         }
-        setJoining(false);
     }
 
     if (!isAuthenticated) return null;
@@ -112,24 +126,90 @@ export default function UserCenterHomePage() {
                     <Button
                         appearance="secondary"
                         icon={<ArrowUpload24Regular />}
-                        onClick={() => setWizardOpen(true)}
+                        onClick={() => {
+                            setWizardTargetAccountId(undefined);
+                            setWizardOpen(true);
+                        }}
                     >
                         首次配置与档案拆分向导
                     </Button>
-                    <Button
-                        appearance="secondary"
-                        icon={<PeopleAdd24Regular />}
-                        onClick={() => setJoinOpen(true)}
+                    <Popover
+                        withArrow
+                        positioning="below-end"
+                        open={createOpen}
+                        onOpenChange={(_, d) => {
+                            setCreateOpen(d.open);
+                            if (!d.open) setCreateError(null);
+                        }}
                     >
-                        使用邀请码加入
-                    </Button>
-                    <Button
-                        appearance="primary"
-                        icon={<Add24Regular />}
-                        onClick={() => router.push("/accounts/new")}
-                    >
-                        创建新账户
-                    </Button>
+                        <PopoverTrigger disableButtonEnhancement>
+                            <Button
+                                appearance="primary"
+                                icon={<Add24Regular />}
+                            >
+                                创建新账户
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverSurface style={{ width: 340, padding: 18 }}>
+                            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--text-primary)" }}>
+                                创建新集控账户
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                                创建一个新的学校或组织集控账户中心
+                            </div>
+                            {createError && (
+                                <MessageBar intent="error" style={{ marginBottom: 10 }}>
+                                    <MessageBarBody>{createError}</MessageBarBody>
+                                </MessageBar>
+                            )}
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    void handleCreateAccount(false);
+                                }}
+                            >
+                                <div className="form-group" style={{ marginBottom: 10 }}>
+                                    <label className="form-label">账户 / 组织名称 *</label>
+                                    <Input
+                                        value={newAccountName}
+                                        onChange={(_, d) => setNewAccountName(d.value)}
+                                        placeholder="例如：第一中学电教中心"
+                                        style={{ width: "100%" }}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 14 }}>
+                                    <label className="form-label">子域名标识 Slug（可选）</label>
+                                    <Input
+                                        value={newAccountSlug}
+                                        onChange={(_, d) => setNewAccountSlug(d.value)}
+                                        placeholder="例如：no1-school (留空自动生成)"
+                                        style={{ width: "100%" }}
+                                    />
+                                    <div className="form-hint">3-64 位小写字母、数字或连字符</div>
+                                </div>
+                                <div className="flex gap-8" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
+                                    <Button
+                                        size="small"
+                                        appearance="secondary"
+                                        type="button"
+                                        disabled={creating || !newAccountName.trim()}
+                                        onClick={() => void handleCreateAccount(true)}
+                                    >
+                                        创建并打开向导
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        appearance="primary"
+                                        type="submit"
+                                        disabled={creating || !newAccountName.trim()}
+                                    >
+                                        {creating ? <Spinner size="tiny" /> : "立即创建"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </PopoverSurface>
+                    </Popover>
                 </div>
             </div>
 
@@ -214,23 +294,25 @@ export default function UserCenterHomePage() {
                             <Button
                                 appearance="primary"
                                 icon={<ArrowUpload24Regular />}
-                                onClick={() => setWizardOpen(true)}
+                                onClick={() => {
+                                    setWizardTargetAccountId(undefined);
+                                    setWizardOpen(true);
+                                }}
                             >
                                 启动首次配置向导 (创建账户并导入本地档案)
                             </Button>
                             <Button
                                 appearance="secondary"
                                 icon={<Add24Regular />}
-                                onClick={() => router.push("/accounts/new")}
+                                onClick={() => setCreateOpen(true)}
                             >
                                 仅创建新账户
                             </Button>
                             <Button
                                 appearance="secondary"
-                                icon={<PeopleAdd24Regular />}
-                                onClick={() => setJoinOpen(true)}
+                                onClick={() => router.push("/security")}
                             >
-                                输入邀请码
+                                前往安全设置使用邀请码
                             </Button>
                         </div>
                     </div>
@@ -344,35 +426,11 @@ export default function UserCenterHomePage() {
                 <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
             </div>
 
-            <Dialog open={joinOpen} onOpenChange={(_, d) => setJoinOpen(d.open)}>
-                <DialogSurface>
-                    <DialogBody>
-                        <DialogTitle>使用邀请码加入账户</DialogTitle>
-                        <DialogContent>
-                            <div className="form-group" style={{ paddingTop: 8 }}>
-                                <label className="form-label">邀请码</label>
-                                <Input
-                                    value={inviteCode}
-                                    onChange={(_, d) => setInviteCode(d.value)}
-                                    placeholder="请输入邀请码..."
-                                    style={{ width: "100%" }}
-                                />
-                            </div>
-                        </DialogContent>
-                        <DialogActions>
-                            <Button appearance="secondary" onClick={() => setJoinOpen(false)}>取消</Button>
-                            <Button appearance="primary" onClick={handleJoinByCode} disabled={joining || !inviteCode.trim()}>
-                                {joining ? <Spinner size="tiny" /> : "加入账户"}
-                            </Button>
-                        </DialogActions>
-                    </DialogBody>
-                </DialogSurface>
-            </Dialog>
-
             <OnboardingWizard
                 open={wizardOpen}
                 onClose={() => setWizardOpen(false)}
-                initialStep={accounts.length === 0 ? 1 : 2}
+                initialStep={wizardTargetAccountId ? 2 : accounts.length === 0 ? 1 : 2}
+                targetAccountId={wizardTargetAccountId}
             />
         </div>
     );

@@ -129,12 +129,18 @@ export class ApiError extends Error {
 }
 
 /**
- * 401 时触发全局事件，供 AuthProvider 拦截并显示内联登录卡片。
- * 不再硬跳转 /login，保留用户上下文。
+ * 401 时清理失效凭据并直接退回到 /login，附带会话过期横幅标记。
  */
 function emitAuthExpired(): void {
     if (typeof window !== "undefined") {
+        clearToken();
+        try {
+            sessionStorage.setItem("miniclassisland_session_expired", "1");
+        } catch { /* ignore */ }
         window.dispatchEvent(new CustomEvent("miniclassisland:auth-expired"));
+        if (!window.location.pathname.startsWith("/login")) {
+            window.location.href = "/login?expired=1";
+        }
     }
 }
 

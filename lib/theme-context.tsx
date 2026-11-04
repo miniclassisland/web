@@ -27,41 +27,52 @@ const ThemeModeContext = createContext<ThemeModeContextValue>({
 });
 
 function getSystemDark(): boolean {
-    if (typeof window === "undefined" || !window.matchMedia) return false;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (typeof window === "undefined") return false;
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return true;
+    }
+    if (typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark") {
+        return true;
+    }
+    return false;
 }
 
 export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
-    const [mode, setModeState] = useState<ThemeMode>(() => {
-        if (typeof window === "undefined") return "system";
+    const [hydrated, setHydrated] = useState(false);
+    const [mode, setModeState] = useState<ThemeMode>("system");
+    const [systemDark, setSystemDark] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
         const saved = localStorage.getItem(THEME_STORAGE_KEY);
         if (saved === "light" || saved === "dark" || saved === "system") {
-            return saved;
+            setModeState(saved);
         }
-        return "system";
-    });
-
-    const [systemDark, setSystemDark] = useState<boolean>(() => getSystemDark());
-
-    useEffect(() => {
-        if (typeof window === "undefined" || !window.matchMedia) return;
-        const mq = window.matchMedia("(prefers-color-scheme: dark)");
-        setSystemDark(mq.matches);
-        const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
-        mq.addEventListener("change", handler);
-        return () => mq.removeEventListener("change", handler);
+        if (window.matchMedia) {
+            const mq = window.matchMedia("(prefers-color-scheme: dark)");
+            setSystemDark(mq.matches);
+            setHydrated(true);
+            const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+            mq.addEventListener("change", handler);
+            return () => mq.removeEventListener("change", handler);
+        }
+        setSystemDark(getSystemDark());
+        setHydrated(true);
     }, []);
 
-    const resolvedTheme: ResolvedTheme =
-        mode === "system" ? (systemDark ? "dark" : "light") : mode;
+    const resolvedTheme: ResolvedTheme = !hydrated
+        ? "light"
+        : mode === "system"
+        ? (systemDark ? "dark" : "light")
+        : mode;
 
     useEffect(() => {
-        if (typeof document === "undefined") return;
+        if (!hydrated || typeof document === "undefined") return;
         const root = document.documentElement;
         root.setAttribute("data-theme", resolvedTheme);
         root.setAttribute("data-theme-mode", mode);
         root.style.colorScheme = resolvedTheme;
-    }, [resolvedTheme, mode]);
+    }, [hydrated, resolvedTheme, mode]);
 
     const setMode = useCallback((next: ThemeMode) => {
         setModeState(next);

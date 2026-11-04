@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAccount } from "@/lib/account-context";
 import { useAuth } from "@/lib/auth-context";
-import { token as tokenApi } from "@/lib/api";
+import { token as tokenApi, getAdminSiteUrl } from "@/lib/api";
 import { Select } from "@fluentui/react-components";
 import {
     Home24Regular, PlugConnected24Regular, Link24Regular,
@@ -14,7 +14,7 @@ import {
     Key24Regular, PersonAccounts24Regular,
     Send24Regular, PeopleAdd24Regular, Laptop24Regular,
     DataBarVertical24Regular, DocumentSearch24Regular,
-    Add24Regular, ArrowLeft16Regular, ArrowRight16Regular,
+    ArrowLeft16Regular, ArrowRight16Regular,
     ShieldKeyhole24Regular, Dismiss24Regular,
 } from "@fluentui/react-icons";
 
@@ -35,7 +35,6 @@ const USER_CENTER_SECTIONS: NavSection[] = [
         title: "用户中心",
         items: [
             { label: "账户主页", href: "/", icon: <Home24Regular />, exact: true },
-            { label: "创建新账户", href: "/accounts/new", icon: <Add24Regular />, exact: true },
             { label: "个人资料与安全", href: "/security", icon: <DataBarVertical24Regular /> },
         ],
     },
@@ -83,34 +82,7 @@ const ACCOUNT_CENTER_SECTIONS: NavSection[] = [
             { label: "邀请管理", href: "/invitations", icon: <PeopleAdd24Regular /> },
         ],
     },
-    {
-        title: "个人与安全",
-        items: [
-            { label: "个人资料与安全", href: "/security", icon: <DataBarVertical24Regular /> },
-        ],
-    },
 ];
-
-function resolveAdminSiteUrl(): string {
-    const envUrl = process.env.NEXT_PUBLIC_ADMIN_SITE_URL;
-    if (envUrl) return envUrl.replace(/\/+$/, "");
-    if (typeof window === "undefined") return "";
-    const { protocol, hostname, port, host } = window.location;
-    if (port === "27042") {
-        return `${protocol}//${hostname}:27043`;
-    }
-    if (port === "3000") {
-        return `${protocol}//${hostname}:3001`;
-    }
-    if (hostname.startsWith("dash.")) {
-        const baseHost = host.replace(/^dash\./i, "");
-        return `${protocol}//admin.${baseHost}`;
-    }
-    if (!hostname.startsWith("admin.")) {
-        return `${protocol}//admin.${host}`;
-    }
-    return "";
-}
 
 export default function Sidebar({
     mobileOpen = false,
@@ -124,10 +96,7 @@ export default function Sidebar({
     const { accounts, accountId, currentAccount, switchAccount } = useAccount();
     const { isSuperAdmin, token } = useAuth();
 
-    const isUserCenter =
-        pathname === "/" ||
-        pathname.startsWith("/accounts/new") ||
-        (pathname.startsWith("/security") && !accountId);
+    const isUserCenter = pathname === "/" || pathname.startsWith("/security");
 
     const sections = isUserCenter ? USER_CENTER_SECTIONS : ACCOUNT_CENTER_SECTIONS;
 
@@ -144,7 +113,7 @@ export default function Sidebar({
                 <img src="/logo.svg" alt="MINI ClassIsland" className="sidebar-logo" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="sidebar-title">
-                        {isUserCenter ? "MINI ClassIsland 用户中心" : "MINI ClassIsland 账户中心"}
+                        MINI ClassIsland
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
                         {isUserCenter ? "User Center & Accounts" : (currentAccount?.slug || "Account Management")}
@@ -223,7 +192,7 @@ export default function Sidebar({
                                 className="sidebar-link"
                                 style={{ width: "100%", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                                 onClick={async () => {
-                                    const adminUrl = resolveAdminSiteUrl();
+                                    const adminUrl = getAdminSiteUrl();
                                     if (token) {
                                         try {
                                             const { code } = await tokenApi.exchange();

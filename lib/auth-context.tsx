@@ -86,7 +86,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         function onAuthExpired() {
-            setRequireReAuth(true);
+            clearToken();
+            setTokenState(null);
+            setUser(null);
+            setIsSuperAdmin(false);
+            setRequireReAuth(false);
+            try {
+                sessionStorage.setItem("miniclassisland_session_expired", "1");
+            } catch { /* ignore */ }
+            if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+                window.location.href = "/login?expired=1";
+            }
         }
         window.addEventListener("miniclassisland:auth-expired", onAuthExpired);
         return () => window.removeEventListener("miniclassisland:auth-expired", onAuthExpired);

@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { ThemeModeToggle } from "@/lib/theme-context";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
-import LoginDialog from "./LoginDialog";
 import RateLimitBanner from "./RateLimitBanner";
 
 /** 不需要侧栏的页面 */
@@ -42,7 +41,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return (
         <>
             <RateLimitBanner />
-            <LoginDialog />
 
             {showFullShell ? (
                 <div className="app-layout">
@@ -59,6 +57,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     />
                     <div className="main-area">
                         <TopBar onToggleMobileMenu={() => setMobileMenuOpen((v) => !v)} />
+                        <div className="sponsor-banner" role="region" aria-label="赞助致谢">
+                            感谢智教联盟对本项目的赞助和支持
+                        </div>
                         <main key={accountId || "user-center"} className="content-area fade-in">{children}</main>
                     </div>
                 </div>
