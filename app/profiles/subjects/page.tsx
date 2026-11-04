@@ -89,7 +89,11 @@ export default function SubjectsPage() {
             } else {
                 setJsonText(JSON.stringify(subjects, null, 2));
             }
-            await data.write(accountId, "Subjects", selectedFile, payloadToSave);
+            const wrapperPayload =
+                payloadToSave && typeof payloadToSave === "object" && "Subjects" in payloadToSave
+                    ? payloadToSave
+                    : { Subjects: payloadToSave };
+            await data.write(accountId, "Subjects", selectedFile, wrapperPayload);
             setMsg({ type: "success", text: "科目数据已保存并递增版本号" });
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "保存失败，请检查 JSON 格式" });

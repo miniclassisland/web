@@ -159,7 +159,19 @@ export default function ClassPlanPage() {
             } else {
                 setJsonText(JSON.stringify(plans, null, 2));
             }
-            await data.write(accountId, "ClassPlan", selectedFile, payloadToSave);
+            const wrapperPayload =
+                payloadToSave && typeof payloadToSave === "object" && "ClassPlans" in payloadToSave
+                    ? payloadToSave
+                    : {
+                          ClassPlans: payloadToSave,
+                          ClassPlanGroups: {
+                              "00000000-0000-0000-0000-000000000000": {
+                                  Name: "默认课表群",
+                                  IsGlobal: false,
+                              },
+                          },
+                      };
+            await data.write(accountId, "ClassPlan", selectedFile, wrapperPayload);
             setMsg({ type: "success", text: "课表数据已保存并递增版本号" });
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "保存失败，请检查 JSON 格式" });

@@ -168,7 +168,11 @@ export default function TimeLayoutPage() {
                 setLayouts(normalized);
                 setJsonText(JSON.stringify(normalized, null, 2));
             }
-            await data.write(accountId, "TimeLayout", selectedFile, payloadToSave);
+            const wrapperPayload =
+                payloadToSave && typeof payloadToSave === "object" && "TimeLayouts" in payloadToSave
+                    ? payloadToSave
+                    : { TimeLayouts: payloadToSave };
+            await data.write(accountId, "TimeLayout", selectedFile, wrapperPayload);
             setMsg({ type: "success", text: "时间表数据已保存并递增版本号" });
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "保存失败，请检查 JSON 格式" });

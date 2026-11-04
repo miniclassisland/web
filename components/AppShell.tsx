@@ -42,7 +42,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <Sidebar />
                     <div className="main-area">
                         <TopBar />
-                        <main className="content-area fade-in">{children}</main>
+                        <main key={accountId} className="content-area fade-in">{children}</main>
                     </div>
                 </div>
             ) : (
