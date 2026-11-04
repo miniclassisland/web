@@ -545,32 +545,165 @@ export interface ManagementSettings {
     ClassIdentity?: string;
 }
 
-/** 客户端应用默认设置 (ClassIsland.Models.Settings) */
+/** 客户端应用默认设置 (ClassIsland.Models.Settings 全量字段) */
 export interface AppDefaultSettings {
+    /* 1. 常规、档案与课程显示 (General & Schedule) */
+    IsMainWindowVisible?: boolean;
     IsWelcomeWindowShowed?: boolean;
+    SelectedProfile?: string;
+    CurrentComponentConfig?: string;
+    ShowDate?: boolean;
+    HideOnClass?: boolean;
+    SingleWeekStartTime?: string;
+    MultiWeekRotationMaxCycle?: number;
+    MultiWeekRotationOffset?: Record<string, number>;
+    DefaultOnClassTimePointMinutes?: number;
+    DefaultBreakingTimePointMinutes?: number;
+    ShowExtraInfoOnTimePoint?: boolean;
+    ExtraInfoType?: number;
+    IsCountdownEnabled?: boolean;
+    CountdownSeconds?: number;
+    ExtraInfo4ShowSecondsSeconds?: number;
+    IsNonExactCountdownEnabled?: boolean;
+    ScheduleSpacing?: number;
+    ShowCurrentLessonOnlyOnClass?: boolean;
+    IsSwapMode?: boolean;
+    IsProfileEditorClassInfoSubjectAutoMoveNextEnabled?: boolean;
+    ExpAllowEditingActivatedTimeLayout?: boolean;
+    ClassPlanEditModeIndex?: number;
+    TimeLayoutEditorIndex?: number;
+
+    /* 2. 窗口、停靠、交互与避让规则 (Window, Docking & Hide Rules) */
     WindowDockingLocation?: number;
+    WindowDockingMonitorIndex?: number;
     WindowDockingOffsetX?: number;
     WindowDockingOffsetY?: number;
-    WindowDockingMonitorIndex?: number;
     WindowLayer?: number;
+    WindowTopmostRecheckMode?: number;
+    IsIgnoreWorkAreaEnabled?: boolean;
+    HideMode?: number;
+    HideOnFullscreen?: boolean;
+    ExcludedFullscreenWindow?: string[];
+    HideOnMaxWindow?: boolean;
     IsMouseClickingEnabled?: boolean;
-    Scale?: number;
+    UseRawInput?: boolean;
+    IsMouseInFadingEnabled?: boolean;
+    IsMouseInFadingReversed?: boolean;
+    TouchInFadingDurationMs?: number;
+    TaskBarIconClickBehavior?: number;
+    IsCompatibleWindowTransparentEnabled?: boolean;
+    IsWaitForTransientDisabled?: boolean;
+    AnimationLevel?: number;
+    ReduceProgressAccuracy?: boolean;
+    IsScreenRecordingModeEnabled?: boolean;
+    IsWindowCaptureBlockingEnabled?: boolean;
+
+    /* 3. 外观、主题、色彩与字体 (Appearance, Theme & Fonts) */
     Theme?: number;
+    Scale?: number;
+    Opacity?: number;
+    RadiusX?: number;
+    RadiusY?: number;
+    MainWindowLineVerticalMargin?: number;
+    IsIslandSeperated?: boolean;
     ColorSource?: number;
     PrimaryColor?: string;
     SecondaryColor?: string;
+    SelectedPlatteIndex?: number;
+    TargetLightValue?: number;
+    IsWallpaperAutoUpdateEnabled?: boolean;
+    WallpaperAutoUpdateIntervalSeconds?: number;
+    WallpaperClassName?: string;
+    IsFallbackModeEnabled?: boolean;
+    UseExperimentColorPickingMethod?: boolean;
+    IsCustomBackgroundColorEnabled?: boolean;
+    BackgroundColor?: string;
+    IsCustomForegroundColorEnabled?: boolean;
+    CustomForegroundColor?: string;
+    MainWindowFont?: string;
+    MainWindowFontWeight2?: number;
+    MainWindowSecondaryFontSize?: number;
+    MainWindowBodyFontSize?: number;
+    MainWindowEmphasizedFontSize?: number;
+    MainWindowLargeFontSize?: number;
+
+    /* 4. 提醒、特效与渠道控制 (Notifications & Effects) */
     IsNotificationEnabled?: boolean;
     IsNotificationEffectEnabled?: boolean;
     IsNotificationSoundEnabled?: boolean;
+    NotificationSoundVolume?: number;
+    NotificationSoundPath?: string;
     IsNotificationTopmostEnabled?: boolean;
+    NotificationEffectRenderingScale?: number;
+    IsNotificationEffectRenderingScaleAutoSet?: boolean;
+    NotificationUseStandaloneEffectUiThread?: boolean;
+    AllowNotificationSpeech?: boolean;
+    AllowNotificationEffect?: boolean;
+    AllowNotificationSound?: boolean;
+    AllowNotificationTopmost?: boolean;
+    NotificationProvidersEnableStates?: Record<string, boolean>;
+    NotificationProvidersPriority?: string[];
+
+    /* 5. 语音合成 (Speech / TTS) */
     IsSpeechEnabled?: boolean;
     SpeechVolume?: number;
     SpeechSource?: number;
+    SelectedSpeechProvider?: string;
+    EdgeTtsVoiceName?: string;
+    NotificationSpeechCustomSmgTokenSource?: string;
+    GptSoVitsSpeechSettings?: Record<string, unknown>;
+
+    /* 6. 天气与气象预警 (Weather) */
+    CityId?: string;
+    CityName?: string;
+    WeatherLocationSource?: number;
+    WeatherLongitude?: number;
+    WeatherLatitude?: number;
+    AutoRefreshWeatherLocation?: boolean;
+    NoTLSWeatherRequests?: boolean;
+    ExcludedWeatherAlerts?: string[];
+    WeatherIconId?: string;
+
+    /* 7. 时间同步与校准 (Time & NTP) */
+    IsExactTimeEnabled?: boolean;
+    ExactTimeServer?: string;
     TimeOffsetSeconds?: number;
     IsTimeAutoAdjustEnabled?: boolean;
+    TimeAutoAdjustSeconds?: number;
+
+    /* 8. 启动画面、自动化、备份、更新与诊断 (System, Backup, Updates & Debug) */
     IsSplashEnabled?: boolean;
-    CurrentComponentConfig?: string;
-    SelectedProfile?: string;
+    SplashCustomText?: string;
+    SplashCustomLogoSource?: string;
+    ShowDetailedStatusOnSplash?: boolean;
+    IsAutomationEnabled?: boolean;
+    CurrentAutomationConfig?: string;
+    IsAutomationWarningVisible?: boolean;
+    IsAutoBackupEnabled?: boolean;
+    AutoBackupIntervalDays?: number;
+    AutoBackupLimit?: number;
+    UpdateMode?: number;
+    SelectedUpdateChannelV2?: string;
+    SelectedUpdateMirrorV2?: string;
+    AutoInstallUpdateNextStartup?: boolean;
+    OfficialSelectedMirror?: string;
+    IgnoreSslForPluginMirrors?: boolean;
+    IsPluginsAutoUpdateEnabled?: boolean;
+    IsPluginsUpdateNotificationEnabled?: boolean;
+    AutoDisableCorruptPlugins?: boolean;
+    IsCriticalSafeMode?: boolean;
+    CriticalSafeModeMethod?: number;
+    IsReportingEnabled?: boolean;
+    IsRefreshingToastEnabled?: boolean;
+    RefreshingToastThresholdDays?: number;
+    MaxRefreshingToastCounts?: number;
+    ShowEchoCaveWhenSettingsPageLoading?: boolean;
+    SettingsPagesCachePolicy?: number;
+    IsDebugEnabled?: boolean;
+    IsDebugOptionsEnabled?: boolean;
+    IsMainWindowDebugEnabled?: boolean;
+    IsDebugConsoleEnabled?: boolean;
+    DebugAnimationScale?: number;
     [key: string]: unknown;
 }
 

@@ -21,9 +21,11 @@ import {
     ShieldTask24Regular,
     Person24Regular,
     Settings24Regular,
+    ArrowUpload24Regular,
 } from "@fluentui/react-icons";
 import type { AccountOut, UserOut } from "@/lib/types";
 import { REGISTRATION_MODE_LABELS, ROLE_LABELS } from "@/lib/types";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 export default function UserCenterHomePage() {
     const { isAuthenticated, isSuperAdmin } = useAuth();
@@ -34,12 +36,23 @@ export default function UserCenterHomePage() {
     const [joinOpen, setJoinOpen] = useState(false);
     const [inviteCode, setInviteCode] = useState("");
     const [joining, setJoining] = useState(false);
+    const [wizardOpen, setWizardOpen] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     useEffect(() => {
         if (!isAuthenticated) return;
         userInfo.get().then(setProfile).catch(() => {});
     }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (!isAuthenticated || loading) return;
+        if (accounts.length === 0 && typeof window !== "undefined") {
+            const done = localStorage.getItem("miniclassisland_onboarding_completed");
+            if (!done) {
+                setWizardOpen(true);
+            }
+        }
+    }, [isAuthenticated, loading, accounts.length]);
 
     const filteredAccounts = useMemo(() => {
         if (!searchQuery.trim()) return accounts;
@@ -95,7 +108,14 @@ export default function UserCenterHomePage() {
                         用户中心主页 · 从左侧导航栏或下方列表选择任一账户，即可进入对应的集控账户中心
                     </p>
                 </div>
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                    <Button
+                        appearance="secondary"
+                        icon={<ArrowUpload24Regular />}
+                        onClick={() => setWizardOpen(true)}
+                    >
+                        首次配置与档案拆分向导
+                    </Button>
                     <Button
                         appearance="secondary"
                         icon={<PeopleAdd24Regular />}
@@ -190,13 +210,20 @@ export default function UserCenterHomePage() {
                         <p className="accounts-list-empty-hint">
                             您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。
                         </p>
-                        <div className="flex gap-8">
+                        <div className="flex gap-8" style={{ flexWrap: "wrap", justifyContent: "center" }}>
                             <Button
                                 appearance="primary"
+                                icon={<ArrowUpload24Regular />}
+                                onClick={() => setWizardOpen(true)}
+                            >
+                                启动首次配置向导 (创建账户并导入本地档案)
+                            </Button>
+                            <Button
+                                appearance="secondary"
                                 icon={<Add24Regular />}
                                 onClick={() => router.push("/accounts/new")}
                             >
-                                创建新账户
+                                仅创建新账户
                             </Button>
                             <Button
                                 appearance="secondary"
@@ -341,6 +368,12 @@ export default function UserCenterHomePage() {
                     </DialogBody>
                 </DialogSurface>
             </Dialog>
+
+            <OnboardingWizard
+                open={wizardOpen}
+                onClose={() => setWizardOpen(false)}
+                initialStep={accounts.length === 0 ? 1 : 2}
+            />
         </div>
     );
 }

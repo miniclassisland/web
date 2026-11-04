@@ -1000,42 +1000,44 @@ export default function ClientsPage() {
                                                 <div className="empty-state-text">暂无配置上报记录</div>
                                             </div>
                                         ) : (
-                                            <table className="data-table mb-16">
-                                                <thead>
-                                                    <tr>
-                                                        <th>配置类型</th>
-                                                        <th>状态</th>
-                                                        <th>上报时间</th>
-                                                        <th>操作</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {snapshots.map((s) => (
-                                                        <tr key={s.request_guid}>
-                                                            <td>{CONFIG_TYPE_LABELS[s.config_type] || s.config_type_name}</td>
-                                                            <td>
-                                                                <span className={`badge ${s.status === "completed" ? "badge-success" : "badge-warning"}`}>
-                                                                    {s.status === "completed" ? "已上报" : "等待客户端响应"}
-                                                                </span>
-                                                            </td>
-                                                            <td style={{ fontSize: 12 }}>
-                                                                {s.uploaded_at ? new Date(s.uploaded_at).toLocaleString("zh-CN") : "-"}
-                                                            </td>
-                                                            <td>
-                                                                <Button
-                                                                    size="small"
-                                                                    appearance="subtle"
-                                                                    icon={<DocumentSearch24Regular />}
-                                                                    disabled={s.status !== "completed"}
-                                                                    onClick={() => handleViewSnapshotDetail(s.request_guid)}
-                                                                >
-                                                                    查看内容
-                                                                </Button>
-                                                            </td>
+                                            <div className="table-container mb-16">
+                                                <table className="data-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>配置类型</th>
+                                                            <th>状态</th>
+                                                            <th>上报时间</th>
+                                                            <th>操作</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        {snapshots.map((s) => (
+                                                            <tr key={s.request_guid}>
+                                                                <td>{CONFIG_TYPE_LABELS[s.config_type] || s.config_type_name}</td>
+                                                                <td>
+                                                                    <span className={`badge ${s.status === "completed" ? "badge-success" : "badge-warning"}`}>
+                                                                        {s.status === "completed" ? "已上报" : "等待客户端响应"}
+                                                                    </span>
+                                                                </td>
+                                                                <td style={{ fontSize: 12 }}>
+                                                                    {s.uploaded_at ? new Date(s.uploaded_at).toLocaleString("zh-CN") : "-"}
+                                                                </td>
+                                                                <td>
+                                                                    <Button
+                                                                        size="small"
+                                                                        appearance="subtle"
+                                                                        icon={<DocumentSearch24Regular />}
+                                                                        disabled={s.status !== "completed"}
+                                                                        onClick={() => handleViewSnapshotDetail(s.request_guid)}
+                                                                    >
+                                                                        查看内容
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         )}
 
                                         {activeSnapshot && (
@@ -1081,34 +1083,36 @@ export default function ClientsPage() {
                                                 <div className="empty-state-text">暂无该设备的审计日志</div>
                                             </div>
                                         ) : (
-                                            <table className="data-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>事件类型</th>
-                                                        <th>事件详情</th>
-                                                        <th>上报时间</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {deviceAudits.map((log) => (
-                                                        <tr key={log.id}>
-                                                            <td>
-                                                                <span className="badge badge-info">
-                                                                    {AUDIT_EVENT_LABELS[log.event_type] || log.event_name}
-                                                                </span>
-                                                            </td>
-                                                            <td style={{ fontSize: 12 }}>
-                                                                {Object.keys(log.decoded || {}).length > 0
-                                                                    ? JSON.stringify(log.decoded)
-                                                                    : "-"}
-                                                            </td>
-                                                            <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                                                                {log.logged_at ? new Date(log.logged_at).toLocaleString("zh-CN") : "-"}
-                                                            </td>
+                                            <div className="table-container">
+                                                <table className="data-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>事件类型</th>
+                                                            <th>事件详情</th>
+                                                            <th>上报时间</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        {deviceAudits.map((log) => (
+                                                            <tr key={log.id}>
+                                                                <td>
+                                                                    <span className="badge badge-info">
+                                                                        {AUDIT_EVENT_LABELS[log.event_type] || log.event_name}
+                                                                    </span>
+                                                                </td>
+                                                                <td style={{ fontSize: 12 }}>
+                                                                    {Object.keys(log.decoded || {}).length > 0
+                                                                        ? JSON.stringify(log.decoded)
+                                                                        : "-"}
+                                                                </td>
+                                                                <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                                                                    {log.logged_at ? new Date(log.logged_at).toLocaleString("zh-CN") : "-"}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         )}
                                     </div>
                                 )}

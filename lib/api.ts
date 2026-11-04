@@ -38,6 +38,28 @@ export function getAdminUrl(): string {
     return url.replace(/\/+$/, "");
 }
 
+/** 动态解析超管站点地址（支持自定义域名部署与本地开发端口推导） */
+export function getAdminSiteUrl(): string {
+    const envUrl = process.env.NEXT_PUBLIC_ADMIN_SITE_URL;
+    if (envUrl) return envUrl.replace(/\/+$/, "");
+    if (typeof window !== "undefined") {
+        const { protocol, hostname, port, host } = window.location;
+        if (port === "27042") return `${protocol}//${hostname}:27043`;
+        if (port === "3000") return `${protocol}//${hostname}:3001`;
+        if (hostname.startsWith("dash.") || hostname.startsWith("dashboard.")) {
+            const baseHost = host.replace(/^(dash|dashboard)\./i, "");
+            return `${protocol}//admin.${baseHost}`;
+        }
+        if (!hostname.startsWith("admin.")) {
+            return `${protocol}//admin.${host}`;
+        }
+        return `${protocol}//${host}`;
+    }
+    const configuredBase = (process.env.NEXT_PUBLIC_BASE_DOMAIN || "").trim();
+    if (configuredBase) return `https://admin.${configuredBase}`;
+    return "https://admin.miniclassisland.com";
+}
+
 export function getToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(STORAGE_KEY_TOKEN);
@@ -207,7 +229,7 @@ async function request<T>(
                 const isOobePage = pathName === "/oobe" || pathName.startsWith("/oobe");
                 const isOobeApi = path.startsWith("/api/oobe") || path.includes("/oobe");
                 if (!isOobePage && !isOobeApi) {
-                    const targetOobeUrl = process.env.NEXT_PUBLIC_ADMIN_OOBE_URL || `${process.env.NEXT_PUBLIC_ADMIN_SITE_URL || "https://admin.miniclassisland.com"}/oobe`;
+                    const targetOobeUrl = process.env.NEXT_PUBLIC_ADMIN_OOBE_URL || `${getAdminSiteUrl()}/oobe`;
                     window.location.href = targetOobeUrl;
                     return new Promise(() => {});
                 }

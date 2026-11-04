@@ -66,7 +66,12 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
+config.json
+config.*.json
+miniclassisland_server.key*
 .env*
+*.env
+*.env.local
 *.env*.local
 !.env.example
 

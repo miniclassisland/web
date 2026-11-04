@@ -8,6 +8,7 @@ import {
     Button, Input, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 export default function NewAccountPage() {
     const { refreshAccounts, switchAccount } = useAccount();
@@ -16,6 +17,7 @@ export default function NewAccountPage() {
     const [slug, setSlug] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [wizardAccountId, setWizardAccountId] = useState<string | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -29,7 +31,8 @@ export default function NewAccountPage() {
             });
             await refreshAccounts();
             switchAccount(created.id);
-            router.push("/dashboard");
+            setLoading(false);
+            setWizardAccountId(created.id);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "创建账户失败");
             setLoading(false);
@@ -87,11 +90,20 @@ export default function NewAccountPage() {
                             type="submit"
                             disabled={loading || !name.trim()}
                         >
-                            {loading ? <Spinner size="tiny" /> : "创建并进入账户中心"}
+                            {loading ? <Spinner size="tiny" /> : "创建账户并启动档案配置向导"}
                         </Button>
                     </div>
                 </form>
             </div>
+
+            {wizardAccountId && (
+                <OnboardingWizard
+                    open={true}
+                    initialStep={2}
+                    targetAccountId={wizardAccountId}
+                    onClose={() => router.push("/dashboard")}
+                />
+            )}
         </div>
     );
 }

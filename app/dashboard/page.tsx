@@ -7,11 +7,14 @@ import { useRouter } from "next/navigation";
 import { clients, data, pairing, audit, accounts } from "@/lib/api";
 import type { ResourceType } from "@/lib/types";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import OnboardingWizard from "@/components/OnboardingWizard";
+import { Button } from "@fluentui/react-components";
 import {
     PlugConnected24Regular,
     Link24Regular,
     Document24Regular,
     DocumentSearch24Regular,
+    ArrowUpload24Regular,
 } from "@fluentui/react-icons";
 
 function StatCard({
@@ -47,6 +50,7 @@ export default function DashboardPage() {
         resourceCount: "-",
         auditCount: "-",
     });
+    const [wizardOpen, setWizardOpen] = useState(false);
 
     useEffect(() => {
         if (!accountId) {
@@ -115,13 +119,29 @@ export default function DashboardPage() {
                         MINI ClassIsland 集控概览 {currentAccount ? `— ${currentAccount.name}` : ""}
                     </p>
                 </div>
-                <DownloadPresetPopoverButton
-                    buttonText="下载通用配置 (仅接口地址)"
-                    appearance="primary"
-                    defaultFileName={`ManagementPreset-${slugName}-generic.json`}
-                    onFetchData={() => accounts.downloadPreset(accountId)}
-                />
+                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                    <Button
+                        appearance="secondary"
+                        icon={<ArrowUpload24Regular />}
+                        onClick={() => setWizardOpen(true)}
+                    >
+                        导入/拆分本地档案与设置向导
+                    </Button>
+                    <DownloadPresetPopoverButton
+                        buttonText="下载通用配置 (仅接口地址)"
+                        appearance="primary"
+                        defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                        onFetchData={() => accounts.downloadPreset(accountId)}
+                    />
+                </div>
             </div>
+
+            <OnboardingWizard
+                open={wizardOpen}
+                onClose={() => setWizardOpen(false)}
+                initialStep={2}
+                targetAccountId={accountId}
+            />
 
             <div className="grid-4">
                 <StatCard
