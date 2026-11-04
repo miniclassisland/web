@@ -837,7 +837,7 @@ export default function ClientsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="card" style={{ background: "#fafafa", marginBottom: 16 }}>
+                                        <div className="card" style={{ background: "var(--bg-subtle)", marginBottom: 16 }}>
                                             <div className="grid-2" style={{ gap: 8, fontSize: 13 }}>
                                                 <div><strong>设备 UID：</strong>{activeClient.uid}</div>
                                                 <div><strong>当前状态：</strong>{activeClient.status === "online" ? "在线" : "离线"}</div>

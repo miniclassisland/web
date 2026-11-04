@@ -312,7 +312,7 @@ export default function SecurityPage() {
                                     }}
                                 >
                                     {setupData.recovery_codes.map((code, i) => (
-                                        <div key={i} style={{ padding: "4px 8px", background: "white", borderRadius: 4 }}>
+                                        <div key={i} style={{ padding: "4px 8px", background: "var(--bg-card)", color: "var(--text-primary)", borderRadius: 4 }}>
                                             {code}
                                         </div>
                                     ))}

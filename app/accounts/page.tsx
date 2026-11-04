@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
-import type { AccountOut, SlugUpdate } from "@/lib/types";
-import { REGISTRATION_MODE_LABELS } from "@/lib/types";
+import type { AccountOut, SlugUpdate, QuotaOut } from "@/lib/types";
+import { REGISTRATION_MODE_LABELS, QUOTA_META } from "@/lib/types";
 import {
     Button, Input, Spinner,
     MessageBar, MessageBarBody,
@@ -28,13 +28,18 @@ export default function AccountsPage() {
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState("");
     const [deleting, setDeleting] = useState(false);
+    const [quotas, setQuotas] = useState<QuotaOut[]>([]);
 
     const loadData = useCallback(async () => {
         if (!accountId) return;
         setLoading(true);
         try {
-            const info = await accounts.info(accountId);
+            const [info, qList] = await Promise.all([
+                accounts.info(accountId),
+                accounts.getQuotas(accountId).catch(() => []),
+            ]);
             setAccountInfo(info);
+            setQuotas(Array.isArray(qList) ? qList : []);
         } catch {
             setAccountInfo(currentAccount);
         }
@@ -273,6 +278,38 @@ export default function AccountsPage() {
                     </div>
                 )}
             </div>
+
+            {accountInfo && quotas.length > 0 && (
+                <div className="card mt-16">
+                    <div className="card-title">账户设备与功能配额</div>
+                    <div>
+                        {Object.entries(QUOTA_META).map(([key, meta]) => {
+                            const q = quotas.find((item) => item.quota_key === key);
+                            const maxVal = q?.max_value ?? meta.defaultMax;
+                            const curVal = q?.current_value ?? 0;
+                            return (
+                                <div className="settings-item" key={key}>
+                                    <div className="settings-item-info">
+                                        <div className="settings-item-label">{meta.label}</div>
+                                        <div className="settings-item-hint">{meta.hint}</div>
+                                    </div>
+                                    <div>
+                                        {meta.type === "boolean" ? (
+                                            <span className={`badge ${maxVal >= 1 ? "badge-success" : "badge-danger"}`}>
+                                                {maxVal >= 1 ? "已启用" : "已禁用"}
+                                            </span>
+                                        ) : (
+                                            <span className="badge badge-info" style={{ fontSize: 13 }}>
+                                                已用 {curVal} / {maxVal < 0 ? "不限制" : maxVal}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {accountInfo && (
                 <div

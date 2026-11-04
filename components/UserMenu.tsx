@@ -4,18 +4,20 @@
  * 右上角用户菜单（MINI ClassIsland 顶栏）。
  *
  * 弹出卡片包含：用户头像/角色、当前账户信息、
- * 账户切换器、超级管理面板入口（条件显示）、安全设置和登出。
+ * 账户切换器、外观主题切换（自动深色/浅色/深色）、超级管理面板入口（条件显示）、安全设置和登出。
  */
 
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
+import { useThemeMode, THEME_MODE_LABELS, type ThemeMode } from "@/lib/theme-context";
 import { ROLE_LABELS, SYSTEM_ROLES } from "@/lib/types";
 import {
     Person24Regular, ShieldKeyhole24Regular,
     Settings24Regular, SignOut24Regular,
     ChevronDown16Regular, Checkmark16Regular,
-    ArrowSwap20Regular,
+    ArrowSwap20Regular, WeatherSunny20Regular,
+    WeatherMoon20Regular, Desktop20Regular,
 } from "@fluentui/react-icons";
 
 function resolveAdminSiteUrl(): string {
@@ -35,6 +37,7 @@ function resolveAdminSiteUrl(): string {
 export default function UserMenu() {
     const { isSuperAdmin, logout, token } = useAuth();
     const { accounts, currentAccount, switchAccount } = useAccount();
+    const { mode, setMode } = useThemeMode();
     const [open, setOpen] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -55,6 +58,12 @@ export default function UserMenu() {
     const roleLabel = currentAccount
         ? (isSuperAdmin ? ROLE_LABELS[SYSTEM_ROLES.SUPERADMIN] : ROLE_LABELS[SYSTEM_ROLES.NORMAL])
         : "";
+
+    const themeOptions: { key: ThemeMode; label: string; icon: React.ReactNode }[] = [
+        { key: "system", label: "自动", icon: <Desktop20Regular style={{ width: 14, height: 14 }} /> },
+        { key: "light", label: "浅色", icon: <WeatherSunny20Regular style={{ width: 14, height: 14 }} /> },
+        { key: "dark", label: "深色", icon: <WeatherMoon20Regular style={{ width: 14, height: 14 }} /> },
+    ];
 
     return (
         <div className="user-menu-wrapper" ref={menuRef}>
@@ -113,6 +122,28 @@ export default function UserMenu() {
                                     <span>切换账户</span>
                                 </button>
                             )}
+
+                            <div className="user-menu-divider" />
+
+                            <div className="user-menu-section">
+                                <div className="user-menu-section-label">
+                                    外观主题 ({THEME_MODE_LABELS[mode]})
+                                </div>
+                                <div className="theme-switcher-group" style={{ width: "100%", marginTop: 4 }}>
+                                    {themeOptions.map((opt) => (
+                                        <button
+                                            key={opt.key}
+                                            type="button"
+                                            className={`theme-segment-btn ${mode === opt.key ? "active" : ""}`}
+                                            style={{ flex: 1, justifyContent: "center" }}
+                                            onClick={() => setMode(opt.key)}
+                                        >
+                                            {opt.icon}
+                                            <span>{opt.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
                             <div className="user-menu-divider" />
 

@@ -107,6 +107,52 @@ export interface AccountNameUpdate {
     registration_mode?: RegistrationMode;
 }
 
+export interface QuotaOut {
+    id: string;
+    account_id: string;
+    quota_key: string;
+    max_value: number;
+    current_value: number;
+}
+
+export interface QuotaSetRequest {
+    quota_key: string;
+    max_value: number;
+}
+
+export const QUOTA_META: Record<string, { label: string; hint: string; type: "number" | "boolean"; defaultMax: number }> = {
+    max_clients: {
+        label: "允许注册的设备数 (max_clients)",
+        hint: "该账户允许登记注册的最大终端设备数量 (-1 表示不限制)",
+        type: "number",
+        defaultMax: 50,
+    },
+    max_grpc_connections: {
+        label: "允许 gRPC 长连接的设备数量 (max_grpc_connections)",
+        hint: "该账户允许同时建立 gRPC 实时双向长连接会话的最大在线终端数量 (-1 表示不限制)",
+        type: "number",
+        defaultMax: 50,
+    },
+    max_bandwidth_mb: {
+        label: "月度流量配额 (MB)",
+        hint: "该账户允许的最大配置与资源分发流量 (-1 表示不限制)",
+        type: "number",
+        defaultMax: 1024,
+    },
+    "feature.ota": {
+        label: "OTA 策略与组件分发",
+        hint: "允许该账户使用远程组件与策略分发能力 (1=开启, 0=关闭)",
+        type: "boolean",
+        defaultMax: 1,
+    },
+    "feature.audit": {
+        label: "终端安全审计日志",
+        hint: "允许该账户收集并检索客户端事件审计日志 (1=开启, 0=关闭)",
+        type: "boolean",
+        defaultMax: 1,
+    },
+};
+
 // ============================================================
 // 2FA
 // ============================================================

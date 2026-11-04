@@ -128,7 +128,7 @@ export default function DownloadPresetPopoverButton({
                                         border: isSelected
                                             ? "1px solid var(--accent-color)"
                                             : "1px solid var(--border-color)",
-                                        background: isSelected ? "#eff6fc" : "var(--bg-card)",
+                                        background: isSelected ? "var(--bg-accent-subtle)" : "var(--bg-card)",
                                         color: isSelected ? "var(--accent-color)" : "var(--text-secondary)",
                                         cursor: "pointer",
                                         textAlign: "left",

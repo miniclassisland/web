@@ -451,7 +451,7 @@ export default function ComponentsPage() {
                                 <>
                                     {/* 当前行属性与内置组件快速添加栏 */}
                                     {currentLine && (
-                                        <div className="card" style={{ background: "#fafafa", marginBottom: 16 }}>
+                                        <div className="card" style={{ background: "var(--bg-subtle)", marginBottom: 16 }}>
                                             <div className="flex items-center justify-between mb-12" style={{ flexWrap: "wrap", gap: 12 }}>
                                                 <div style={{ fontWeight: 600 }}>
                                                     第 {selectedLineIdx + 1} 行设置

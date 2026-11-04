@@ -56,9 +56,10 @@ export function clearToken(): void {
 export class ApiError extends Error {
     status: number;
     code?: string;
+    retryAfter?: number;
     detail: unknown;
 
-    constructor(status: number, detail: unknown) {
+    constructor(status: number, detail: unknown, retryAfter?: number) {
         let msg = typeof detail === "string" ? detail : JSON.stringify(detail);
         let code: string | undefined;
 
@@ -82,6 +83,14 @@ export class ApiError extends Error {
             }
         }
 
+        if (status === 429) {
+            if (code === "ERR_IP_BLOCKED" || msg.includes("IP address temporarily blocked")) {
+                msg = "当前 IP 因短时间内多次异常请求已被安全机制临时封禁（约 5 分钟），请稍后再试";
+            } else if (!msg || msg === "请求失败" || msg.startsWith("{")) {
+                msg = "请求过于频繁（HTTP 429），已被安全限流保护拦截，请稍后再试";
+            }
+        }
+
         if (msg === "Failed to fetch" || (typeof msg === "string" && msg.includes("Failed to fetch"))) {
             msg = "未知的服务器回答，请联系管理员";
         }
@@ -89,6 +98,7 @@ export class ApiError extends Error {
         super(msg);
         this.status = status;
         this.code = code;
+        this.retryAfter = retryAfter;
         this.detail = detail;
     }
 }
@@ -100,6 +110,15 @@ export class ApiError extends Error {
 function emitAuthExpired(): void {
     if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("miniclassisland:auth-expired"));
+    }
+}
+
+/**
+ * 429 时触发全局限流事件，供 RateLimitBanner 展示倒计时提示横幅。
+ */
+function emitRateLimited(detail: { message: string; retryAfter: number; code?: string; path?: string }): void {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("miniclassisland:rate-limited", { detail }));
     }
 }
 
@@ -190,6 +209,22 @@ async function request<T>(
                     return new Promise(() => {});
                 }
             }
+        }
+
+        if (res.status === 429) {
+            const retryHeader = res.headers.get("retry-after");
+            const parsedRetry = retryHeader ? parseInt(retryHeader, 10) : NaN;
+            const retryAfter = !Number.isNaN(parsedRetry) && parsedRetry > 0
+                ? parsedRetry
+                : (code === "ERR_IP_BLOCKED" ? 300 : 30);
+            const apiErr = new ApiError(429, detail, retryAfter);
+            emitRateLimited({
+                message: apiErr.message,
+                retryAfter,
+                code: apiErr.code,
+                path,
+            });
+            throw apiErr;
         }
 
         if (msg === "Failed to fetch" || (typeof msg === "string" && msg.includes("Failed to fetch"))) {
@@ -340,6 +375,12 @@ export const accounts = {
 
     downloadPreset: (accountId: string, classIdentity = "") =>
         get<ManagementSettings>(`${acctPath(accountId)}/ManagementPreset.json${classIdentity ? `?class_identity=${encodeURIComponent(classIdentity)}` : ""}`),
+
+    getQuotas: (accountId: string) =>
+        get<import("./types").QuotaOut[]>(`${acctPath(accountId)}/quota`),
+
+    setQuota: (accountId: string, data: import("./types").QuotaSetRequest) =>
+        post<import("./types").QuotaOut>(`${acctPath(accountId)}/quota`, data),
 };
 
 // ============================================================

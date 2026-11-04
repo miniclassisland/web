@@ -4,9 +4,11 @@ import React from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
 import { usePathname } from "next/navigation";
+import { ThemeModeToggle } from "@/lib/theme-context";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import LoginDialog from "./LoginDialog";
+import RateLimitBanner from "./RateLimitBanner";
 
 /** 不需要侧栏的页面 */
 const SHELL_EXCLUDED_PATHS = ["/login", "/register"];
@@ -35,6 +37,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <>
+            <RateLimitBanner />
             <LoginDialog />
 
             {showFullShell ? (
@@ -46,7 +49,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
             ) : (
-                <>{children}</>
+                <>
+                    <ThemeModeToggle floating />
+                    {children}
+                </>
             )}
         </>
     );
