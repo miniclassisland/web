@@ -25,7 +25,11 @@
 Thumbs.db
 desktop.ini
 .vscode/
-.idea/
+# IDE project identity (shared name and icon)
+.idea/*
+!.idea/.name
+!.idea/icon.png
+!.idea/icon.svg
 *.swp
 *.swo
 *~
