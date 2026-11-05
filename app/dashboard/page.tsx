@@ -125,7 +125,7 @@ export default function DashboardPage() {
                         icon={<ArrowUpload24Regular />}
                         onClick={() => setWizardOpen(true)}
                     >
-                        导入/拆分本地档案与设置向导
+                        从本地上传配置
                     </Button>
                     <DownloadPresetPopoverButton
                         buttonText="下载通用配置 (仅接口地址)"
@@ -141,6 +141,7 @@ export default function DashboardPage() {
                 onClose={() => setWizardOpen(false)}
                 initialStep={2}
                 targetAccountId={accountId}
+                mode="import"
             />
 
             <div className="grid-4">

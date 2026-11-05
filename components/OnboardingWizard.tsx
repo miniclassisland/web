@@ -37,6 +37,7 @@ interface OnboardingWizardProps {
     onClose: () => void;
     initialStep?: 1 | 2 | 3 | 4;
     targetAccountId?: string;
+    mode?: "onboarding" | "import";
     onCompleted?: (accountId: string) => void;
 }
 
@@ -83,15 +84,31 @@ export default function OnboardingWizard({
     onClose,
     initialStep = 1,
     targetAccountId,
+    mode = "onboarding",
     onCompleted,
 }: OnboardingWizardProps) {
     const { accounts, accountId: currentContextAccountId, refreshAccounts, switchAccount } = useAccount();
     const router = useRouter();
 
+    const isImportMode = mode === "import" || initialStep >= 2;
+    const minStep: 1 | 2 = isImportMode ? 2 : 1;
+
     const [step, setStep] = useState<1 | 2 | 3 | 4>(initialStep);
     const [activeAccountId, setActiveAccountId] = useState<string>(
         targetAccountId || currentContextAccountId || ""
     );
+
+    React.useEffect(() => {
+        if (open) {
+            setStep(initialStep);
+            if (targetAccountId) {
+                setActiveAccountId(targetAccountId);
+            } else if (currentContextAccountId) {
+                setActiveAccountId(currentContextAccountId);
+            }
+            setMsg(null);
+        }
+    }, [open, initialStep, targetAccountId, currentContextAccountId]);
 
     // Step 1 state: Create or select first account
     const [acctName, setAcctName] = useState("");
@@ -392,32 +409,41 @@ export default function OnboardingWizard({
         }
     }
 
-    const stepsMeta = [
-        { num: 1, title: "创建集控账户", icon: <PersonAccounts24Regular /> },
-        { num: 2, title: "导入并拆分档案", icon: <ArrowUpload24Regular /> },
-        { num: 3, title: "上载应用与组件设置", icon: <Settings24Regular /> },
-        { num: 4, title: "配置管理密码凭据", icon: <Key24Regular /> },
-    ];
+    const stepsMeta = isImportMode
+        ? [
+              { num: 2, displayNum: 1, title: "导入并拆分档案", icon: <ArrowUpload24Regular /> },
+              { num: 3, displayNum: 2, title: "上载应用与组件设置", icon: <Settings24Regular /> },
+              { num: 4, displayNum: 3, title: "配置管理密码凭据", icon: <Key24Regular /> },
+          ]
+        : [
+              { num: 1, displayNum: 1, title: "创建集控账户", icon: <PersonAccounts24Regular /> },
+              { num: 2, displayNum: 2, title: "导入并拆分档案", icon: <ArrowUpload24Regular /> },
+              { num: 3, displayNum: 3, title: "上载应用与组件设置", icon: <Settings24Regular /> },
+              { num: 4, displayNum: 4, title: "配置管理密码凭据", icon: <Key24Regular /> },
+          ];
+
+    const currentDisplayStep = isImportMode ? Math.max(1, step - 1) : step;
+    const totalDisplaySteps = stepsMeta.length;
 
     return (
         <Dialog open={open} onOpenChange={(_, d) => !d.open && onClose()}>
-            <DialogSurface style={{ maxWidth: 720, width: "94vw" }}>
-                <DialogBody>
-                    <DialogTitle>
+            <DialogSurface style={{ maxWidth: 740, width: "94vw" }}>
+                <DialogBody style={{ display: "block" }}>
+                    <DialogTitle style={{ marginBottom: 12 }}>
                         <div className="flex items-center justify-between" style={{ width: "100%" }}>
-                            <span>新用户集控快速上手向导</span>
-                            <Badge appearance="tint" color="brand">
-                                步骤 {step} / 4
+                            <span>{isImportMode ? "从本地上传配置与档案拆分" : "新用户集控快速上手向导"}</span>
+                            <Badge appearance="tint" color="brand" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                                步骤 {currentDisplayStep} / {totalDisplaySteps}
                             </Badge>
                         </div>
                     </DialogTitle>
-                    <DialogContent>
+                    <DialogContent style={{ overflowX: "hidden" }}>
                         {/* 步骤条 */}
                         <div
                             style={{
                                 display: "grid",
-                                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                                gap: 8,
+                                gridTemplateColumns: `repeat(${stepsMeta.length}, minmax(0, 1fr))`,
+                                gap: 10,
                                 marginBottom: 20,
                                 paddingBottom: 14,
                                 borderBottom: "1px solid var(--border-color)",
@@ -438,7 +464,7 @@ export default function OnboardingWizard({
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 8,
-                                            padding: "8px 10px",
+                                            padding: "10px 12px",
                                             borderRadius: 8,
                                             cursor: s.num === 1 || effectiveAccountId ? "pointer" : "not-allowed",
                                             background: isActive
@@ -463,12 +489,15 @@ export default function OnboardingWizard({
                                                     ? "var(--success-color)"
                                                     : "var(--text-secondary)",
                                                 display: "inline-flex",
+                                                flexShrink: 0,
                                             }}
                                         >
                                             {isDone ? <CheckmarkCircle24Regular /> : s.icon}
                                         </span>
-                                        <div style={{ minWidth: 0 }}>
-                                            <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Step {s.num}</div>
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                            <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                                Step {s.displayNum}
+                                            </div>
                                             <div
                                                 style={{
                                                     fontSize: 12.5,
@@ -765,18 +794,35 @@ export default function OnboardingWizard({
                         )}
                     </DialogContent>
 
-                    <DialogActions style={{ marginTop: 12, justifyContent: "space-between", width: "100%" }}>
+                    <DialogActions
+                        style={{
+                            marginTop: 16,
+                            paddingTop: 12,
+                            borderTop: "1px solid var(--border-color)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            flexWrap: "wrap",
+                            gap: 8,
+                        }}
+                    >
                         <div>
-                            <Button appearance="subtle" onClick={handleSkipFinish}>
-                                稍后配置 / 跳过向导
+                            <Button
+                                appearance="subtle"
+                                onClick={handleSkipFinish}
+                                style={{ whiteSpace: "nowrap" }}
+                            >
+                                {isImportMode ? "关闭" : "稍后配置 / 跳过向导"}
                             </Button>
                         </div>
-                        <div className="flex gap-8">
-                            {step > 1 && (
+                        <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                            {step > minStep && (
                                 <Button
                                     appearance="secondary"
                                     icon={<ArrowLeft16Regular />}
-                                    onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s))}
+                                    onClick={() => setStep((s) => (s > minStep ? ((s - 1) as 1 | 2 | 3 | 4) : s))}
+                                    style={{ whiteSpace: "nowrap" }}
                                 >
                                     上一步
                                 </Button>
@@ -789,6 +835,7 @@ export default function OnboardingWizard({
                                     iconPosition="after"
                                     disabled={creatingAcct}
                                     onClick={handleStep1Continue}
+                                    style={{ whiteSpace: "nowrap" }}
                                 >
                                     {creatingAcct ? <Spinner size="tiny" /> : "下一步：导入并拆分档案"}
                                 </Button>
@@ -801,6 +848,7 @@ export default function OnboardingWizard({
                                     iconPosition="after"
                                     disabled={savingProfile}
                                     onClick={handleStep2SaveAndNext}
+                                    style={{ whiteSpace: "nowrap" }}
                                 >
                                     {savingProfile ? (
                                         <Spinner size="tiny" />
@@ -819,6 +867,7 @@ export default function OnboardingWizard({
                                     iconPosition="after"
                                     disabled={savingSettingsComp}
                                     onClick={handleStep3SaveAndNext}
+                                    style={{ whiteSpace: "nowrap" }}
                                 >
                                     {savingSettingsComp ? (
                                         <Spinner size="tiny" />
@@ -836,6 +885,7 @@ export default function OnboardingWizard({
                                     icon={<CheckmarkCircle24Regular />}
                                     disabled={savingCreds}
                                     onClick={handleStep4Complete}
+                                    style={{ whiteSpace: "nowrap" }}
                                 >
                                     {savingCreds ? <Spinner size="tiny" /> : "保存凭据并进入集控仪表盘"}
                                 </Button>

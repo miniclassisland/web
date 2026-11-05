@@ -10,10 +10,11 @@ import {
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import {
-    Edit24Regular, Delete24Regular, ArrowClockwise24Regular, Copy24Regular,
+    Edit24Regular, Delete24Regular, ArrowClockwise24Regular, Copy24Regular, ArrowUpload24Regular,
 } from "@fluentui/react-icons";
 import { useRouter } from "next/navigation";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 export default function AccountsPage() {
     const { accountId, currentAccount, refreshAccounts, switchAccount } = useAccount();
@@ -31,6 +32,7 @@ export default function AccountsPage() {
     const [deleteConfirm, setDeleteConfirm] = useState("");
     const [deleting, setDeleting] = useState(false);
     const [quotas, setQuotas] = useState<QuotaOut[]>([]);
+    const [wizardOpen, setWizardOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!accountId) return;
@@ -158,14 +160,31 @@ export default function AccountsPage() {
                     <h1 className="page-title">账户概览</h1>
                     <p className="page-subtitle">查看和管理当前 MINI ClassIsland 账户信息与引导凭证</p>
                 </div>
-                <DownloadPresetPopoverButton
-                    buttonText="下载通用配置 (仅接口地址)"
-                    appearance="primary"
-                    defaultFileName={`ManagementPreset-${slugName}-generic.json`}
-                    onFetchData={() => accounts.downloadPreset(accountId)}
-                    onError={(text) => setMsg({ type: "error", text })}
-                />
+                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                    <Button
+                        appearance="secondary"
+                        icon={<ArrowUpload24Regular />}
+                        onClick={() => setWizardOpen(true)}
+                    >
+                        从本地上传配置
+                    </Button>
+                    <DownloadPresetPopoverButton
+                        buttonText="下载通用配置 (仅接口地址)"
+                        appearance="primary"
+                        defaultFileName={`ManagementPreset-${slugName}-generic.json`}
+                        onFetchData={() => accounts.downloadPreset(accountId)}
+                        onError={(text) => setMsg({ type: "error", text })}
+                    />
+                </div>
             </div>
+
+            <OnboardingWizard
+                open={wizardOpen}
+                onClose={() => setWizardOpen(false)}
+                initialStep={2}
+                targetAccountId={accountId}
+                mode="import"
+            />
 
             {msg && (
                 <MessageBar intent={msg.type} style={{ marginBottom: 16 }}>

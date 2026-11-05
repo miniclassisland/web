@@ -78,7 +78,13 @@ export default function UserCenterHomePage() {
         router.push("/accounts");
     }
 
-    async function handleCreateAccount(openWizardAfter: boolean) {
+    function handleImportLocalConfig(account: AccountOut) {
+        switchAccount(account.id);
+        setWizardTargetAccountId(account.id);
+        setWizardOpen(true);
+    }
+
+    async function handleCreateAccount() {
         if (!newAccountName.trim()) return;
         setCreating(true);
         setCreateError(null);
@@ -93,12 +99,7 @@ export default function UserCenterHomePage() {
             setCreateOpen(false);
             setNewAccountName("");
             setNewAccountSlug("");
-            if (openWizardAfter) {
-                setWizardTargetAccountId(created.id);
-                setWizardOpen(true);
-            } else {
-                router.push("/dashboard");
-            }
+            router.push("/dashboard");
         } catch (err: unknown) {
             setCreateError(err instanceof Error ? err.message : "创建账户失败");
         } finally {
@@ -123,16 +124,6 @@ export default function UserCenterHomePage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
-                    <Button
-                        appearance="secondary"
-                        icon={<ArrowUpload24Regular />}
-                        onClick={() => {
-                            setWizardTargetAccountId(undefined);
-                            setWizardOpen(true);
-                        }}
-                    >
-                        首次配置与档案拆分向导
-                    </Button>
                     <Popover
                         withArrow
                         positioning="below-end"
@@ -165,7 +156,7 @@ export default function UserCenterHomePage() {
                             <form
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    void handleCreateAccount(false);
+                                    void handleCreateAccount();
                                 }}
                             >
                                 <div className="form-group" style={{ marginBottom: 10 }}>
@@ -189,15 +180,6 @@ export default function UserCenterHomePage() {
                                     <div className="form-hint">3-64 位小写字母、数字或连字符</div>
                                 </div>
                                 <div className="flex gap-8" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
-                                    <Button
-                                        size="small"
-                                        appearance="secondary"
-                                        type="button"
-                                        disabled={creating || !newAccountName.trim()}
-                                        onClick={() => void handleCreateAccount(true)}
-                                    >
-                                        创建并打开向导
-                                    </Button>
                                     <Button
                                         size="small"
                                         appearance="primary"
@@ -293,20 +275,10 @@ export default function UserCenterHomePage() {
                         <div className="flex gap-8" style={{ flexWrap: "wrap", justifyContent: "center" }}>
                             <Button
                                 appearance="primary"
-                                icon={<ArrowUpload24Regular />}
-                                onClick={() => {
-                                    setWizardTargetAccountId(undefined);
-                                    setWizardOpen(true);
-                                }}
-                            >
-                                启动首次配置向导 (创建账户并导入本地档案)
-                            </Button>
-                            <Button
-                                appearance="secondary"
                                 icon={<Add24Regular />}
                                 onClick={() => setCreateOpen(true)}
                             >
-                                仅创建新账户
+                                创建新账户
                             </Button>
                             <Button
                                 appearance="secondary"
@@ -387,6 +359,14 @@ export default function UserCenterHomePage() {
                                                 <Button
                                                     size="small"
                                                     appearance="subtle"
+                                                    icon={<ArrowUpload24Regular />}
+                                                    onClick={() => handleImportLocalConfig(account)}
+                                                >
+                                                    导入本地配置
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    appearance="subtle"
                                                     icon={<Settings24Regular />}
                                                     onClick={() => handleOpenAccountSettings(account)}
                                                 >
@@ -431,6 +411,7 @@ export default function UserCenterHomePage() {
                 onClose={() => setWizardOpen(false)}
                 initialStep={wizardTargetAccountId ? 2 : accounts.length === 0 ? 1 : 2}
                 targetAccountId={wizardTargetAccountId}
+                mode={wizardTargetAccountId ? "import" : "onboarding"}
             />
         </div>
     );
