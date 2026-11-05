@@ -1,5 +1,12 @@
 # MINI ClassIsland Web (`miniclassisland-web`)
 
+<p align="center">
+  <a href="https://miniclassisland.com" target="_blank" rel="noopener noreferrer">
+    <img src="assets/miniclassisland.png" alt="MINI ClassIsland Logo" width="128" height="128" />
+  </a>
+</p>
+
+
 > **MINI ClassIsland** 租户集控与教务管理工作台（`dash.miniclassisland.com`）  
 > 基于 Next.js 16 + React 19 + Fluent UI v9 构建的现代化校园终端集中管控前端。
 
