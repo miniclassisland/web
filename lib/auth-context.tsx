@@ -17,6 +17,7 @@ import type {
 
 interface AuthState {
     isAuthenticated: boolean;
+    initialized: boolean;
     token: string | null;
     user: UserOut | null;
     isSuperAdmin: boolean;
@@ -29,6 +30,7 @@ interface AuthState {
     register: (data: UserRegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    syncTokenFromStorage: (tokenOverride?: string | null) => void;
     complete2FA: (token: string) => void;
     cancel2FA: () => void;
     clearError: () => void;
@@ -40,6 +42,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [token, setTokenState] = useState<string | null>(null);
+    const [initialized, setInitialized] = useState(false);
     const [user, setUser] = useState<UserOut | null>(null);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [pending2FA, setPending2FA] = useState<TwoFARequired | null>(null);
@@ -48,8 +51,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [error, setError] = useState<string | null>(null);
     const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
+    const syncTokenFromStorage = useCallback((tokenOverride?: string | null) => {
+        if (tokenOverride !== undefined) {
+            if (tokenOverride) {
+                setToken(tokenOverride);
+                setTokenState(tokenOverride);
+            } else {
+                clearToken();
+                setTokenState(null);
+            }
+        } else {
+            setTokenState(getToken());
+        }
+        setInitialized(true);
+    }, []);
+
     useEffect(() => {
         setTokenState(getToken());
+        setInitialized(true);
     }, []);
 
     const isAuthenticated = !!token;
@@ -196,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <AuthContext.Provider
             value={{
                 isAuthenticated,
+                initialized,
                 token,
                 user,
                 isSuperAdmin,
@@ -208,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 register,
                 logout,
                 refreshUser,
+                syncTokenFromStorage,
                 complete2FA,
                 cancel2FA,
                 clearError: clearErrorCb,

@@ -32,6 +32,8 @@ export default function LoginPage() {
     const [twoFAError, setTwoFAError] = useState<string | null>(null);
     const [twoFALoading, setTwoFALoading] = useState(false);
     const [sessionExpired, setSessionExpired] = useState(false);
+    const [redirectTarget, setRedirectTarget] = useState("/");
+    const [forceResetTotp, setForceResetTotp] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState("");
     const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
@@ -39,6 +41,10 @@ export default function LoginPage() {
         if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
             const fromQuery = params.get("expired") === "1";
+            const rawRedirect = params.get("redirect");
+            if (rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.startsWith("/login")) {
+                setRedirectTarget(rawRedirect);
+            }
             let fromStorage = false;
             try {
                 fromStorage = sessionStorage.getItem("miniclassisland_session_expired") === "1";
@@ -57,8 +63,14 @@ export default function LoginPage() {
     }, [pending2FA]);
 
     useEffect(() => {
-        if (isAuthenticated) router.push("/");
-    }, [isAuthenticated, router]);
+        if (isAuthenticated) {
+            if (forceResetTotp) {
+                router.push("/security?reset_totp=1");
+            } else {
+                router.push(redirectTarget || "/");
+            }
+        }
+    }, [isAuthenticated, forceResetTotp, redirectTarget, router]);
 
     const loading = contextLoading || localLoading || twoFALoading;
     const error = localError || contextError || twoFAError;
@@ -166,7 +178,14 @@ export default function LoginPage() {
                 recovery_code: recoveryCode,
             });
             if (result && typeof result === "object" && "token" in result) {
-                complete2FA((result as { token: string }).token);
+                const tr = result as { token: string; require_totp_reset?: boolean; remaining_recovery_codes?: number };
+                if (tr.require_totp_reset || (typeof tr.remaining_recovery_codes === "number" && tr.remaining_recovery_codes <= 1)) {
+                    setForceResetTotp(true);
+                    try {
+                        sessionStorage.setItem("miniclassisland_force_reset_totp", "1");
+                    } catch { /* ignore */ }
+                }
+                complete2FA(tr.token);
             }
         } catch (err: unknown) {
             setTwoFAError(err instanceof Error ? err.message : "恢复失败");

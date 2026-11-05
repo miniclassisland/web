@@ -365,8 +365,8 @@ export const userInfo = {
 // ============================================================
 
 export const twoFA = {
-    enable: () =>
-        post<TotpEnableResponse>("/user/2fa/totp/enable"),
+    enable: (reset = false) =>
+        post<TotpEnableResponse>(`/user/2fa/totp/enable${reset ? "?reset=true" : ""}`),
 
     confirm: (data: TotpConfirmRequest) =>
         post<unknown>("/user/2fa/totp/confirm", data),

@@ -11,10 +11,10 @@ import RateLimitBanner from "./RateLimitBanner";
 import SponsorBanner from "./SponsorBanner";
 
 /** 不需要侧栏的页面 */
-const SHELL_EXCLUDED_PATHS = ["/login", "/register"];
+const SHELL_EXCLUDED_PATHS = ["/login", "/register", "/auth"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, initialized } = useAuth();
     const { accountId } = useAccount();
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -26,14 +26,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }, [pathname, accountId]);
 
     React.useEffect(() => {
-        if (!isAuthenticated && !isExcluded) {
+        if (initialized && !isAuthenticated && !isExcluded) {
             if (typeof window !== "undefined") {
-                window.location.href = "/login";
+                const targetPath = window.location.pathname + window.location.search;
+                if (targetPath && targetPath !== "/" && !targetPath.startsWith("/login")) {
+                    window.location.href = `/login?redirect=${encodeURIComponent(targetPath)}`;
+                } else {
+                    window.location.href = "/login";
+                }
             }
         }
-    }, [isAuthenticated, isExcluded, pathname]);
+    }, [initialized, isAuthenticated, isExcluded, pathname]);
 
-    const showFullShell = isAuthenticated && !isExcluded;
+    const showFullShell = initialized && isAuthenticated && !isExcluded;
+
+    if (!initialized && !isExcluded) {
+        return null;
+    }
 
     if (!isAuthenticated && !isExcluded) {
         return null;

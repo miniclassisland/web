@@ -5,13 +5,15 @@ import { twoFA, userInfo, invitations } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
 import { useRouter } from "next/navigation";
-import type { TotpEnableResponse } from "@/lib/types";
+import type { TotpEnableResponse, TotpDisableRequest } from "@/lib/types";
 import {
-    Button, Input, Spinner,
+    Button, Input, Spinner, Select,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
 import QRCode from "qrcode";
 import { ShieldKeyhole24Regular, Person24Regular, Key24Regular, PeopleAdd24Regular } from "@fluentui/react-icons";
+
+type DisableMode = "pwd_totp" | "pwd_recovery" | "totp_recovery" | "two_recovery";
 
 function QRCodeImage({ text }: { text: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -57,9 +59,14 @@ export default function SecurityPage() {
     const [step, setStep] = useState<"idle" | "setup" | "confirm" | "disable">("idle");
     const [setupData, setSetupData] = useState<TotpEnableResponse | null>(null);
     const [confirmCode, setConfirmCode] = useState("");
+    const [disableMode, setDisableMode] = useState<DisableMode>("pwd_totp");
     const [disablePassword, setDisablePassword] = useState("");
+    const [disableTotpCode, setDisableTotpCode] = useState("");
+    const [disableRecoveryCode1, setDisableRecoveryCode1] = useState("");
+    const [disableRecoveryCode2, setDisableRecoveryCode2] = useState("");
+    const [resetPromptTriggered, setResetPromptTriggered] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    const [msg, setMsg] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
 
     // 个人资料与密码修改
     const [displayName, setDisplayName] = useState("");
@@ -97,6 +104,38 @@ export default function SecurityPage() {
             setEmail(user.email || "");
         }
     }, [user]);
+
+    useEffect(() => {
+        if (typeof window === "undefined" || resetPromptTriggered) return;
+        const params = new URLSearchParams(window.location.search);
+        const fromQuery = params.get("reset_totp") === "1";
+        let fromStorage = false;
+        try {
+            fromStorage = sessionStorage.getItem("miniclassisland_force_reset_totp") === "1";
+            if (fromStorage) {
+                sessionStorage.removeItem("miniclassisland_force_reset_totp");
+            }
+        } catch { /* ignore */ }
+        if (fromQuery || fromStorage) {
+            setResetPromptTriggered(true);
+            setMsg({
+                type: "warning",
+                text: "您刚刚使用了倒数第二个（或最后一个）有效恢复码登录账户。为防止账户锁定，系统已为您开启两步验证 (TOTP) 重置向导，请立即重新绑定身份验证器并备份新的恢复码！",
+            });
+            void (async () => {
+                setLoading(true);
+                try {
+                    const res = await twoFA.enable(true);
+                    setSetupData(res);
+                    setStep("setup");
+                } catch (err: unknown) {
+                    setMsg({ type: "error", text: err instanceof Error ? err.message : "开启 TOTP 重置向导失败" });
+                } finally {
+                    setLoading(false);
+                }
+            })();
+        }
+    }, [resetPromptTriggered]);
 
     async function handleSaveProfile(e: React.FormEvent) {
         e.preventDefault();
@@ -140,7 +179,7 @@ export default function SecurityPage() {
         setLoading(true);
         setMsg(null);
         try {
-            const res = await twoFA.enable();
+            const res = await twoFA.enable(Boolean(user?.totp_enabled));
             setSetupData(res);
             setStep("setup");
         } catch (err: unknown) {
@@ -165,14 +204,50 @@ export default function SecurityPage() {
         setLoading(false);
     }
 
+    function canSubmitDisable(): boolean {
+        if (disableMode === "pwd_totp") {
+            return Boolean(disablePassword && disableTotpCode.trim().length >= 6);
+        }
+        if (disableMode === "pwd_recovery") {
+            return Boolean(disablePassword && disableRecoveryCode1.trim());
+        }
+        if (disableMode === "totp_recovery") {
+            return Boolean(disableTotpCode.trim().length >= 6 && disableRecoveryCode1.trim());
+        }
+        if (disableMode === "two_recovery") {
+            const c1 = disableRecoveryCode1.trim().toUpperCase();
+            const c2 = disableRecoveryCode2.trim().toUpperCase();
+            return Boolean(c1 && c2 && c1 !== c2);
+        }
+        return false;
+    }
+
     async function handleDisable() {
         setLoading(true);
         setMsg(null);
         try {
-            await twoFA.disable({ password: disablePassword });
+            const payload: TotpDisableRequest = {};
+            if (disableMode === "pwd_totp") {
+                payload.password = disablePassword;
+                payload.totp_code = disableTotpCode.trim();
+            } else if (disableMode === "pwd_recovery") {
+                payload.password = disablePassword;
+                payload.recovery_code = disableRecoveryCode1.trim();
+            } else if (disableMode === "totp_recovery") {
+                payload.totp_code = disableTotpCode.trim();
+                payload.recovery_code = disableRecoveryCode1.trim();
+            } else if (disableMode === "two_recovery") {
+                payload.recovery_code = disableRecoveryCode1.trim();
+                payload.second_recovery_code = disableRecoveryCode2.trim();
+                payload.recovery_codes = [disableRecoveryCode1.trim(), disableRecoveryCode2.trim()];
+            }
+            await twoFA.disable(payload);
             setMsg({ type: "success", text: "两步验证已禁用" });
             setStep("idle");
             setDisablePassword("");
+            setDisableTotpCode("");
+            setDisableRecoveryCode1("");
+            setDisableRecoveryCode2("");
             await refreshUser();
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "禁用失败" });
@@ -308,7 +383,7 @@ export default function SecurityPage() {
 
             {/* 2FA 卡片 */}
             <div className="card">
-                <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
                     <div className="card-title flex items-center gap-8" style={{ margin: 0 }}>
                         <ShieldKeyhole24Regular />
                         两步验证 (TOTP)
@@ -405,24 +480,81 @@ export default function SecurityPage() {
 
                 {step === "disable" && (
                     <div>
-                        <p style={{ marginBottom: 16, color: "var(--text-secondary)" }}>
-                            禁用两步验证需要验证当前账户密码。
+                        <p style={{ marginBottom: 12, color: "var(--text-secondary)", fontSize: 13 }}>
+                            禁用两步验证需要完成双重凭证校验，请选择以下任一组合：
                         </p>
-                        <div className="flex items-center gap-12">
-                            <Input
-                                type="password"
-                                value={disablePassword}
-                                onChange={(_, d) => setDisablePassword(d.value)}
-                                placeholder="请输入当前密码"
-                                style={{ width: 300 }}
-                            />
+                        <div className="form-group" style={{ maxWidth: 420 }}>
+                            <label className="form-label">验证方式</label>
+                            <Select
+                                value={disableMode}
+                                onChange={(_, d) => setDisableMode(d.value as DisableMode)}
+                            >
+                                <option value="pwd_totp">账户密码 + 1 个 TOTP 动态验证码</option>
+                                <option value="pwd_recovery">账户密码 + 1 个有效恢复码</option>
+                                <option value="totp_recovery">1 个 TOTP 动态验证码 + 1 个有效恢复码</option>
+                                <option value="two_recovery">2 个不同的有效恢复码</option>
+                            </Select>
+                        </div>
+
+                        {(disableMode === "pwd_totp" || disableMode === "pwd_recovery") && (
+                            <div className="form-group" style={{ maxWidth: 420 }}>
+                                <label className="form-label">当前账户密码</label>
+                                <Input
+                                    type="password"
+                                    value={disablePassword}
+                                    onChange={(_, d) => setDisablePassword(d.value)}
+                                    placeholder="请输入当前登录密码"
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        )}
+
+                        {(disableMode === "pwd_totp" || disableMode === "totp_recovery") && (
+                            <div className="form-group" style={{ maxWidth: 420 }}>
+                                <label className="form-label">TOTP 动态验证码 (6 位)</label>
+                                <Input
+                                    value={disableTotpCode}
+                                    onChange={(_, d) => setDisableTotpCode(d.value)}
+                                    placeholder="请输入 6 位动态验证码"
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        )}
+
+                        {(disableMode === "pwd_recovery" || disableMode === "totp_recovery" || disableMode === "two_recovery") && (
+                            <div className="form-group" style={{ maxWidth: 420 }}>
+                                <label className="form-label">
+                                    {disableMode === "two_recovery" ? "第 1 个有效恢复码" : "有效恢复码"}
+                                </label>
+                                <Input
+                                    value={disableRecoveryCode1}
+                                    onChange={(_, d) => setDisableRecoveryCode1(d.value)}
+                                    placeholder="请输入未使用的恢复码"
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        )}
+
+                        {disableMode === "two_recovery" && (
+                            <div className="form-group" style={{ maxWidth: 420 }}>
+                                <label className="form-label">第 2 个有效恢复码（需与第 1 个不同）</label>
+                                <Input
+                                    value={disableRecoveryCode2}
+                                    onChange={(_, d) => setDisableRecoveryCode2(d.value)}
+                                    placeholder="请输入另一个未使用的恢复码"
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-12" style={{ marginTop: 12 }}>
                             <Button
                                 appearance="primary"
                                 onClick={handleDisable}
-                                disabled={loading || !disablePassword}
+                                disabled={loading || !canSubmitDisable()}
                                 style={{ background: "var(--danger-color)" }}
                             >
-                                {loading ? <Spinner size="tiny" /> : "禁用 2FA"}
+                                {loading ? <Spinner size="tiny" /> : "确认禁用 2FA"}
                             </Button>
                             <Button appearance="secondary" onClick={() => setStep("idle")}>
                                 取消

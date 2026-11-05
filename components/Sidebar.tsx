@@ -190,7 +190,6 @@ export default function Sidebar({
                             <button
                                 type="button"
                                 className="sidebar-link"
-                                style={{ width: "100%", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
                                 onClick={async () => {
                                     const adminUrl = getAdminSiteUrl();
                                     if (token) {
