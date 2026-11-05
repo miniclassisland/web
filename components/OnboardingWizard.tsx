@@ -97,6 +97,7 @@ export default function OnboardingWizard({
     const [activeAccountId, setActiveAccountId] = useState<string>(
         targetAccountId || currentContextAccountId || ""
     );
+    const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     React.useEffect(() => {
         if (open) {
@@ -147,8 +148,6 @@ export default function OnboardingWizard({
         ChangeLessonsAuthorizeLevel: 0,
     });
     const [savingCreds, setSavingCreds] = useState(false);
-
-    const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     const effectiveAccountId = activeAccountId || targetAccountId || currentContextAccountId || (accounts[0]?.id ?? "");
 
