@@ -51,7 +51,7 @@ function QRCodeImage({ text }: { text: string }) {
 }
 
 export default function SecurityPage() {
-    const { user, refreshUser } = useAuth();
+    const { user, isSuperAdmin, refreshUser } = useAuth();
     const { refreshAccounts, switchAccount } = useAccount();
     const router = useRouter();
     const [step, setStep] = useState<"idle" | "setup" | "confirm" | "disable">("idle");
@@ -109,7 +109,7 @@ export default function SecurityPage() {
             if (username.trim() && username !== user?.username) {
                 await userInfo.changeUsername({ username: username.trim() });
             }
-            if (email.trim() && email !== user?.email) {
+            if (isSuperAdmin && email.trim() && email !== user?.email) {
                 await userInfo.changeEmail({ email: email.trim() });
             }
             await refreshUser();
@@ -224,9 +224,18 @@ export default function SecurityPage() {
                             <Input
                                 type="email"
                                 value={email}
-                                onChange={(_, d) => setEmail(d.value)}
+                                readOnly={!isSuperAdmin}
+                                disabled={!isSuperAdmin}
+                                onChange={(_, d) => {
+                                    if (isSuperAdmin) setEmail(d.value);
+                                }}
                                 style={{ width: "100%" }}
                             />
+                            {!isSuperAdmin && (
+                                <div className="form-hint">
+                                    绑定邮箱不支持自行修改，如需变更请联系超级管理员
+                                </div>
+                            )}
                         </div>
                         <Button appearance="primary" type="submit" disabled={loading}>
                             保存资料修改

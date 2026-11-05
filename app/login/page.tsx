@@ -10,6 +10,7 @@ import {
 } from "@fluentui/react-components";
 import Link from "next/link";
 import SponsorBanner from "@/components/SponsorBanner";
+import TurnstileWidget from "@/components/TurnstileWidget";
 
 type AuthStep = "email" | "login" | "register" | "2fa";
 
@@ -31,6 +32,8 @@ export default function LoginPage() {
     const [twoFAError, setTwoFAError] = useState<string | null>(null);
     const [twoFALoading, setTwoFALoading] = useState(false);
     const [sessionExpired, setSessionExpired] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState("");
+    const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -81,12 +84,10 @@ export default function LoginPage() {
         setLocalLoading(true);
         try {
             const res = await authApi.checkMailAvailability(email) as { available?: boolean };
+            setTurnstileToken("");
+            setTurnstileResetKey((k) => k + 1);
             if (res && res.available === false) {
                 setStep("login");
-                if (autoFilledPassword) {
-                    // 如果存在自动填充的密码，直接在当前步骤发起登录请求
-                    await login({ email, password: autoFilledPassword });
-                }
             } else {
                 setStep("register");
             }
@@ -103,14 +104,35 @@ export default function LoginPage() {
         e.preventDefault();
         clearError();
         setLocalError(null);
-        await login({ email, password });
+        if (!turnstileToken) {
+            setLocalError("请先完成 Turnstile 人机验证");
+            return;
+        }
+        await login({
+            email,
+            password,
+            cf_turnstile_response: turnstileToken,
+        });
+        setTurnstileToken("");
+        setTurnstileResetKey((k) => k + 1);
     }
 
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
         clearError();
         setLocalError(null);
-        await register({ email, password, display_name: displayName || undefined });
+        if (!turnstileToken) {
+            setLocalError("请先完成 Turnstile 人机验证");
+            return;
+        }
+        await register({
+            email,
+            password,
+            display_name: displayName || undefined,
+            cf_turnstile_response: turnstileToken,
+        });
+        setTurnstileToken("");
+        setTurnstileResetKey((k) => k + 1);
     }
 
     async function handle2FAVerify(e: React.FormEvent) {
@@ -158,6 +180,8 @@ export default function LoginPage() {
         clearError();
         setLocalError(null);
         setTwoFAError(null);
+        setTurnstileToken("");
+        setTurnstileResetKey((k) => k + 1);
         if (pending2FA) cancel2FA();
     };
 
@@ -270,10 +294,15 @@ export default function LoginPage() {
                                         autoFocus
                                     />
                                 </div>
+                                <TurnstileWidget
+                                    action="login"
+                                    resetKey={turnstileResetKey}
+                                    onVerify={(tok) => setTurnstileToken(tok)}
+                                />
                                 <Button
                                     appearance="primary"
                                     type="submit"
-                                    disabled={loading || !password}
+                                    disabled={loading || !password || !turnstileToken}
                                     style={{ width: "100%", marginTop: 8 }}
                                 >
                                     {loading ? <Spinner size="tiny" /> : "登录"}
@@ -325,10 +354,15 @@ export default function LoginPage() {
                                     />
                                     <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>密码长度至少为 12 个字符，用户名将自动生成</div>
                                 </div>
+                                <TurnstileWidget
+                                    action="register"
+                                    resetKey={turnstileResetKey}
+                                    onVerify={(tok) => setTurnstileToken(tok)}
+                                />
                                 <Button
                                     appearance="primary"
                                     type="submit"
-                                    disabled={loading || password.length < 12}
+                                    disabled={loading || password.length < 12 || !turnstileToken}
                                     style={{ width: "100%", marginTop: 8 }}
                                 >
                                     {loading ? <Spinner size="tiny" /> : "完成注册"}

@@ -14,6 +14,7 @@ import {
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import FileHistoryButton from "@/components/FileHistoryButton";
 
 type SubjectsData = Record<string, Subject>;
 
@@ -241,7 +242,32 @@ export default function SubjectsPage() {
                                 <div className="card-title" style={{ margin: 0 }}>
                                     编辑科目文件: {selectedFile} ({Object.keys(subjects).length} 门科目)
                                 </div>
-                                <div className="flex gap-8">
+                                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                                    <FileHistoryButton
+                                        accountId={accountId}
+                                        resourceType="Subjects"
+                                        fileName={selectedFile}
+                                        onLoadVersion={(content, version, isCurrent) => {
+                                            let parsed: SubjectsData = {};
+                                            if (content && typeof content === "object") {
+                                                const obj = content as Record<string, unknown>;
+                                                if (obj.Subjects && typeof obj.Subjects === "object") {
+                                                    parsed = obj.Subjects as SubjectsData;
+                                                } else {
+                                                    parsed = obj as SubjectsData;
+                                                }
+                                            }
+                                            setSubjects(parsed);
+                                            setJsonText(JSON.stringify(parsed, null, 2));
+                                            setMsg({
+                                                type: "success",
+                                                text: isCurrent
+                                                    ? `已加载当前最新版本 v${version}`
+                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
+                                            });
+                                        }}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <DownloadPresetPopoverButton
                                         buttonText="导出 JSON"
                                         appearance="secondary"

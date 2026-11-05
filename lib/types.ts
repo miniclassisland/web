@@ -10,11 +10,13 @@ export interface UserRegisterRequest {
     password: string;
     username?: string;
     display_name?: string;
+    cf_turnstile_response?: string;
 }
 
 export interface UserLoginRequest {
     email: string;
     password: string;
+    cf_turnstile_response?: string;
 }
 
 export interface TokenResponse {
@@ -52,6 +54,7 @@ export interface UserOut {
 export interface UserUpdateRequest {
     display_name?: string | null;
     username?: string | null;
+    email?: string | null;
     role_code?: string | null;
     is_active?: boolean | null;
     can_create_account?: boolean | null;
@@ -911,3 +914,20 @@ export type LoginResult = TokenResponse | TwoFARequired;
 export const WEEKDAY_LABELS = [
     "周日", "周一", "周二", "周三", "周四", "周五", "周六"
 ];
+
+export interface ResourceHistoryItem {
+    version: number;
+    name: string;
+    resource_type: string;
+    updated_at: string;
+    size_bytes: number;
+    is_current: boolean;
+}
+
+export interface ResourceHistoryVersionOut {
+    version: number;
+    name: string;
+    resource_type: string;
+    updated_at: string;
+    content: unknown;
+}

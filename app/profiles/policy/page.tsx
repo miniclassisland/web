@@ -13,6 +13,7 @@ import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular, Code24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import FileHistoryButton from "@/components/FileHistoryButton";
 
 const POLICY_FIELDS: { key: keyof ManagementPolicy; label: string; hint: string }[] = [
     { key: "DisableProfileClassPlanEditing", label: "禁止编辑课表 (DisableProfileClassPlanEditing)", hint: "阻止客户端本地用户修改课表与临时换课" },
@@ -181,7 +182,24 @@ export default function PolicyPage() {
                         <div className="card">
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>编辑策略: {selectedFile}</div>
-                                <div className="flex gap-8">
+                                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                                    <FileHistoryButton
+                                        accountId={accountId}
+                                        resourceType="Policy"
+                                        fileName={selectedFile}
+                                        onLoadVersion={(content, version, isCurrent) => {
+                                            const parsed = (content as ManagementPolicy) || {};
+                                            setPolicy(parsed);
+                                            setJsonText(JSON.stringify(parsed, null, 2));
+                                            setMsg({
+                                                type: "success",
+                                                text: isCurrent
+                                                    ? `已加载当前最新版本 v${version}`
+                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
+                                            });
+                                        }}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <DownloadPresetPopoverButton
                                         buttonText="导出 JSON"
                                         appearance="secondary"

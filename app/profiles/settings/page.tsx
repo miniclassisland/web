@@ -14,6 +14,7 @@ import {
     Code24Regular, ArrowUpload24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import FileHistoryButton from "@/components/FileHistoryButton";
 
 type SettingsTabKey =
     | "general"
@@ -327,6 +328,23 @@ export default function SettingsPage() {
                                     >
                                         导入本地 Settings.json
                                     </Button>
+                                    <FileHistoryButton
+                                        accountId={accountId}
+                                        resourceType="DefaultSettings"
+                                        fileName={selectedFile}
+                                        onLoadVersion={(content, version, isCurrent) => {
+                                            const parsed = (content as AppDefaultSettings) || {};
+                                            setSettings(parsed);
+                                            setJsonText(JSON.stringify(parsed, null, 2));
+                                            setMsg({
+                                                type: "success",
+                                                text: isCurrent
+                                                    ? `已加载当前最新版本 v${version}`
+                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
+                                            });
+                                        }}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <DownloadPresetPopoverButton
                                         buttonText="导出 JSON"
                                         appearance="secondary"

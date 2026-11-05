@@ -15,6 +15,7 @@ import {
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular, ArrowSort24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import FileHistoryButton from "@/components/FileHistoryButton";
 
 type TimeLayoutsData = Record<string, TimeLayout>;
 type SubjectsData = Record<string, Subject>;
@@ -374,7 +375,33 @@ export default function TimeLayoutPage() {
                         <div className="card">
                             <div className="flex items-center justify-between mb-16">
                                 <div className="card-title" style={{ margin: 0 }}>JSON 源码编辑: {selectedFile}</div>
-                                <div className="flex gap-8">
+                                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                                    <FileHistoryButton
+                                        accountId={accountId}
+                                        resourceType="TimeLayout"
+                                        fileName={selectedFile}
+                                        onLoadVersion={(content, version, isCurrent) => {
+                                            let parsed: TimeLayoutsData = {};
+                                            if (content && typeof content === "object") {
+                                                const obj = content as Record<string, unknown>;
+                                                if (obj.TimeLayouts && typeof obj.TimeLayouts === "object") {
+                                                    parsed = obj.TimeLayouts as TimeLayoutsData;
+                                                } else {
+                                                    parsed = obj as TimeLayoutsData;
+                                                }
+                                            }
+                                            setLayouts(parsed);
+                                            setJsonText(JSON.stringify(parsed, null, 2));
+                                            setSelectedLayoutId(Object.keys(parsed)[0] || null);
+                                            setMsg({
+                                                type: "success",
+                                                text: isCurrent
+                                                    ? `已加载当前最新版本 v${version}`
+                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
+                                            });
+                                        }}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <DownloadPresetPopoverButton
                                         buttonText="导出 JSON"
                                         appearance="secondary"
@@ -451,6 +478,32 @@ export default function TimeLayoutPage() {
                                     >
                                         按时间排序
                                     </Button>
+                                    <FileHistoryButton
+                                        accountId={accountId}
+                                        resourceType="TimeLayout"
+                                        fileName={selectedFile}
+                                        onLoadVersion={(content, version, isCurrent) => {
+                                            let parsed: TimeLayoutsData = {};
+                                            if (content && typeof content === "object") {
+                                                const obj = content as Record<string, unknown>;
+                                                if (obj.TimeLayouts && typeof obj.TimeLayouts === "object") {
+                                                    parsed = obj.TimeLayouts as TimeLayoutsData;
+                                                } else {
+                                                    parsed = obj as TimeLayoutsData;
+                                                }
+                                            }
+                                            setLayouts(parsed);
+                                            setJsonText(JSON.stringify(parsed, null, 2));
+                                            setSelectedLayoutId(Object.keys(parsed)[0] || null);
+                                            setMsg({
+                                                type: "success",
+                                                text: isCurrent
+                                                    ? `已加载当前最新版本 v${version}`
+                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
+                                            });
+                                        }}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <DownloadPresetPopoverButton
                                         buttonText="导出 JSON"
                                         appearance="secondary"

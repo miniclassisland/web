@@ -20,6 +20,7 @@ import {
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
+import FileHistoryButton from "@/components/FileHistoryButton";
 
 /** 将任意后端读取的组件配置标准化为上游 ComponentProfile ({ Lines: [...] }) */
 function normalizeComponentProfile(raw: unknown): ComponentProfile {
@@ -409,7 +410,26 @@ export default function ComponentsPage() {
                                 <div className="card-title" style={{ margin: 0 }}>
                                     编辑组件档案: {selectedFile}
                                 </div>
-                                <div className="flex gap-8">
+                                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                                    <FileHistoryButton
+                                        accountId={accountId}
+                                        resourceType="Components"
+                                        fileName={selectedFile}
+                                        onLoadVersion={(content, version, isCurrent) => {
+                                            const normalized = normalizeComponentProfile(content);
+                                            setProfile(normalized);
+                                            setJsonText(JSON.stringify(normalized, null, 2));
+                                            setSelectedLineIdx(0);
+                                            setSelectedCompIdx((normalized.Lines[0]?.Children?.length || 0) > 0 ? 0 : -1);
+                                            setMsg({
+                                                type: "success",
+                                                text: isCurrent
+                                                    ? `已加载当前最新版本 v${version}`
+                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
+                                            });
+                                        }}
+                                        onError={(text) => setMsg({ type: "error", text })}
+                                    />
                                     <DownloadPresetPopoverButton
                                         buttonText="导出 JSON"
                                         appearance="secondary"
