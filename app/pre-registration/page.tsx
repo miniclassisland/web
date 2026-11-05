@@ -11,10 +11,11 @@ import type {
 } from "@/lib/types";
 import { RESOURCE_TYPES, RESOURCE_TYPE_LABELS } from "@/lib/types";
 import {
-    Button, Input, Spinner, Select, Switch, Textarea,
+    Button, Input, Spinner, Switch, Textarea,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular,
     Edit24Regular, Settings24Regular, DocumentAdd24Regular,

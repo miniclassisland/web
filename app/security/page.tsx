@@ -7,9 +7,10 @@ import { useAccount } from "@/lib/account-context";
 import { useRouter } from "next/navigation";
 import type { TotpEnableResponse, TotpDisableRequest } from "@/lib/types";
 import {
-    Button, Input, Spinner, Select,
+    Button, Input, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import QRCode from "qrcode";
 import { ShieldKeyhole24Regular, Person24Regular, Key24Regular, PeopleAdd24Regular } from "@fluentui/react-icons";
 

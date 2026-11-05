@@ -5,10 +5,11 @@ import { data, accounts } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
 import type { AppDefaultSettings } from "@/lib/types";
 import {
-    Button, Input, Select, Switch, Spinner,
+    Button, Input, Switch, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     Code24Regular, ArrowUpload24Regular,

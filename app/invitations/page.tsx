@@ -6,10 +6,11 @@ import { useAccount } from "@/lib/account-context";
 import type { InvitationOut, InvitationCreate } from "@/lib/types";
 import { ACCOUNT_ROLE_LABELS } from "@/lib/types";
 import {
-    Button, Spinner, Input, Select,
+    Button, Spinner, Input,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import { Add24Regular, Dismiss24Regular, Copy24Regular, PeopleAdd24Regular } from "@fluentui/react-icons";
 
 export default function InvitationsPage() {

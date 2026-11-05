@@ -15,10 +15,11 @@ import {
     RESOURCE_TYPE_LABELS,
 } from "@/lib/types";
 import {
-    Button, Spinner, Select,
+    Button, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Checkmark24Regular, Dismiss24Regular, ArrowSync24Regular,
 } from "@fluentui/react-icons";

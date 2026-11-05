@@ -61,6 +61,10 @@
   --danger-color: #d13438;
   --success-color: #107c10;
   --warning-color: #ffb900;
+  --scrollbar-thumb: rgba(128, 128, 128, 0.34);
+  --scrollbar-thumb-hover: rgba(128, 128, 128, 0.56);
+  --scrollbar-thumb-active: rgba(128, 128, 128, 0.72);
+  --scrollbar-track: transparent;
 }
 
 /* 自动深色（未显式锁定 light 时跟随系统 prefers-color-scheme: dark） */
@@ -82,6 +86,9 @@
     --danger-color: #f1707b;
     --success-color: #54b054;
     --warning-color: #fce100;
+    --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.38);
+    --scrollbar-thumb-active: rgba(255, 255, 255, 0.52);
   }
 }
 
@@ -103,15 +110,48 @@
   --danger-color: #f1707b;
   --success-color: #54b054;
   --warning-color: #fce100;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.38);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.52);
 }
 
-/* 重置 */
+/* 重置与全局美化滚动条 */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 html,
@@ -465,6 +505,35 @@ body {
 
 .fui-Button {
   white-space: nowrap;
+}
+
+/* ===== Fluent UI 自定义下拉选择器 (替代浏览器原生 select) ===== */
+.fui-Dropdown {
+  min-width: 110px;
+}
+
+.fui-Dropdown__button {
+  width: 100%;
+  justify-content: space-between;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fui-Listbox {
+  max-height: 280px !important;
+  overflow-y: auto !important;
+  border-radius: 8px !important;
+  padding: 4px !important;
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14) !important;
+}
+
+.fui-Option {
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
 }
 
 .badge-success {
@@ -1965,10 +2034,31 @@ body {
 
 [data-theme="dark"] .fui-Input,
 [data-theme="dark"] .fui-Textarea,
+[data-theme="dark"] .fui-Dropdown,
 [data-theme="dark"] .fui-Select__select {
   background-color: #161616 !important;
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .fui-Dropdown__button {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .fui-Listbox {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme="dark"] .fui-Option {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .fui-Option:hover,
+[data-theme="dark"] .fui-Option[aria-selected="true"] {
+  background-color: #282828 !important;
 }
 
 [data-theme="dark"] .fui-Input__input,
@@ -2178,10 +2268,27 @@ body {
   }
   :root:not([data-theme="light"]) .fui-Input,
   :root:not([data-theme="light"]) .fui-Textarea,
+  :root:not([data-theme="light"]) .fui-Dropdown,
   :root:not([data-theme="light"]) .fui-Select__select {
     background-color: #161616 !important;
     color: var(--text-primary) !important;
     border-color: var(--border-color) !important;
+  }
+  :root:not([data-theme="light"]) .fui-Dropdown__button {
+    color: var(--text-primary) !important;
+  }
+  :root:not([data-theme="light"]) .fui-Listbox {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55) !important;
+  }
+  :root:not([data-theme="light"]) .fui-Option {
+    color: var(--text-primary) !important;
+  }
+  :root:not([data-theme="light"]) .fui-Option:hover,
+  :root:not([data-theme="light"]) .fui-Option[aria-selected="true"] {
+    background-color: #282828 !important;
   }
   :root:not([data-theme="light"]) .fui-Input__input,
   :root:not([data-theme="light"]) .fui-Textarea__textarea,

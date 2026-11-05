@@ -11,10 +11,11 @@ import type {
 } from "@/lib/types";
 import { HORIZONTAL_ALIGNMENT_LABELS, BUILTIN_COMPONENTS } from "@/lib/types";
 import {
-    Button, Input, Select, Switch, Spinner, Textarea,
+    Button, Input, Switch, Spinner, Textarea,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular,

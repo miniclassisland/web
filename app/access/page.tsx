@@ -6,9 +6,10 @@ import { useAccount } from "@/lib/account-context";
 import type { AccessMember } from "@/lib/types";
 import { ACCOUNT_ROLE_LABELS } from "@/lib/types";
 import {
-    Button, Input, Spinner, Select,
+    Button, Input, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import { Search24Regular, Delete24Regular } from "@fluentui/react-icons";
 
 export default function AccessPage() {

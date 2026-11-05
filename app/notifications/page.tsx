@@ -5,9 +5,10 @@ import { clients } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
 import type { NotificationPayload, ClientDeviceOut } from "@/lib/types";
 import {
-    Button, Input, Spinner, Select, Switch, Textarea,
+    Button, Input, Spinner, Switch, Textarea,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import { Send24Regular } from "@fluentui/react-icons";
 
 export default function NotificationsPage() {

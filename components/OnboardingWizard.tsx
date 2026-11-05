@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import {
     Button,
     Input,
-    Select,
     Spinner,
     Dialog,
     DialogSurface,
@@ -19,6 +18,7 @@ import {
     MessageBarBody,
     Badge,
 } from "@fluentui/react-components";
+import { Select } from "./CustomSelect";
 import {
     PersonAccounts24Regular,
     ArrowUpload24Regular,

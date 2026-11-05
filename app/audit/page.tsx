@@ -6,10 +6,11 @@ import { useAccount } from "@/lib/account-context";
 import type { AuditLogItem, ClientDeviceOut } from "@/lib/types";
 import { AUDIT_EVENT_LABELS } from "@/lib/types";
 import {
-    Button, Spinner, Select,
+    Button, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     ArrowSync24Regular, Delete24Regular, DocumentSearch24Regular,
 } from "@fluentui/react-icons";

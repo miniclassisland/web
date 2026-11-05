@@ -6,10 +6,11 @@ import { useAccount } from "@/lib/account-context";
 import type { ManagementCredentialConfig, AuthorizeLevel } from "@/lib/types";
 import { AUTHORIZE_LEVEL_LABELS } from "@/lib/types";
 import {
-    Button, Input, Select, Spinner,
+    Button, Input, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     Key24Regular, Code24Regular,

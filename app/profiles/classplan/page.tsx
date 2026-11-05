@@ -13,10 +13,11 @@ import type {
 } from "@/lib/types";
 import { TIME_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/types";
 import {
-    Button, Input, Select, Switch, Spinner,
+    Button, Input, Switch, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular, Code24Regular,
 } from "@fluentui/react-icons";

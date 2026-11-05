@@ -20,9 +20,10 @@ import {
 import {
     Button, Input, Spinner, Dialog, DialogSurface, DialogBody,
     DialogTitle, DialogContent, DialogActions,
-    Switch, Textarea, Select,
+    Switch, Textarea,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     ArrowSync24Regular, Send24Regular,
     ArrowClockwise24Regular, Settings24Regular,

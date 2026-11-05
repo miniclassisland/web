@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAccount } from "@/lib/account-context";
 import { useAuth } from "@/lib/auth-context";
 import { token as tokenApi, getAdminSiteUrl } from "@/lib/api";
-import { Select } from "@fluentui/react-components";
+import { Select } from "./CustomSelect";
 import {
     Home24Regular, PlugConnected24Regular, Link24Regular,
     Settings24Regular, Book24Regular, Clock24Regular,

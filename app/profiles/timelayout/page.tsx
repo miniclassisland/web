@@ -6,10 +6,11 @@ import { useAccount } from "@/lib/account-context";
 import type { TimeLayout, TimeLayoutItem, TimeType, Subject } from "@/lib/types";
 import { TIME_TYPE_LABELS } from "@/lib/types";
 import {
-    Button, Input, Select, Switch, Spinner,
+    Button, Input, Switch, Spinner,
     MessageBar, MessageBarBody,
     Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular, ArrowSort24Regular,

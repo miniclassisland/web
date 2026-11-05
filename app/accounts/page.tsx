@@ -6,9 +6,10 @@ import { useAccount } from "@/lib/account-context";
 import type { AccountOut, SlugUpdate, QuotaOut, RegistrationMode } from "@/lib/types";
 import { REGISTRATION_MODE_LABELS, QUOTA_META } from "@/lib/types";
 import {
-    Button, Input, Spinner, Select,
+    Button, Input, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { Select } from "@/components/CustomSelect";
 import {
     Edit24Regular, Delete24Regular, ArrowClockwise24Regular, Copy24Regular, ArrowUpload24Regular,
 } from "@fluentui/react-icons";
