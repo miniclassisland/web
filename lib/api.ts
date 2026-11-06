@@ -513,6 +513,10 @@ export const site = {
     getAnnouncement: () => get<SiteAnnouncement>("/site/announcement"),
 };
 
+export const system = {
+    getVersion: () => get<{ version: string }>("/version"),
+};
+
 // ============================================================
 // Support Tickets (Management API: /ticket/*)
 // ============================================================

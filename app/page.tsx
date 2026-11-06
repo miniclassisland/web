@@ -26,6 +26,7 @@ import type { AccountOut, UserOut } from "@/lib/types";
 import { REGISTRATION_MODE_LABELS, ROLE_LABELS } from "@/lib/types";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import CommunityJoinLink from "@/components/CommunityJoinLink";
+import VersionLine from "@/components/VersionLine";
 
 export default function UserCenterHomePage() {
     const { isAuthenticated, isSuperAdmin } = useAuth();
@@ -405,6 +406,9 @@ export default function UserCenterHomePage() {
             >
                 <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
                 <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
+                <div style={{ marginTop: 4 }}>
+                    <VersionLine />
+                </div>
                 <div style={{ marginTop: 6 }}>
                     <CommunityJoinLink />
                 </div>
