@@ -336,7 +336,7 @@ export default function UserCenterHomePage() {
                                         </td>
                                         <td>
                                             <Badge appearance="outline" color="informative">
-                                                {REGISTRATION_MODE_LABELS[account.registration_mode || "open"]}
+                                                {REGISTRATION_MODE_LABELS[account.registration_mode || "pairing"]}
                                             </Badge>
                                         </td>
                                         <td>

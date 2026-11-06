@@ -28,7 +28,7 @@ import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButto
 export default function PairingPage() {
     const { accountId, currentAccount } = useAccount();
     const [codes, setCodes] = useState<PairingCodeOut[]>([]);
-    const [regMode, setRegMode] = useState<RegistrationMode>("open");
+    const [regMode, setRegMode] = useState<RegistrationMode>("pairing");
     const [loading, setLoading] = useState(true);
     const [savingMode, setSavingMode] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);

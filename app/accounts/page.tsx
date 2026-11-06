@@ -344,7 +344,7 @@ export default function AccountsPage() {
                             <div className="detail-value">
                                 <Select
                                     size="small"
-                                    value={accountInfo.registration_mode || "open"}
+                                    value={accountInfo.registration_mode || "pairing"}
                                     onChange={(_, d) => handleRegModeChange(d.value as RegistrationMode)}
                                     disabled={saving}
                                     style={{ maxWidth: 320 }}
