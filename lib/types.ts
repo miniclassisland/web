@@ -331,11 +331,17 @@ export const SETTINGS_ALLOWED_KEYS = [
     "require_approval",
     "max_accounts_per_user",
     "default_role",
+    "announcement_title",
     "motd",
 ] as const;
 
 export interface SettingsUpdate {
     items: Record<string, string>;
+}
+
+export interface SiteAnnouncement {
+    title: string;
+    subtitle: string;
 }
 
 // ============================================================

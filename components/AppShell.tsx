@@ -9,6 +9,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import RateLimitBanner from "./RateLimitBanner";
 import SponsorBanner from "./SponsorBanner";
+import SiteAnnouncementBanner from "./SiteAnnouncementBanner";
 
 /** 不需要侧栏的页面 */
 const SHELL_EXCLUDED_PATHS = ["/login", "/register", "/auth"];
@@ -68,6 +69,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <div className="main-area">
                         <TopBar onToggleMobileMenu={() => setMobileMenuOpen((v) => !v)} />
                         <SponsorBanner variant="top" />
+                        <SiteAnnouncementBanner />
                         <main key={accountId || "user-center"} className="content-area fade-in">{children}</main>
                     </div>
                 </div>

@@ -12,7 +12,7 @@ import type {
     PairingCodeOut, PairingStatusResponse, RegistrationMode,
     PreRegOut, PreRegCreate, AccessMember, AccessRoleUpdate,
     InvitationOut, InvitationCreate,
-    NotificationPayload, BatchRequest, ClientBatchRequest,
+    NotificationPayload, BatchRequest, ClientBatchRequest, SiteAnnouncement,
     StatusResponse, MessageResponse, LoginResult,
     ResourceType, ClientDeviceOut, ClientProfileConfig,
     ConfigUploadItem, AuditLogItem, ManagementSettings,
@@ -347,6 +347,10 @@ export const community = {
         post<{ code: string }>("/community/code", {
             cf_turnstile_response: cfTurnstileResponse,
         }),
+};
+
+export const site = {
+    getAnnouncement: () => get<SiteAnnouncement>("/site/announcement"),
 };
 
 // ============================================================
