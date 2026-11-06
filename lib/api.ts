@@ -27,6 +27,20 @@ import type {
 
 const STORAGE_KEY_TOKEN = "miniclassisland_auth_token";
 const STORAGE_KEY_ACCOUNT = "miniclassisland_current_account_id";
+const STORAGE_KEY_TOKEN_ISSUED_AT = "miniclassisland_token_issued_at";
+
+/** Refresh the 1-hour session token after 50 minutes, keeping a 10-minute margin. */
+const TOKEN_REFRESH_AFTER_MS = 50 * 60 * 1000;
+const TOKEN_REFRESH_RETRY_MS = 60 * 1000;
+const TOKEN_REFRESH_TIMER_MS = 60 * 1000;
+const TOKEN_REFRESH_EXEMPT_PATHS = new Set([
+    "/token/refresh",
+    "/token/deactivate",
+    "/token/redeem",
+    "/user/auth",
+    "/user/apply",
+]);
+const TOKEN_REFRESH_EXEMPT_PREFIXES = ["/user/2fa/", "/user/availability/"];
 
 /** Management API 地址（认证、账户内操作） */
 export function getServerUrl(): string {
@@ -68,12 +82,35 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string): void {
+    if (typeof window === "undefined") return;
+    const previous = localStorage.getItem(STORAGE_KEY_TOKEN);
     localStorage.setItem(STORAGE_KEY_TOKEN, token);
+    // Only mark issuance when the token actually changes. Restoring the same
+    // token from storage or SSO must not prolong its perceived lifetime.
+    if (previous !== token) {
+        localStorage.setItem(STORAGE_KEY_TOKEN_ISSUED_AT, String(Date.now()));
+    }
 }
 
 export function clearToken(): void {
+    if (typeof window === "undefined") return;
     localStorage.removeItem(STORAGE_KEY_TOKEN);
     localStorage.removeItem(STORAGE_KEY_ACCOUNT);
+    localStorage.removeItem(STORAGE_KEY_TOKEN_ISSUED_AT);
+}
+
+function getTokenIssuedAt(): number {
+    if (typeof window === "undefined") return 0;
+    const raw = localStorage.getItem(STORAGE_KEY_TOKEN_ISSUED_AT);
+    const value = raw ? Number(raw) : 0;
+    return Number.isFinite(value) ? value : 0;
+}
+
+function isTokenRefreshExempt(path: string): boolean {
+    return (
+        TOKEN_REFRESH_EXEMPT_PATHS.has(path) ||
+        TOKEN_REFRESH_EXEMPT_PREFIXES.some((prefix) => path.startsWith(prefix))
+    );
 }
 
 // ============================================================
@@ -155,13 +192,127 @@ function emitRateLimited(detail: { message: string; retryAfter: number; code?: s
     }
 }
 
+// ============================================================
+// 会话滑动续期
+// ============================================================
+
+let activeRequests = 0;
+let refreshPromise: Promise<void> | null = null;
+let lastRefreshAttemptAt = 0;
+let tokenRefreshTimer: number | null = null;
+
+/** Let in-flight requests finish before revoking the old token. */
+async function waitForActiveRequests(maxWaitMs = 5000): Promise<void> {
+    const startedAt = Date.now();
+    while (activeRequests > 0 && Date.now() - startedAt < maxWaitMs) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+}
+
+type NavigatorWithLocks = Navigator & {
+    locks?: {
+        request<T>(name: string, callback: () => Promise<T>): Promise<T>;
+    };
+};
+
+/** Coordinate refreshes across tabs so one tab cannot revoke another's token. */
+async function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
+    if (typeof navigator !== "undefined") {
+        const locks = (navigator as NavigatorWithLocks).locks;
+        if (locks) {
+            return locks.request("miniclassisland-token-refresh", callback);
+        }
+    }
+    return callback();
+}
+
+async function refreshSessionToken(): Promise<void> {
+    if (refreshPromise) return refreshPromise;
+    const current = getToken();
+    if (!current) return;
+
+    refreshPromise = withRefreshLock(async () => {
+        await waitForActiveRequests();
+        const tokenToRefresh = getToken();
+        if (!tokenToRefresh) return;
+        const issuedAtBefore = getTokenIssuedAt();
+        // Another tab may have already refreshed while we waited for the lock.
+        if (
+            issuedAtBefore > 0 &&
+            Date.now() - issuedAtBefore < TOKEN_REFRESH_AFTER_MS
+        ) {
+            return;
+        }
+        lastRefreshAttemptAt = Date.now();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        try {
+            const res = await fetch(`${getServerUrl()}/token/refresh`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${tokenToRefresh}` },
+                signal: controller.signal,
+            });
+            if (res.status === 401 || res.status === 403) {
+                const latest = getToken();
+                if (
+                    latest &&
+                    latest !== tokenToRefresh &&
+                    getTokenIssuedAt() > issuedAtBefore
+                ) {
+                    return;
+                }
+                emitAuthExpired();
+                return;
+            }
+            if (!res.ok) return;
+            const data = (await res.json()) as { token?: string };
+            if (data?.token) {
+                setToken(data.token);
+            }
+        } catch {
+            /* Network failure: retry on a later request/timer tick. */
+        } finally {
+            clearTimeout(timeout);
+        }
+    }).finally(() => {
+        refreshPromise = null;
+    });
+
+    return refreshPromise;
+}
+
+async function ensureFreshToken(path: string): Promise<void> {
+    if (typeof window === "undefined" || isTokenRefreshExempt(path)) return;
+    if (refreshPromise) {
+        await refreshPromise;
+        return;
+    }
+    if (!getToken()) return;
+
+    const issuedAt = getTokenIssuedAt();
+    const age = issuedAt > 0 ? Date.now() - issuedAt : Number.POSITIVE_INFINITY;
+    if (age < TOKEN_REFRESH_AFTER_MS) return;
+    if (Date.now() - lastRefreshAttemptAt < TOKEN_REFRESH_RETRY_MS) return;
+    await refreshSessionToken();
+}
+
+function startTokenRefreshTimer(): void {
+    if (typeof window === "undefined" || tokenRefreshTimer !== null) return;
+    tokenRefreshTimer = window.setInterval(() => {
+        void ensureFreshToken("/__token_timer__");
+    }, TOKEN_REFRESH_TIMER_MS);
+}
+
 async function request<T>(
     path: string,
     options: RequestInit = {},
     baseOverride?: string,
+    retried = false,
 ): Promise<T> {
     const base = baseOverride || getServerUrl();
     if (!base) throw new Error("未配置服务器地址");
+
+    await ensureFreshToken(path);
 
     const token = getToken();
     const headers: Record<string, string> = {
@@ -175,6 +326,7 @@ async function request<T>(
     }
 
     let res: Response;
+    activeRequests += 1;
     try {
         res = await fetch(`${base}${path}`, { ...options, headers });
     } catch (err: unknown) {
@@ -184,12 +336,18 @@ async function request<T>(
             throw new ApiError(0, "未知的服务器回答，请联系管理员");
         }
         throw err;
+    } finally {
+        activeRequests = Math.max(0, activeRequests - 1);
     }
 
     if (res.status === 401 || res.status === 403) {
         const isAuthFlow = path === "/user/auth" || path === "/user/2fa/totp/verify" || path === "/user/2fa/totp/recover";
         if (!isAuthFlow) {
             if (path !== "/token/deactivate" && res.status === 401) {
+                const latestToken = getToken();
+                if (!retried && latestToken && latestToken !== token) {
+                    return request<T>(path, options, baseOverride, true);
+                }
                 emitAuthExpired();
             }
             let errDetail: unknown = "未授权或权限不足，请重新登录";
@@ -802,3 +960,5 @@ export const adminApi = {
         }
     },
 };
+
+startTokenRefreshTimer();
