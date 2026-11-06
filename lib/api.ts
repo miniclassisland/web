@@ -16,6 +16,8 @@ import type {
     StatusResponse, MessageResponse, LoginResult,
     ResourceType, ClientDeviceOut, ClientProfileConfig,
     ConfigUploadItem, AuditLogItem, ManagementSettings,
+    TicketDetail, TicketListResponse, TicketMessage,
+    TicketCreateRequest, TicketStatus,
 } from "./types";
 
 // ============================================================
@@ -351,6 +353,36 @@ export const community = {
 
 export const site = {
     getAnnouncement: () => get<SiteAnnouncement>("/site/announcement"),
+};
+
+// ============================================================
+// Support Tickets (Management API: /ticket/*)
+// ============================================================
+
+export const tickets = {
+    create: (data: TicketCreateRequest) =>
+        post<TicketDetail>("/ticket", data),
+
+    list: (params?: { offset?: number; limit?: number; status?: TicketStatus }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.offset !== undefined) searchParams.set("offset", String(params.offset));
+        if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
+        if (params?.status) searchParams.set("status", params.status);
+        const qs = searchParams.toString();
+        return get<TicketListResponse>(`/ticket/list${qs ? `?${qs}` : ""}`);
+    },
+
+    get: (ticketId: string) =>
+        get<TicketDetail>(`/ticket/${encodeURIComponent(ticketId)}`),
+
+    reply: (ticketId: string, content: string) =>
+        post<TicketMessage>(`/ticket/${encodeURIComponent(ticketId)}/reply`, { content }),
+
+    close: (ticketId: string) =>
+        post<MessageResponse>(`/ticket/${encodeURIComponent(ticketId)}/close`),
+
+    unreadCount: () =>
+        get<{ count: number }>("/ticket/unread-count"),
 };
 
 // ============================================================

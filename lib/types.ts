@@ -950,3 +950,84 @@ export interface ResourceHistoryVersionOut {
     updated_at: string;
     content: unknown;
 }
+
+// ============================================================
+// 工单系统
+// ============================================================
+
+export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
+export type TicketPriority = "low" | "normal" | "high" | "urgent";
+export type TicketCategory = "account" | "client" | "bug" | "feature" | "other";
+
+export interface TicketMessage {
+    id: number;
+    author_id: string;
+    author_role: "user" | "admin";
+    content: string;
+    created_at: string;
+}
+
+export interface TicketUserSummary {
+    id: string;
+    username: string;
+    email: string;
+    display_name: string;
+    role_code: string;
+    is_active: boolean;
+}
+
+export interface TicketItem {
+    id: string;
+    user_id: string;
+    subject: string;
+    category: TicketCategory;
+    priority: TicketPriority;
+    status: TicketStatus;
+    created_at: string;
+    updated_at: string;
+    last_reply_at: string | null;
+    last_reply_by: string;
+    admin_unread: boolean;
+    user_unread: boolean;
+    message_count: number;
+    user?: TicketUserSummary | null;
+}
+
+export interface TicketDetail extends TicketItem {
+    content: string;
+    messages: TicketMessage[];
+}
+
+export interface TicketListResponse {
+    total: number;
+    items: TicketItem[];
+}
+
+export interface TicketCreateRequest {
+    subject: string;
+    content: string;
+    category: TicketCategory;
+    priority: TicketPriority;
+}
+
+export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
+    open: "待处理",
+    in_progress: "处理中",
+    resolved: "已解决",
+    closed: "已关闭",
+};
+
+export const TICKET_PRIORITY_LABELS: Record<TicketPriority, string> = {
+    low: "低",
+    normal: "普通",
+    high: "高",
+    urgent: "紧急",
+};
+
+export const TICKET_CATEGORY_LABELS: Record<TicketCategory, string> = {
+    account: "账户问题",
+    client: "客户端问题",
+    bug: "故障报告",
+    feature: "功能建议",
+    other: "其他",
+};

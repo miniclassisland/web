@@ -15,7 +15,7 @@ import {
     Send24Regular, PeopleAdd24Regular, Laptop24Regular,
     DataBarVertical24Regular, DocumentSearch24Regular,
     ArrowLeft16Regular, ArrowRight16Regular,
-    ShieldKeyhole24Regular, Dismiss24Regular,
+    ShieldKeyhole24Regular, Dismiss24Regular, Headset24Regular,
 } from "@fluentui/react-icons";
 
 interface NavItem {
@@ -36,6 +36,7 @@ const USER_CENTER_SECTIONS: NavSection[] = [
         items: [
             { label: "账户主页", href: "/", icon: <Home24Regular />, exact: true },
             { label: "个人资料与安全", href: "/security", icon: <DataBarVertical24Regular /> },
+            { label: "我的工单", href: "/tickets", icon: <Headset24Regular /> },
         ],
     },
 ];
@@ -96,7 +97,10 @@ export default function Sidebar({
     const { accounts, accountId, currentAccount, switchAccount } = useAccount();
     const { isSuperAdmin, token } = useAuth();
 
-    const isUserCenter = pathname === "/" || pathname.startsWith("/security");
+    const isUserCenter =
+        pathname === "/" ||
+        pathname.startsWith("/security") ||
+        pathname.startsWith("/tickets");
 
     const sections = isUserCenter ? USER_CENTER_SECTIONS : ACCOUNT_CENTER_SECTIONS;
 
