@@ -342,6 +342,13 @@ export const auth = {
         get<unknown>(`/user/availability/username?value=${encodeURIComponent(username)}`),
 };
 
+export const community = {
+    getCode: (cfTurnstileResponse: string) =>
+        post<{ code: string }>("/community/code", {
+            cf_turnstile_response: cfTurnstileResponse,
+        }),
+};
+
 // ============================================================
 // User Info (Management API: /user/info/*)
 // ============================================================
