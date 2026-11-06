@@ -19,6 +19,11 @@ export interface UserLoginRequest {
     cf_turnstile_response?: string;
 }
 
+export interface EmailAvailabilityRequest {
+    email: string;
+    cf_turnstile_response?: string;
+}
+
 export interface TokenResponse {
     token: string;
     user_id?: string;

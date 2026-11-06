@@ -332,8 +332,11 @@ export const auth = {
     logout: () =>
         post<MessageResponse>("/token/deactivate"),
 
-    checkMailAvailability: (email: string) =>
-        get<unknown>(`/user/availability/mail?value=${encodeURIComponent(email)}`),
+    checkMailAvailability: (email: string, cfTurnstileResponse: string) =>
+        post<unknown>("/user/availability/mail", {
+            email,
+            cf_turnstile_response: cfTurnstileResponse,
+        }),
 
     checkUsernameAvailability: (username: string) =>
         get<unknown>(`/user/availability/username?value=${encodeURIComponent(username)}`),

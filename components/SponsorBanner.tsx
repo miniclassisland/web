@@ -7,11 +7,21 @@ const DISMISS_STORAGE_KEY = "miniclassisland_sponsor_banner_dismissed_until";
 /** 横幅关闭后的静默有效期：24 小时（过期后自动重新出现） */
 const DISMISS_TTL_MS = 24 * 60 * 60 * 1000;
 
-export default function SponsorBanner({ variant = "top" }: { variant?: "top" | "card" }) {
+export default function SponsorBanner({
+    variant = "top",
+    dismissible = true,
+}: {
+    variant?: "top" | "card";
+    dismissible?: boolean;
+}) {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+        if (!dismissible) {
+            setVisible(true);
+            return;
+        }
         const checkVisibility = () => {
             try {
                 const raw = localStorage.getItem(DISMISS_STORAGE_KEY);
@@ -29,7 +39,7 @@ export default function SponsorBanner({ variant = "top" }: { variant?: "top" | "
             return undefined;
         };
         return checkVisibility();
-    }, []);
+    }, [dismissible]);
 
     function handleDismiss() {
         setVisible(false);
@@ -47,15 +57,16 @@ export default function SponsorBanner({ variant = "top" }: { variant?: "top" | "
     return (
         <div className={className} role="region" aria-label="赞助致谢">
             <span className="sponsor-banner-text">感谢智教联盟对本项目的赞助和支持</span>
-            <button
-                type="button"
-                className="sponsor-banner-close"
-                onClick={handleDismiss}
-                aria-label="关闭赞助横幅（24小时内不再提示）"
-                title="关闭横幅（24 小时后再次显示）"
-            >
-                <Dismiss16Regular />
-            </button>
+            {dismissible && (
+                <button
+                    type="button"
+                    className="sponsor-banner-close"
+                    onClick={handleDismiss}
+                    aria-label="关闭赞助横幅（24小时内不再提示）"
+                >
+                    <Dismiss16Regular />
+                </button>
+            )}
         </div>
     );
 }

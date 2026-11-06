@@ -82,6 +82,10 @@ export default function LoginPage() {
         setLocalError(null);
         clearError();
         if (!email) return;
+        if (!turnstileToken) {
+            setLocalError("请先完成 Turnstile 人机验证");
+            return;
+        }
 
         let autoFilledPassword = password;
         // 尝试从隐藏的占位密码输入框中继承浏览器自动填充的密码作为兜底
@@ -95,9 +99,7 @@ export default function LoginPage() {
 
         setLocalLoading(true);
         try {
-            const res = await authApi.checkMailAvailability(email) as { available?: boolean };
-            setTurnstileToken("");
-            setTurnstileResetKey((k) => k + 1);
+            const res = await authApi.checkMailAvailability(email, turnstileToken) as { available?: boolean };
             if (res && res.available === false) {
                 setStep("login");
             } else {
@@ -108,6 +110,8 @@ export default function LoginPage() {
             const msg = err instanceof Error ? err.message : "检查邮箱可用性失败";
             setLocalError(msg);
         } finally {
+            setTurnstileToken("");
+            setTurnstileResetKey((k) => k + 1);
             setLocalLoading(false);
         }
     }
@@ -274,10 +278,15 @@ export default function LoginPage() {
                                     style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden", pointerEvents: "none", zIndex: -1 }}
                                     tabIndex={-1}
                                 />
+                                <TurnstileWidget
+                                    action="email_availability"
+                                    resetKey={turnstileResetKey}
+                                    onVerify={(tok) => setTurnstileToken(tok)}
+                                />
                                 <Button
                                     appearance="primary"
                                     type="submit"
-                                    disabled={loading || !email}
+                                    disabled={loading || !email || !turnstileToken}
                                     style={{ width: "100%", marginTop: 8 }}
                                 >
                                     {loading ? <Spinner size="tiny" /> : "继续"}
@@ -467,7 +476,7 @@ export default function LoginPage() {
                     <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
                 </div>
             </div>
-            <SponsorBanner variant="card" />
+            <SponsorBanner variant="card" dismissible={false} />
         </div>
     );
 }
