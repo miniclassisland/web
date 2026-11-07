@@ -194,7 +194,7 @@ export default function OnboardingWizard({
             await refreshAccounts();
             switchAccount(created.id);
             setActiveAccountId(created.id);
-            setMsg({ type: "success", text: `集控账户「${created.name}」(${created.slug}) 已创建！` });
+            setMsg({ type: "success", text: `集控账户「${created.name}」已创建！` });
             setStep(2);
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "创建账户失败" });
@@ -283,7 +283,7 @@ export default function OnboardingWizard({
             setProfileSaved(true);
             setMsg({
                 type: "success",
-                text: `已将完整档案自动拆分为 Subjects/${targetGroup}（${profileStats.subjectCount} 科）、TimeLayout/${targetGroup}（${profileStats.timeLayoutCount} 套时间表）、ClassPlan/${targetGroup}（${profileStats.classPlanCount} 张课表）！`,
+                text: `已将完整档案自动拆分为 ${profileStats.subjectCount} 门科目、${profileStats.timeLayoutCount} 套时间表、${profileStats.classPlanCount} 张课表！`,
             });
             setStep(3);
         } catch (err: unknown) {
@@ -563,7 +563,7 @@ export default function OnboardingWizard({
                                     <Input
                                         value={acctSlug}
                                         onChange={(_, d) => setAcctSlug(d.value)}
-                                        placeholder="例如：no1-school (留空自动生成)"
+                                        placeholder="留空自动生成"
                                         style={{ width: "100%" }}
                                     />
                                     <div className="form-hint">用于生成班级终端专属接入地址与 ManagementPreset.json</div>
@@ -575,7 +575,7 @@ export default function OnboardingWizard({
                         {step === 2 && (
                             <div>
                                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
-                                    您可以直接上传单机版 ClassIsland 的完整档案文件（通常位于客户端程序目录 <code>Profiles/default.json</code>），向导会自动将其中的 <strong>科目</strong>、<strong>时间表</strong> 与 <strong>课表</strong> 拆分为集控端的首个配置组。
+                                    您可以直接上传单机版 ClassIsland 的完整档案文件，向导会自动将其中的 <strong>科目</strong>、<strong>时间表</strong> 与 <strong>课表</strong> 拆分为集控端的首个配置组。
                                 </p>
 
                                 <div className="grid-2 mb-16">
@@ -624,11 +624,11 @@ export default function OnboardingWizard({
                                         <div className="grid-3">
                                             <div className="stat-card" style={{ padding: 12 }}>
                                                 <div className="stat-value" style={{ fontSize: 22 }}>{profileStats.subjectCount}</div>
-                                                <div className="stat-label">科目 (Subjects/{profileGroupName || "default"})</div>
+                                                <div className="stat-label">科目</div>
                                             </div>
                                             <div className="stat-card" style={{ padding: 12 }}>
                                                 <div className="stat-value" style={{ fontSize: 22 }}>{profileStats.timeLayoutCount}</div>
-                                                <div className="stat-label">时间表 (TimeLayout/{profileGroupName || "default"})</div>
+                                                <div className="stat-label">时间表</div>
                                             </div>
                                             <div className="stat-card" style={{ padding: 12 }}>
                                                 <div className="stat-value" style={{ fontSize: 22 }}>{profileStats.classPlanCount}</div>
@@ -646,7 +646,7 @@ export default function OnboardingWizard({
                         {step === 3 && (
                             <div>
                                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
-                                    接下来您可以上传客户端本地的 <code>Settings.json</code>（作为集控默认设置 <code>DefaultSettings/{profileGroupName || "default"}</code>）以及组件配置文件 <code>Config/Components/Default.json</code>（作为集控组件设置 <code>Components/{profileGroupName || "default"}</code>）。如暂不上传，系统将使用内置标准配置。
+                                    接下来您可以上传客户端本地的 <code>Settings.json</code>以及组件配置文件 <code>Config/Components/Default.json</code>。如暂不上传，系统将使用内置标准配置。
                                 </p>
 
                                 <div className="grid-2">
@@ -700,7 +700,7 @@ export default function OnboardingWizard({
                                             <span style={{ fontWeight: 600, fontSize: 14 }}>组件设置</span>
                                         </div>
                                         <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
-                                            包含 ClassIsland 主界面多行组件布局 (Lines) 及各子组件样式参数。
+                                            包含 ClassIsland 主界面多行组件布局及各子组件样式参数。
                                         </p>
                                         <input
                                             ref={componentsInputRef}
@@ -732,7 +732,7 @@ export default function OnboardingWizard({
                         {step === 4 && (
                             <div>
                                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
-                                    最后一步：配置班级终端的解锁密码与敏感操作授权等级（保存至 <code>Credentials/{profileGroupName || "default"}</code>）。设置后可防止学生随意退出集控、篡改课表或关闭 ClassIsland。
+                                    最后一步：配置班级终端的解锁密码与敏感操作授权等级。设置后可防止学生随意退出集控、篡改课表或关闭 ClassIsland。
                                 </p>
 
                                 <div className="grid-2 mb-16">

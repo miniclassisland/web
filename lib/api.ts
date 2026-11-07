@@ -43,7 +43,7 @@ const TOKEN_REFRESH_EXEMPT_PATHS = new Set([
     "/user/auth",
     "/user/apply",
 ]);
-const TOKEN_REFRESH_EXEMPT_PREFIXES = ["/user/2fa/", "/user/availability/", "/token/certificate/"];
+const TOKEN_REFRESH_EXEMPT_PREFIXES = ["/user/2fa/", "/user/availability/", "/token/certificate/", "/token/qr-login/"];
 
 /** Management API 地址（认证、账户内操作） */
 export function getServerUrl(): string {
@@ -154,7 +154,7 @@ export class ApiError extends Error {
             if (code === "ERR_IP_BLOCKED" || msg.includes("IP address temporarily blocked")) {
                 msg = "当前 IP 因短时间内多次异常请求已被安全机制临时封禁（约 5 分钟），请稍后再试";
             } else if (!msg || msg === "请求失败" || msg.startsWith("{")) {
-                msg = "请求过于频繁（HTTP 429），已被安全限流保护拦截，请稍后再试";
+                msg = "请求过于频繁，已被安全限流保护拦截，请稍后再试";
             }
         }
 
@@ -412,12 +412,14 @@ async function request<T>(
                 ? parsedRetry
                 : (code === "ERR_IP_BLOCKED" ? 300 : 30);
             const apiErr = new ApiError(429, detail, retryAfter);
-            emitRateLimited({
-                message: apiErr.message,
-                retryAfter,
-                code: apiErr.code,
-                path,
-            });
+            if (!path.startsWith("/token/qr-login/poll")) {
+                emitRateLimited({
+                    message: apiErr.message,
+                    retryAfter,
+                    code: apiErr.code,
+                    path,
+                });
+            }
             throw apiErr;
         }
 

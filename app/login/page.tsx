@@ -41,9 +41,8 @@ export default function LoginPage() {
     const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
     const [qrCodeStr, setQrCodeStr] = useState("");
-    const [qrDeeplink, setQrDeeplink] = useState("");
     const [qrDataUrl, setQrDataUrl] = useState("");
-    const [qrExpiresAt, setQrExpiresAt] = useState(0);
+    const [qrLocalExpiresAtMs, setQrLocalExpiresAtMs] = useState(0);
     const [qrRemainingSec, setQrRemainingSec] = useState(0);
     const [qrLoading, setQrLoading] = useState(false);
 
@@ -53,10 +52,10 @@ export default function LoginPage() {
         setQrLoading(true);
         try {
             const res = await tokenApi.createQrLogin();
+            const ttlSec = Math.max(1, Number(res.expires_in) || 300);
             setQrCodeStr(res.code);
-            setQrDeeplink(res.deeplink);
-            setQrExpiresAt(res.expires_at);
-            setQrRemainingSec(res.expires_in);
+            setQrLocalExpiresAtMs(Date.now() + ttlSec * 1000);
+            setQrRemainingSec(ttlSec);
             const dataUrl = await QRCode.toDataURL(res.deeplink, {
                 width: 220,
                 margin: 1,
@@ -71,29 +70,40 @@ export default function LoginPage() {
     }
 
     useEffect(() => {
-        if (step !== "qr" || !qrCodeStr) return;
-        const timer = setInterval(async () => {
-            const rem = Math.max(0, qrExpiresAt - Math.floor(Date.now() / 1000));
+        if (step !== "qr" || !qrLocalExpiresAtMs) return;
+        const tick = setInterval(() => {
+            const rem = Math.max(0, Math.ceil((qrLocalExpiresAtMs - Date.now()) / 1000));
             setQrRemainingSec(rem);
             if (rem <= 0) {
-                clearInterval(timer);
+                clearInterval(tick);
+            }
+        }, 1000);
+        return () => clearInterval(tick);
+    }, [step, qrLocalExpiresAtMs]);
+
+    useEffect(() => {
+        if (step !== "qr" || !qrCodeStr || !qrLocalExpiresAtMs) return;
+        const pollTimer = setInterval(async () => {
+            if (Date.now() >= qrLocalExpiresAtMs) {
+                setQrRemainingSec(0);
+                clearInterval(pollTimer);
                 return;
             }
             try {
                 const p = await tokenApi.pollQrLogin(qrCodeStr);
                 if (p.status === "authorized" && p.token) {
-                    clearInterval(timer);
+                    clearInterval(pollTimer);
                     complete2FA(p.token);
                 } else if (p.status === "expired") {
                     setQrRemainingSec(0);
-                    clearInterval(timer);
+                    clearInterval(pollTimer);
                 }
             } catch {
                 // ignore transient network errors during poll
             }
         }, 2000);
-        return () => clearInterval(timer);
-    }, [step, qrCodeStr, qrExpiresAt, complete2FA]);
+        return () => clearInterval(pollTimer);
+    }, [step, qrCodeStr, qrLocalExpiresAtMs, complete2FA]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -380,16 +390,9 @@ export default function LoginPage() {
                                 )}
                                 <div style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center" }}>
                                     {qrRemainingSec > 0
-                                        ? `请使用已登录或已绑定安全证书的 Android / HarmonyOS 客户端扫描二维码确认登录（有效期剩余 ${qrRemainingSec} 秒）`
-                                        : "当前登录二维码已过期，请点击下方按钮刷新"}
+                                        ? `二维码将在 ${qrRemainingSec >= 60 ? `${Math.ceil(qrRemainingSec / 60)} 分钟` : `${qrRemainingSec} 秒`}后过期。`
+                                        : "二维码已过期。"}
                                 </div>
-                                {qrDeeplink && qrRemainingSec > 0 && (
-                                    <Input
-                                        readOnly
-                                        value={qrDeeplink}
-                                        style={{ width: "100%", fontFamily: "monospace", fontSize: 11 }}
-                                    />
-                                )}
                                 <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 4 }}>
                                     <Button
                                         appearance="secondary"
@@ -483,7 +486,7 @@ export default function LoginPage() {
                                         style={{ width: "100%" }}
                                         autoFocus
                                     />
-                                    <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>3-64 位小写字母、数字或下划线（默认格式如 user_1234abcd，集控账户 Slug 将独立随机生成为 account_1234abcd）</div>
+                                    <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>3-64 位小写字母、数字或下划线</div>
                                 </div>
                                 <div className="form-group">
                                     <Label htmlFor="displayName">显示名称（可选）</Label>

@@ -117,7 +117,7 @@ export default function Sidebar({
                         MINI ClassIsland
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
-                        {isUserCenter ? "User Center & Accounts" : (currentAccount?.slug || "Account Management")}
+                        {isUserCenter ? "用户中心" : (currentAccount?.slug || "账户中心")}
                     </div>
                 </div>
                 {onCloseMobile && (
@@ -227,7 +227,7 @@ export default function Sidebar({
                                     type="button"
                                     className={`sidebar-account-jump ${accountId === acct.id ? "active" : ""}`}
                                     onClick={() => handleJumpToAccount(acct.id)}
-                                    title={`进入「${acct.name}」(${acct.slug}) 账户中心`}
+                                    title={`进入「${acct.name}」账户中心`}
                                 >
                                     <PersonAccounts24Regular style={{ flexShrink: 0 }} />
                                     <div className="sidebar-account-jump-info">

@@ -145,7 +145,7 @@ export default function DownloadPresetPopoverButton({
                             size="small"
                             value={fileName}
                             onChange={(_, d) => setFileName(d.value)}
-                            placeholder="输入文件名 (.json)"
+                            placeholder="输入文件名"
                             style={{ width: "100%" }}
                         />
                     </div>

@@ -18,18 +18,16 @@ export interface RateLimitEventDetail {
 export default function RateLimitBanner() {
     const [active, setActive] = useState(false);
     const [message, setMessage] = useState("");
-    const [code, setCode] = useState<string | undefined>();
     const [remaining, setRemaining] = useState(0);
 
     useEffect(() => {
         function handleRateLimit(e: Event) {
             const custom = e as CustomEvent<RateLimitEventDetail>;
             const detail = custom.detail || {
-                message: "请求过于频繁（HTTP 429），已被安全限流保护拦截，请稍后再试。",
+                message: "请求过于频繁，已被安全限流保护拦截，请稍后再试。",
                 retryAfter: 30,
             };
             setMessage(detail.message);
-            setCode(detail.code);
             setRemaining(detail.retryAfter > 0 ? detail.retryAfter : 30);
             setActive(true);
         }
@@ -73,7 +71,7 @@ export default function RateLimitBanner() {
                 <MessageBarBody>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                         <div>
-                            <strong>请求受限 (HTTP 429{code ? ` · ${code}` : ""})：</strong>
+                            <strong>请求受限：</strong>
                             <span>{message}</span>
                             {remaining > 0 && (
                                 <span style={{ marginLeft: 8, fontWeight: 600 }}>

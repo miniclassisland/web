@@ -175,14 +175,14 @@ export default function UserCenterHomePage() {
                                         />
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 14 }}>
-                                        <label className="form-label">子域名标识 Slug（可选）</label>
+                                        <label className="form-label">子域名标识（可选）</label>
                                         <Input
                                             value={newAccountSlug}
                                             onChange={(_, d) => setNewAccountSlug(d.value)}
                                             placeholder="留空随机生成如 account_1234abcd"
                                             style={{ width: "100%" }}
                                         />
-                                        <div className="form-hint">3-64 位小写字母、数字、连字符或下划线（默认格式如 account_1234abcd）</div>
+                                        <div className="form-hint">3-64 位小写字母、数字、连字符或下划线</div>
                                     </div>
                                     <div className="flex gap-8" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
                                         <Button
@@ -204,7 +204,7 @@ export default function UserCenterHomePage() {
             {isPendingUser && (
                 <MessageBar intent="warning" style={{ marginBottom: 16 }}>
                     <MessageBarBody>
-                        您的账号当前处于待审核状态：暂不会创建默认租户，仅支持在页脚获取交流群入群码或通过邀请码加入组织（批准前在组织内强制设定为观察员 Viewer 层级权限）。
+                        您的账号当前处于待审核状态：暂不会创建默认租户，仅支持在页脚获取交流群入群码或通过邀请码加入组织（批准前在组织内强制设定为观察员权限）。
                     </MessageBarBody>
                 </MessageBar>
             )}
@@ -285,7 +285,7 @@ export default function UserCenterHomePage() {
                         <p className="accounts-list-empty-text">暂无可用账户</p>
                         <p className="accounts-list-empty-hint">
                             {isPendingUser
-                                ? "您的账号正在等待管理员批准，目前可使用邀请码加入现有组织（将以观察员 Viewer 身份加入）。"
+                                ? "您的账号正在等待管理员批准，目前可使用邀请码加入现有组织（将以观察员身份加入）。"
                                 : "您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。"}
                         </p>
                         <div className="flex gap-8" style={{ flexWrap: "wrap", justifyContent: "center" }}>

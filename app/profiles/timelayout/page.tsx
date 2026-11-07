@@ -1074,7 +1074,7 @@ export default function TimeLayoutPage() {
                                                                         <option value={EMPTY_GUID}>默认科目: （空 / 未设置）</option>
                                                                         {validSubjectEntries.map(([sid, sub]) => (
                                                                             <option key={sid} value={sid}>
-                                                                                默认: {sub.Name} ({sub.Initial})
+                                                                                默认: {sub.Name}
                                                                             </option>
                                                                         ))}
                                                                     </Select>

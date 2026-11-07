@@ -259,7 +259,7 @@ export default function SettingsPage() {
                             onError={(text) => setMsg({ type: "error", text })}
                         />
                         <Input
-                            placeholder="预设班级标识 (可选，如 class-101)"
+                            placeholder="预设班级标识（可选）"
                             value={presetIdentity}
                             onChange={(_, d) => setPresetIdentity(d.value)}
                             style={{ width: 220 }}
@@ -722,9 +722,9 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("AnimationLevel", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>关闭动画 (0)</option>
-                                                        <option value={1}>标准动画 (1)</option>
-                                                        <option value={2}>完整流畅动画 (2)</option>
+                                                        <option value={0}>关闭动画</option>
+                                                        <option value={1}>标准动画</option>
+                                                        <option value={2}>完整流畅动画</option>
                                                     </Select>
                                                 </div>
                                             </div>
@@ -807,11 +807,11 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("ExtraInfoType", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>不显示 / 默认 (0)</option>
-                                                        <option value={1}>显示已进行时间 (1)</option>
-                                                        <option value={2}>显示倒计时百分比 (2)</option>
-                                                        <option value={3}>显示倒计时分/秒 (3)</option>
-                                                        <option value={4}>倒计时最后显示秒数 (4)</option>
+                                                        <option value={0}>不显示 / 默认</option>
+                                                        <option value={1}>显示已进行时间</option>
+                                                        <option value={2}>显示倒计时百分比</option>
+                                                        <option value={3}>显示倒计时分/秒</option>
+                                                        <option value={4}>倒计时最后显示秒数</option>
                                                     </Select>
                                                 </div>
                                             </div>
@@ -1039,11 +1039,11 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("TaskBarIconClickBehavior", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>打开主菜单 (0)</option>
-                                                        <option value={1}>打开档案编辑窗口 (1)</option>
-                                                        <option value={2}>显示/隐藏主界面 (2)</option>
-                                                        <option value={3}>打开换课窗口 (3)</option>
-                                                        <option value={4}>打开设置窗口 (4)</option>
+                                                        <option value={0}>打开主菜单</option>
+                                                        <option value={1}>打开档案编辑窗口</option>
+                                                        <option value={2}>显示/隐藏主界面</option>
+                                                        <option value={3}>打开换课窗口</option>
+                                                        <option value={4}>打开设置窗口</option>
                                                     </Select>
                                                 </div>
                                             </div>
@@ -1056,8 +1056,8 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("HideMode", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>按基础条件自动隐藏 (0)</option>
-                                                        <option value={1}>使用高级规则集隐藏 (1)</option>
+                                                        <option value={0}>按基础条件自动隐藏</option>
+                                                        <option value={1}>使用高级规则集隐藏</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
@@ -1150,9 +1150,9 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("Theme", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>跟随系统 (0)</option>
-                                                        <option value={1}>明亮模式 (1)</option>
-                                                        <option value={2}>黑暗模式 (2)</option>
+                                                        <option value={0}>跟随系统</option>
+                                                        <option value={1}>明亮模式</option>
+                                                        <option value={2}>黑暗模式</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
@@ -1162,9 +1162,9 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("ColorSource", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>自定义色彩 (0)</option>
-                                                        <option value={1}>壁纸主题色提取 (1)</option>
-                                                        <option value={2}>系统强调色 (2)</option>
+                                                        <option value={0}>自定义色彩</option>
+                                                        <option value={1}>壁纸主题色提取</option>
+                                                        <option value={2}>系统强调色</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
@@ -1501,7 +1501,7 @@ export default function SettingsPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="settings-section-title mt-16">语音合成引擎 (系统 TTS / EdgeTTS / GPT-SoVITS)</div>
+                                            <div className="settings-section-title mt-16">语音合成引擎</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
                                                     <div className="settings-item-label">启用 TTS 语音合成播报</div>
@@ -1577,9 +1577,9 @@ export default function SettingsPage() {
                                                         onChange={(_, d) => update("WeatherLocationSource", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>按城市/区县名称搜索 (0)</option>
-                                                        <option value={1}>按经纬度坐标定位 (1)</option>
-                                                        <option value={2}>系统自动定位 (2)</option>
+                                                        <option value={0}>按城市/区县名称搜索</option>
+                                                        <option value={1}>按经纬度坐标定位</option>
+                                                        <option value={2}>系统自动定位</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
@@ -1691,10 +1691,10 @@ export default function SettingsPage() {
                                                     onChange={(_, d) => update("UpdateMode", parseInt(d.value, 10))}
                                                     style={{ width: "100%" }}
                                                 >
-                                                    <option value={0}>不自动检查更新 (0)</option>
-                                                    <option value={1}>自动检查更新并通知 (1)</option>
-                                                    <option value={2}>自动检查并下载更新 (2)</option>
-                                                    <option value={3}>自动下载并在重启时安装 (3)</option>
+                                                    <option value={0}>不自动检查更新</option>
+                                                    <option value={1}>自动检查更新并通知</option>
+                                                    <option value={2}>自动检查并下载更新</option>
+                                                    <option value={3}>自动下载并在重启时安装</option>
                                                 </Select>
                                             </div>
                                         </div>

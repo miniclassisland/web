@@ -567,12 +567,12 @@ export default function ComponentsPage() {
                                         value={String(s.ExtraInfoType ?? 0)}
                                         onChange={(_, d) => updateCurrentCompSettings({ ExtraInfoType: parseInt(d.value, 10) })}
                                     >
-                                        <option value="0">时间点持续时间 (如 45m)</option>
+                                        <option value="0">时间点持续时间</option>
                                         <option value="1">已过时间 / 持续时间 (分)</option>
                                         <option value="2">剩余时间 / 持续时间 (分)</option>
                                         <option value="3">已过时间百分比 (%)</option>
-                                        <option value="4">剩余时间 (分/秒)</option>
-                                        <option value="5">倒计时 (MM:SS)</option>
+                                        <option value="4">剩余时间</option>
+                                        <option value="5">倒计时</option>
                                     </Select>
                                 </div>
                                 {Number(s.ExtraInfoType ?? 0) === 4 && (
@@ -771,11 +771,11 @@ export default function ComponentsPage() {
                                 value={String(s.MainWeatherInfoKind ?? 0)}
                                 onChange={(_, d) => updateCurrentCompSettings({ MainWeatherInfoKind: parseInt(d.value, 10) })}
                             >
-                                <option value="0">天气状况与气温 (如 晴 24℃)</option>
+                                <option value="0">天气状况与气温</option>
                                 <option value="1">相对湿度 (%)</option>
                                 <option value="2">风向与风力</option>
-                                <option value="3">空气质量指数 (AQI)</option>
-                                <option value="4">大气压强 (hPa)</option>
+                                <option value="3">空气质量指数</option>
+                                <option value="4">大气压强</option>
                                 <option value="5">体感温度 (℃)</option>
                             </Select>
                         </div>
@@ -892,7 +892,7 @@ export default function ComponentsPage() {
                                         />
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">周期持续时长（如 1.00:00:00）</label>
+                                        <label className="form-label">周期持续时长</label>
                                         <Input
                                             value={String(s.CycleDuration ?? "1.00:00:00")}
                                             onChange={(_, d) => updateCurrentCompSettings({ CycleDuration: d.value })}
@@ -923,7 +923,7 @@ export default function ComponentsPage() {
                                             />
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">循环次数上限 (0=不限)</label>
+                                            <label className="form-label">循环次数上限</label>
                                             <Input
                                                 type="number"
                                                 value={String(s.IsCycleCountLimited ? (s.CycleCountLimit ?? 2) : 0)}
@@ -1020,7 +1020,7 @@ export default function ComponentsPage() {
                                 </div>
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">字体大小 (px)</label>
+                                <label className="form-label">字体大小</label>
                                 <Input
                                     type="number"
                                     value={String(s.FontSize ?? 16)}
@@ -1102,7 +1102,7 @@ export default function ComponentsPage() {
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "center" }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">字体大小 (px)</label>
+                            <label className="form-label">字体大小</label>
                             <Input
                                 type="number"
                                 value={String(s.FontSize ?? 16)}
@@ -1198,7 +1198,7 @@ export default function ComponentsPage() {
                 <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
                     <div className="settings-section-title" style={{ marginBottom: 0 }}>滚动容器设置</div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">滚动速度 (px/s)</label>
+                        <label className="form-label">滚动速度</label>
                         <Input
                             type="number"
                             value={String(s.SpeedPixelPerSecond ?? 40)}
@@ -1226,7 +1226,7 @@ export default function ComponentsPage() {
                                 />
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">暂停位置水平偏移 (px)</label>
+                                <label className="form-label">暂停位置水平偏移</label>
                                 <Input
                                     type="number"
                                     value={String(s.PauseOffsetX ?? 0)}
@@ -1909,7 +1909,7 @@ export default function ComponentsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                                    <label className="form-label">整体不透明度 (0.0 ~ 1.0)</label>
+                                                    <label className="form-label">整体不透明度</label>
                                                     <Input
                                                         type="number"
                                                         step={0.05}
@@ -1924,7 +1924,7 @@ export default function ComponentsPage() {
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                        <label className="form-label" style={{ marginBottom: 0 }}>固定宽度 (px)</label>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>固定宽度</label>
                                                         <Switch
                                                             checked={!!currentComp.IsFixedWidthEnabled}
                                                             onChange={(_, d) => updateCurrentComp({ IsFixedWidthEnabled: d.checked })}
@@ -1940,7 +1940,7 @@ export default function ComponentsPage() {
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                        <label className="form-label" style={{ marginBottom: 0 }}>最小宽度 (px)</label>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>最小宽度</label>
                                                         <Switch
                                                             checked={!!currentComp.IsMinWidthEnabled}
                                                             onChange={(_, d) => updateCurrentComp({ IsMinWidthEnabled: d.checked })}
@@ -1956,7 +1956,7 @@ export default function ComponentsPage() {
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                        <label className="form-label" style={{ marginBottom: 0 }}>最大宽度 (px)</label>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>最大宽度</label>
                                                         <Switch
                                                             checked={!!currentComp.IsMaxWidthEnabled}
                                                             onChange={(_, d) => updateCurrentComp({ IsMaxWidthEnabled: d.checked })}
@@ -2052,7 +2052,7 @@ export default function ComponentsPage() {
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                        <label className="form-label" style={{ marginBottom: 0 }}>自定义背景不透明度 (0~1)</label>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>自定义背景不透明度</label>
                                                         <Switch
                                                             checked={!!currentComp.IsCustomBackgroundOpacityEnabled}
                                                             onChange={(_, d) => updateCurrentComp({ IsCustomBackgroundOpacityEnabled: d.checked })}
@@ -2069,7 +2069,7 @@ export default function ComponentsPage() {
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                        <label className="form-label" style={{ marginBottom: 0 }}>自定义背景圆角半径 (px)</label>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>自定义背景圆角半径</label>
                                                         <Switch
                                                             checked={!!currentComp.IsCustomCornerRadiusEnabled}
                                                             onChange={(_, d) => updateCurrentComp({ IsCustomCornerRadiusEnabled: d.checked })}
@@ -2195,7 +2195,7 @@ export default function ComponentsPage() {
                                             </Select>
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">整行不透明度 (0.0 ~ 1.0)</label>
+                                            <label className="form-label">整行不透明度</label>
                                             <Input
                                                 type="number"
                                                 step={0.05}
@@ -2240,7 +2240,7 @@ export default function ComponentsPage() {
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                <label className="form-label" style={{ marginBottom: 0 }}>自定义行背景不透明度 (0~1)</label>
+                                                <label className="form-label" style={{ marginBottom: 0 }}>自定义行背景不透明度</label>
                                                 <Switch
                                                     checked={!!currentLine.IsCustomBackgroundOpacityEnabled}
                                                     onChange={(_, d) => updateCurrentLine({ IsCustomBackgroundOpacityEnabled: d.checked })}
@@ -2257,7 +2257,7 @@ export default function ComponentsPage() {
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                                <label className="form-label" style={{ marginBottom: 0 }}>自定义行圆角半径 (px)</label>
+                                                <label className="form-label" style={{ marginBottom: 0 }}>自定义行圆角半径</label>
                                                 <Switch
                                                     checked={!!currentLine.IsCustomCornerRadiusEnabled}
                                                     onChange={(_, d) => updateCurrentLine({ IsCustomCornerRadiusEnabled: d.checked })}
@@ -2329,7 +2329,7 @@ export default function ComponentsPage() {
                         <DialogTitle>新建组件配置文件</DialogTitle>
                         <DialogContent>
                             <div className="form-group" style={{ marginTop: 8 }}>
-                                <label className="form-label">配置名称 (无需 .json 后缀)</label>
+                                <label className="form-label">配置名称</label>
                                 <Input
                                     value={newFileName}
                                     onChange={(_, d) => setNewFileName(d.value)}

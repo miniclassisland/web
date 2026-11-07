@@ -24,7 +24,7 @@ export default function TopBar({
         (isUserCenter
             ? "MINI ClassIsland 用户中心"
             : currentAccount
-              ? `账户中心 · ${currentAccount.name} (${currentAccount.slug})`
+              ? `账户中心 · ${currentAccount.name}`
               : "MINI ClassIsland 账户中心");
 
     return (

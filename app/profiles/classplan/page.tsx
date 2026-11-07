@@ -1216,7 +1216,7 @@ export default function ClassPlanPage() {
                                                     </option>
                                                 ))}
                                                 {!isEmptyGuid(currentTlId) && !timeLayouts[currentTlId] && (
-                                                    <option value={currentTlId}>未知时间表 ({currentTlId.slice(0, 8)}...)</option>
+                                                    <option value={currentTlId}>未知时间表</option>
                                                 )}
                                             </Select>
                                         </div>
@@ -1342,7 +1342,7 @@ export default function ClassPlanPage() {
                         <DialogTitle>新建课表配置文件</DialogTitle>
                         <DialogContent>
                             <div className="form-group" style={{ marginTop: 8 }}>
-                                <label className="form-label">文件名称 (无需 .json 后缀)</label>
+                                <label className="form-label">文件名称</label>
                                 <Input
                                     value={newFileName}
                                     onChange={(_, d) => setNewFileName(d.value)}
