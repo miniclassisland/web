@@ -181,7 +181,7 @@ export default function CommunityJoinLink() {
                                     )}
                                     <MessageBar intent="warning" style={{ marginBottom: 8 }}>
                                         <MessageBarBody>
-                                            您已经绑定过一个 QQ 了，如果需要换绑，请直接退出群聊；如果需要继续加入群聊，您可以考虑新注册一个用户或者练习管理员
+                                            您已经绑定过一个 QQ 了，如果需要换绑，请直接退出群聊；如果需要继续加入群聊，您可以考虑新注册一个用户或者联系管理员
                                         </MessageBarBody>
                                     </MessageBar>
                                 </div>
