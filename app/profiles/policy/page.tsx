@@ -16,15 +16,15 @@ import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButto
 import FileHistoryButton from "@/components/FileHistoryButton";
 
 const POLICY_FIELDS: { key: keyof ManagementPolicy; label: string; hint: string }[] = [
-    { key: "DisableProfileClassPlanEditing", label: "禁止编辑课表 (DisableProfileClassPlanEditing)", hint: "阻止客户端本地用户修改课表与临时换课" },
-    { key: "DisableProfileTimeLayoutEditing", label: "禁止编辑时间表 (DisableProfileTimeLayoutEditing)", hint: "阻止客户端本地用户修改时间表节点" },
-    { key: "DisableProfileSubjectsEditing", label: "禁止编辑科目 (DisableProfileSubjectsEditing)", hint: "阻止客户端本地用户增删改科目列表" },
-    { key: "DisableProfileEditing", label: "禁止编辑全部档案 (DisableProfileEditing)", hint: "完全锁定客户端档案编辑器" },
-    { key: "DisableSettingsEditing", label: "禁止修改应用设置 (DisableSettingsEditing)", hint: "阻止客户端本地用户修改应用设置页面" },
-    { key: "DisableSplashCustomize", label: "禁止自定义启动画面 (DisableSplashCustomize)", hint: "阻止客户端本地用户修改启动图与标语" },
-    { key: "DisableDebugMenu", label: "禁止使用调试菜单 (DisableDebugMenu)", hint: "隐藏客户端开发者调试入口" },
-    { key: "AllowExitManagement", label: "允许退出集控 (AllowExitManagement)", hint: "是否允许终端用户在客户端设置中主动脱离集控管理" },
-    { key: "DisableEasterEggs", label: "禁用彩蛋功能 (DisableEasterEggs)", hint: "关闭客户端内的趣味彩蛋功能" },
+    { key: "DisableProfileClassPlanEditing", label: "禁止编辑课表", hint: "阻止客户端本地用户修改课表与临时换课" },
+    { key: "DisableProfileTimeLayoutEditing", label: "禁止编辑时间表", hint: "阻止客户端本地用户修改时间表节点" },
+    { key: "DisableProfileSubjectsEditing", label: "禁止编辑科目", hint: "阻止客户端本地用户增删改科目列表" },
+    { key: "DisableProfileEditing", label: "禁止编辑全部档案", hint: "完全锁定客户端档案编辑器" },
+    { key: "DisableSettingsEditing", label: "禁止修改应用设置", hint: "阻止客户端本地用户修改应用设置页面" },
+    { key: "DisableSplashCustomize", label: "禁止自定义启动画面", hint: "阻止客户端本地用户修改启动图与标语" },
+    { key: "DisableDebugMenu", label: "禁止使用调试菜单", hint: "隐藏客户端开发者调试入口" },
+    { key: "AllowExitManagement", label: "允许退出集控", hint: "是否允许终端用户在客户端设置中主动脱离集控管理" },
+    { key: "DisableEasterEggs", label: "禁用彩蛋功能", hint: "关闭客户端内的趣味彩蛋功能" },
 ];
 
 export default function PolicyPage() {
@@ -129,7 +129,7 @@ export default function PolicyPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">策略管理</h1>
-                    <p className="page-subtitle">管理 ClassIsland 客户端安全限制策略 (ManagementPolicy)</p>
+                    <p className="page-subtitle">管理 ClassIsland 客户端安全限制策略</p>
                 </div>
                 <div className="flex gap-8">
                     <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建文件</Button>
@@ -205,7 +205,7 @@ export default function PolicyPage() {
                                         appearance="secondary"
                                         defaultFileName={`Policy-${selectedFile}.json`}
                                         suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `Policy-${selectedFile}.json` },
+                                            { label: "具名区分文件", fileName: `Policy-${selectedFile}.json` },
                                             { label: "档案原名", fileName: `${selectedFile}.json` },
                                             { label: "客户端标准资源名", fileName: "Policy.json" },
                                         ]}

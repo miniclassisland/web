@@ -334,7 +334,7 @@ body {
 /* 卡片 */
 .card {
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   padding: 20px;
   margin-bottom: 16px;
@@ -348,6 +348,11 @@ body {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* 网格 */
@@ -355,18 +360,31 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  margin-bottom: 16px;
+  align-items: stretch;
 }
 
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+  margin-bottom: 16px;
+  align-items: stretch;
 }
 
 .grid-4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.grid-2 > .card,
+.grid-3 > .card,
+.grid-4 > .card {
+  margin-bottom: 0;
+  height: 100%;
 }
 
 /* 统计卡片 */
@@ -375,17 +393,20 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
+  align-items: stretch;
 }
 
 .stat-card {
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   padding: 20px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 8px;
   min-width: 0;
+  height: 100%;
 }
 
 .stat-card-header {
@@ -743,10 +764,38 @@ body {
 }
 
 /* 确保 input[type="time"] 在 12h (AM/PM) 与 24h 浏览器语言环境下均完整显示时间数字与时钟图标 */
+.fui-Input:has(input[type="time"]) {
+  min-width: 176px !important;
+  width: 176px !important;
+}
+
 .fui-Input input[type="time"] {
-  min-width: 118px;
+  min-width: 150px !important;
   font-variant-numeric: tabular-nums;
-  padding-right: 4px;
+  padding-right: 4px !important;
+}
+
+/* 课表编辑器三栏自适应网格 */
+.classplan-3col-grid {
+  display: grid;
+  grid-template-columns: 230px minmax(380px, 1fr) 270px;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 1280px) {
+  .classplan-3col-grid {
+    grid-template-columns: 220px minmax(360px, 1fr);
+  }
+  .classplan-3col-grid > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .classplan-3col-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .timeline-content {
@@ -1235,18 +1284,20 @@ body {
 }
 
 .user-menu-trigger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
+  height: 34px;
+  padding: 0 10px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--bg-card);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
   font-size: 13px;
   color: var(--text-primary);
+  box-sizing: border-box;
 }
 
 .user-menu-trigger:hover {
@@ -1256,19 +1307,20 @@ body {
 }
 
 .user-menu-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
   background: var(--accent-color);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  flex-shrink: 0;
 }
 
 .user-menu-avatar svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 .user-menu-account-name {
@@ -1710,11 +1762,13 @@ body {
 .theme-switcher-group {
   display: inline-flex;
   align-items: center;
+  height: 34px;
   background: var(--bg-subtle);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 2px;
   gap: 2px;
+  box-sizing: border-box;
 }
 
 .theme-switcher-floating {
@@ -1724,26 +1778,32 @@ body {
   z-index: 1200;
   display: inline-flex;
   align-items: center;
+  height: 34px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 3px;
+  border-radius: var(--radius-md);
+  padding: 2px;
   gap: 2px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  box-sizing: border-box;
 }
 
 .theme-segment-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  height: 28px;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 0 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }

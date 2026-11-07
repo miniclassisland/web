@@ -145,7 +145,7 @@ export default function PairingPage() {
                 </div>
                 <div className="flex gap-8">
                     <DownloadPresetPopoverButton
-                        buttonText="下载通用配置 (仅接口地址)"
+                        buttonText="下载通用配置"
                         appearance="secondary"
                         defaultFileName={`ManagementPreset-${slugName}-generic.json`}
                         onFetchData={() => accounts.downloadPreset(accountId)}
@@ -201,7 +201,7 @@ export default function PairingPage() {
                         <thead>
                             <tr>
                                 <th>6位配对码</th>
-                                <th>请求班级标识 (ClientId)</th>
+                                <th>请求班级标识</th>
                                 <th>客户端 UID</th>
                                 <th>物理 MAC / IP</th>
                                 <th>状态</th>
@@ -229,7 +229,7 @@ export default function PairingPage() {
                                         ) : c.used ? (
                                             <span className="badge badge-info">已完成注册</span>
                                         ) : c.approved ? (
-                                            <span className="badge badge-success">已批准 (等待重连)</span>
+                                            <span className="badge badge-success">已批准</span>
                                         ) : (
                                             <span className="badge badge-warning">待管理员审批</span>
                                         )}

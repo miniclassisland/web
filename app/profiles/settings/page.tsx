@@ -12,7 +12,7 @@ import {
 import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
-    Code24Regular, ArrowUpload24Regular,
+    Code24Regular, ArrowUpload24Regular, Desktop16Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import FileHistoryButton from "@/components/FileHistoryButton";
@@ -42,8 +42,8 @@ interface SettingsHierarchyGroup {
 
 /**
  * 严格对齐上游 ClassIsland (App.Services.xaml.cs & SettingsWindowNew) 的二级设置导航层级：
- * 1. 通用 (classisland.general): 基本、时钟、存储、隐私、翻新与迎新、高级
- * 2. 主界面 (classisland.mainwindow): 组件、外观、窗口
+ * 1. 通用: 基本、时钟、存储、隐私、翻新与迎新、高级
+ * 2. 主界面: 组件、外观、窗口
  * 3. 独立设置页: 提醒(含语音合成)、天气、自动化、更新、插件、调试
  */
 const SETTINGS_HIERARCHY: SettingsHierarchyGroup[] = [
@@ -152,7 +152,7 @@ export default function SettingsPage() {
                 setJsonText(JSON.stringify(settings, null, 2));
             }
             await data.write(accountId, "DefaultSettings", selectedFile, payloadToSave);
-            setMsg({ type: "success", text: "客户端默认应用设置 (DefaultSettings) 已保存并递增版本号" });
+            setMsg({ type: "success", text: "客户端默认应用设置 已保存并递增版本号" });
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "保存失败" });
         }
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                 <div>
                     <h1 className="page-title">默认设置管理</h1>
                     <p className="page-subtitle">
-                        管理下发至 ClassIsland 客户端的全量应用设置 (ClassIsland.Models.Settings / DefaultSettings)
+                        管理下发至 ClassIsland 客户端的全量应用设置
                     </p>
                 </div>
                 <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
                         <DownloadPresetPopoverButton
-                            buttonText="下载通用配置 (仅接口地址)"
+                            buttonText="下载通用配置"
                             appearance="primary"
                             defaultFileName={`ManagementPreset-${slugName}-generic.json`}
                             onFetchData={() => accounts.downloadPreset(accountId, "")}
@@ -351,7 +351,7 @@ export default function SettingsPage() {
                                         appearance="secondary"
                                         defaultFileName={`DefaultSettings-${selectedFile}.json`}
                                         suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `DefaultSettings-${selectedFile}.json` },
+                                            { label: "具名区分文件", fileName: `DefaultSettings-${selectedFile}.json` },
                                             { label: "档案原名", fileName: `${selectedFile}.json` },
                                             { label: "客户端标准资源名", fileName: "DefaultSettings.json" },
                                             { label: "单机版设置文件名", fileName: "Settings.json" },
@@ -434,13 +434,13 @@ export default function SettingsPage() {
                                         ))}
                                     </div>
 
-                                    {/* 通用 -> 基本 (GeneralSettingsPage) */}
+                                    {/* 通用 -> 基本 */}
                                     {activeTab === "general" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">通用 · 基本 (GeneralSettingsPage)</div>
+                                            <div className="settings-section-title">通用 · 基本</div>
                                             <div className="grid-3">
                                                 <div className="form-group">
-                                                    <label className="form-label">选定的本地档案文件名 (SelectedProfile)</label>
+                                                    <label className="form-label">选定的本地档案文件名</label>
                                                     <Input
                                                         value={settings.SelectedProfile ?? "Default.json"}
                                                         onChange={(_, d) => update("SelectedProfile", d.value)}
@@ -449,7 +449,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">多周轮换最大周期数 (MultiWeekRotationMaxCycle)</label>
+                                                    <label className="form-label">多周轮换最大周期数</label>
                                                     <Input
                                                         type="number"
                                                         min={2}
@@ -460,7 +460,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">开学首周起始日期 (SingleWeekStartTime)</label>
+                                                    <label className="form-label">开学首周起始日期</label>
                                                     <Input
                                                         value={settings.SingleWeekStartTime ?? ""}
                                                         onChange={(_, d) => update("SingleWeekStartTime", d.value)}
@@ -472,7 +472,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">启动画面自定义文字 (SplashCustomText)</label>
+                                                    <label className="form-label">启动画面自定义文字</label>
                                                     <Input
                                                         value={settings.SplashCustomText ?? ""}
                                                         onChange={(_, d) => update("SplashCustomText", d.value)}
@@ -481,7 +481,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">启动画面自定义 Logo 路径 (SplashCustomLogoSource)</label>
+                                                    <label className="form-label">启动画面自定义 Logo 路径</label>
                                                     <Input
                                                         value={settings.SplashCustomLogoSource ?? ""}
                                                         onChange={(_, d) => update("SplashCustomLogoSource", d.value)}
@@ -493,7 +493,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">默认上课时长(分钟) (DefaultOnClassTimePointMinutes)</label>
+                                                    <label className="form-label">默认上课时长(分钟)</label>
                                                     <Input
                                                         type="number"
                                                         min={1}
@@ -503,7 +503,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">默认课间时长(分钟) (DefaultBreakingTimePointMinutes)</label>
+                                                    <label className="form-label">默认课间时长(分钟)</label>
                                                     <Input
                                                         type="number"
                                                         min={1}
@@ -516,7 +516,7 @@ export default function SettingsPage() {
 
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">显示应用启动画面 (IsSplashEnabled)</div>
+                                                    <div className="settings-item-label">显示应用启动画面</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsSplashEnabled !== false}
@@ -525,7 +525,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">在启动画面上显示详细加载进度 (ShowDetailedStatusOnSplash)</div>
+                                                    <div className="settings-item-label">在启动画面上显示详细加载进度</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.ShowDetailedStatusOnSplash}
@@ -534,7 +534,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">快速换课默认采用互换模式 (IsSwapMode)</div>
+                                                    <div className="settings-item-label">快速换课默认采用互换模式</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsSwapMode !== false}
@@ -543,7 +543,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">档案编辑器录入科目后自动跳到下一节 (IsProfileEditorClassInfoSubjectAutoMoveNextEnabled)</div>
+                                                    <div className="settings-item-label">档案编辑器录入科目后自动跳到下一节</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsProfileEditorClassInfoSubjectAutoMoveNextEnabled !== false}
@@ -552,7 +552,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">允许直接编辑当前已激活的时间表 (ExpAllowEditingActivatedTimeLayout)</div>
+                                                    <div className="settings-item-label">允许直接编辑当前已激活的时间表</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.ExpAllowEditingActivatedTimeLayout}
@@ -561,7 +561,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">自动禁用导致崩溃的损坏插件 (AutoDisableCorruptPlugins)</div>
+                                                    <div className="settings-item-label">自动禁用导致崩溃的损坏插件</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.AutoDisableCorruptPlugins !== false}
@@ -571,13 +571,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 通用 -> 时钟 (ClockSettingsPage) */}
+                                    {/* 通用 -> 时钟 */}
                                     {activeTab === "clock" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">通用 · 时钟 (ClockSettingsPage)</div>
+                                            <div className="settings-section-title">通用 · 时钟</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用 NTP 网络精确时间同步 (IsExactTimeEnabled)</div>
+                                                    <div className="settings-item-label">启用 NTP 网络精确时间同步</div>
                                                     <div className="settings-item-hint">开启后客户端自动从指定 NTP 服务器同步标准时间，消除主板时钟误差</div>
                                                 </div>
                                                 <Switch
@@ -587,7 +587,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用每日定时时间自动微调 (IsTimeAutoAdjustEnabled)</div>
+                                                    <div className="settings-item-label">启用每日定时时间自动微调</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsTimeAutoAdjustEnabled}
@@ -597,7 +597,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-3 mt-16">
                                                 <div className="form-group">
-                                                    <label className="form-label">NTP 时间服务器地址 (ExactTimeServer)</label>
+                                                    <label className="form-label">NTP 时间服务器地址</label>
                                                     <Input
                                                         value={settings.ExactTimeServer ?? "ntp.aliyun.com"}
                                                         onChange={(_, d) => update("ExactTimeServer", d.value)}
@@ -606,7 +606,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">固定时间偏移秒数 (TimeOffsetSeconds)</label>
+                                                    <label className="form-label">固定时间偏移秒数</label>
                                                     <Input
                                                         type="number"
                                                         step={0.5}
@@ -616,7 +616,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">每日自动调整秒数 (TimeAutoAdjustSeconds)</label>
+                                                    <label className="form-label">每日自动调整秒数</label>
                                                     <Input
                                                         type="number"
                                                         step={0.1}
@@ -629,13 +629,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 通用 -> 存储 (StorageSettingsPage) */}
+                                    {/* 通用 -> 存储 */}
                                     {activeTab === "storage" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">通用 · 存储与自动备份 (StorageSettingsPage)</div>
+                                            <div className="settings-section-title">通用 · 存储与自动备份</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用配置自动定期备份 (IsAutoBackupEnabled)</div>
+                                                    <div className="settings-item-label">启用配置自动定期备份</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsAutoBackupEnabled !== false}
@@ -644,7 +644,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="grid-2 mt-16">
                                                 <div className="form-group">
-                                                    <label className="form-label">自动备份间隔天数 (AutoBackupIntervalDays)</label>
+                                                    <label className="form-label">自动备份间隔天数</label>
                                                     <Input
                                                         type="number"
                                                         min={1}
@@ -654,7 +654,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">保留自动备份数量上限 (AutoBackupLimit)</label>
+                                                    <label className="form-label">保留自动备份数量上限</label>
                                                     <Input
                                                         type="number"
                                                         min={1}
@@ -667,13 +667,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 通用 -> 隐私 (PrivacySettingsPage) */}
+                                    {/* 通用 -> 隐私 */}
                                     {activeTab === "privacy" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">通用 · 隐私与诊断遥测 (PrivacySettingsPage)</div>
+                                            <div className="settings-section-title">通用 · 隐私与诊断遥测</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用崩溃与诊断遥测上报 (IsReportingEnabled)</div>
+                                                    <div className="settings-item-label">启用崩溃与诊断遥测上报</div>
                                                     <div className="settings-item-hint">控制客户端是否允许上报诊断与崩溃分析信息</div>
                                                 </div>
                                                 <Switch
@@ -684,13 +684,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 通用 -> 翻新与迎新 (RefreshingSettingsPage) */}
+                                    {/* 通用 -> 翻新与迎新 */}
                                     {activeTab === "refreshing" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">通用 · 翻新与迎新 (RefreshingSettingsPage)</div>
+                                            <div className="settings-section-title">通用 · 翻新与迎新</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">已完成欢迎引导 (IsWelcomeWindowShowed)</div>
+                                                    <div className="settings-item-label">已完成欢迎引导</div>
                                                     <div className="settings-item-hint">开启后客户端首次启动不再弹出单机欢迎向导</div>
                                                 </div>
                                                 <Switch
@@ -700,7 +700,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用久未重启翻新提示横幅 (IsRefreshingToastEnabled)</div>
+                                                    <div className="settings-item-label">启用久未重启翻新提示横幅</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsRefreshingToastEnabled !== false}
@@ -710,13 +710,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 通用 -> 高级 (AdvancedSettingsPage) */}
+                                    {/* 通用 -> 高级 */}
                                     {activeTab === "advanced" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">通用 · 高级与兼容性 (AdvancedSettingsPage)</div>
+                                            <div className="settings-section-title">通用 · 高级与兼容性</div>
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">动画等级 (AnimationLevel)</label>
+                                                    <label className="form-label">动画等级</label>
                                                     <Select
                                                         value={String(settings.AnimationLevel ?? 1)}
                                                         onChange={(_, d) => update("AnimationLevel", parseInt(d.value, 10))}
@@ -730,7 +730,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">使用 RawInput 检测鼠标坐标 (UseRawInput)</div>
+                                                    <div className="settings-item-label">使用 RawInput 检测鼠标坐标</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.UseRawInput}
@@ -739,7 +739,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用兼容窗口透明模式 (IsCompatibleWindowTransparentEnabled)</div>
+                                                    <div className="settings-item-label">启用兼容窗口透明模式</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsCompatibleWindowTransparentEnabled}
@@ -748,7 +748,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">录屏模式优化 (IsScreenRecordingModeEnabled)</div>
+                                                    <div className="settings-item-label">录屏模式优化</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsScreenRecordingModeEnabled}
@@ -757,7 +757,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">防截屏/录屏捕获保护 (IsWindowCaptureBlockingEnabled)</div>
+                                                    <div className="settings-item-label">防截屏/录屏捕获保护</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsWindowCaptureBlockingEnabled}
@@ -766,7 +766,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">降低进度条刷新精度以节省希沃白板 CPU 占用 (ReduceProgressAccuracy)</div>
+                                                    <div className="settings-item-label">降低进度条刷新精度以节省希沃白板 CPU 占用</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.ReduceProgressAccuracy !== false}
@@ -776,13 +776,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 主界面 -> 组件 (ComponentsSettingsPage) */}
+                                    {/* 主界面 -> 组件 */}
                                     {activeTab === "components" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">主界面 · 组件与课程显示 (ComponentsSettingsPage)</div>
+                                            <div className="settings-section-title">主界面 · 组件与课程显示</div>
                                             <div className="grid-3">
                                                 <div className="form-group">
-                                                    <label className="form-label">当前组件配置方案名 (CurrentComponentConfig)</label>
+                                                    <label className="form-label">当前组件配置方案名</label>
                                                     <Input
                                                         value={settings.CurrentComponentConfig ?? "Default"}
                                                         onChange={(_, d) => update("CurrentComponentConfig", d.value)}
@@ -791,7 +791,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">课程表项间距 (ScheduleSpacing)</label>
+                                                    <label className="form-label">课程表项间距</label>
                                                     <Input
                                                         type="number"
                                                         step={0.5}
@@ -801,7 +801,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">时间点附加信息类型 (ExtraInfoType)</label>
+                                                    <label className="form-label">时间点附加信息类型</label>
                                                     <Select
                                                         value={String(settings.ExtraInfoType ?? 0)}
                                                         onChange={(_, d) => update("ExtraInfoType", parseInt(d.value, 10))}
@@ -818,7 +818,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">上课倒计时触发阈值(秒) (CountdownSeconds)</label>
+                                                    <label className="form-label">上课倒计时触发阈值(秒)</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.CountdownSeconds ?? 60)}
@@ -827,7 +827,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">精确秒数显示阈值(秒) (ExtraInfo4ShowSecondsSeconds)</label>
+                                                    <label className="form-label">精确秒数显示阈值(秒)</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.ExtraInfo4ShowSecondsSeconds ?? 60)}
@@ -839,7 +839,7 @@ export default function SettingsPage() {
 
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">上课时仅显示当前课程 (ShowCurrentLessonOnlyOnClass)</div>
+                                                    <div className="settings-item-label">上课时仅显示当前课程</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.ShowCurrentLessonOnlyOnClass}
@@ -848,7 +848,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">在时间点上显示附加信息 (ShowExtraInfoOnTimePoint)</div>
+                                                    <div className="settings-item-label">在时间点上显示附加信息</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.ShowExtraInfoOnTimePoint !== false}
@@ -857,7 +857,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用上课前倒计时显示 (IsCountdownEnabled)</div>
+                                                    <div className="settings-item-label">启用上课前倒计时显示</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsCountdownEnabled !== false}
@@ -866,7 +866,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用模糊倒计时模式 (IsNonExactCountdownEnabled)</div>
+                                                    <div className="settings-item-label">启用模糊倒计时模式</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsNonExactCountdownEnabled}
@@ -876,13 +876,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 主界面 -> 窗口 (WindowSettingsPage) */}
+                                    {/* 主界面 -> 窗口 */}
                                     {activeTab === "window" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">主界面 · 窗口、停靠与避让 (WindowSettingsPage)</div>
+                                            <div className="settings-section-title">主界面 · 窗口、停靠与避让</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">显示主窗口 (IsMainWindowVisible)</div>
+                                                    <div className="settings-item-label">显示主窗口</div>
                                                     <div className="settings-item-hint">控制客户端主界面默认是否可见</div>
                                                 </div>
                                                 <Switch
@@ -894,7 +894,7 @@ export default function SettingsPage() {
                                             {/* 原位复刻上游 WindowSettingsPage 屏幕 6 停靠点可视化选择器 */}
                                             <div style={{ marginTop: 14, marginBottom: 16, padding: 16, borderRadius: 10, border: "1px solid var(--border-color)", background: "rgba(0,0,0,0.18)" }}>
                                                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-                                                    窗口停靠位置可视化预览 (WindowDockingLocation)
+                                                    窗口停靠位置可视化预览
                                                 </div>
                                                 <div
                                                     style={{
@@ -913,9 +913,9 @@ export default function SettingsPage() {
                                                 >
                                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                                                         {[
-                                                            { idx: 0, label: "左上角 (TopLeft)" },
-                                                            { idx: 1, label: "顶部居中 (TopCenter)" },
-                                                            { idx: 2, label: "右上角 (TopRight)" },
+                                                            { idx: 0, label: "左上角" },
+                                                            { idx: 1, label: "顶部居中" },
+                                                            { idx: 2, label: "右上角" },
                                                         ].map((pos) => {
                                                             const active = (settings.WindowDockingLocation ?? 1) === pos.idx;
                                                             return (
@@ -939,14 +939,15 @@ export default function SettingsPage() {
                                                             );
                                                         })}
                                                     </div>
-                                                    <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-secondary)" }}>
-                                                        🖥️ 显示器 #{settings.WindowDockingMonitorIndex ?? 0} · 偏移 ({settings.WindowDockingOffsetX ?? 0}, {settings.WindowDockingOffsetY ?? 0})
+                                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 11, color: "var(--text-secondary)" }}>
+                                                        <Desktop16Regular />
+                                                        <span>显示器 #{settings.WindowDockingMonitorIndex ?? 0} · 偏移 ({settings.WindowDockingOffsetX ?? 0}, {settings.WindowDockingOffsetY ?? 0})</span>
                                                     </div>
                                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                                                         {[
-                                                            { idx: 3, label: "左下角 (BottomLeft)" },
-                                                            { idx: 4, label: "底部居中 (BottomCenter)" },
-                                                            { idx: 5, label: "右下角 (BottomRight)" },
+                                                            { idx: 3, label: "左下角" },
+                                                            { idx: 4, label: "底部居中" },
+                                                            { idx: 5, label: "右下角" },
                                                         ].map((pos) => {
                                                             const active = (settings.WindowDockingLocation ?? 1) === pos.idx;
                                                             return (
@@ -975,33 +976,33 @@ export default function SettingsPage() {
 
                                             <div className="grid-3 mt-16">
                                                 <div className="form-group">
-                                                    <label className="form-label">窗口停靠位置 (WindowDockingLocation)</label>
+                                                    <label className="form-label">窗口停靠位置</label>
                                                     <Select
                                                         value={String(settings.WindowDockingLocation ?? 1)}
                                                         onChange={(_, d) => update("WindowDockingLocation", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>左上角 (TopLeft)</option>
-                                                        <option value={1}>中上侧 (TopCenter)</option>
-                                                        <option value={2}>右上角 (TopRight)</option>
-                                                        <option value={3}>左下角 (BottomLeft)</option>
-                                                        <option value={4}>中下侧 (BottomCenter)</option>
-                                                        <option value={5}>右下角 (BottomRight)</option>
+                                                        <option value={0}>左上角</option>
+                                                        <option value={1}>中上侧</option>
+                                                        <option value={2}>右上角</option>
+                                                        <option value={3}>左下角</option>
+                                                        <option value={4}>中下侧</option>
+                                                        <option value={5}>右下角</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">窗口层级 (WindowLayer)</label>
+                                                    <label className="form-label">窗口层级</label>
                                                     <Select
                                                         value={String(settings.WindowLayer ?? 1)}
                                                         onChange={(_, d) => update("WindowLayer", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>置底 (Bottom)</option>
-                                                        <option value={1}>置顶 (Topmost)</option>
+                                                        <option value={0}>置底</option>
+                                                        <option value={1}>置顶</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">停靠显示器索引 (WindowDockingMonitorIndex)</label>
+                                                    <label className="form-label">停靠显示器索引</label>
                                                     <Input
                                                         type="number"
                                                         min={0}
@@ -1014,7 +1015,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-3">
                                                 <div className="form-group">
-                                                    <label className="form-label">窗口向右偏移 X (WindowDockingOffsetX)</label>
+                                                    <label className="form-label">窗口向右偏移 X</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.WindowDockingOffsetX ?? 0)}
@@ -1023,7 +1024,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">窗口向下偏移 Y (WindowDockingOffsetY)</label>
+                                                    <label className="form-label">窗口向下偏移 Y</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.WindowDockingOffsetY ?? 0)}
@@ -1032,7 +1033,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">点击托盘图标行为 (TaskBarIconClickBehavior)</label>
+                                                    <label className="form-label">点击托盘图标行为</label>
                                                     <Select
                                                         value={String(settings.TaskBarIconClickBehavior ?? 0)}
                                                         onChange={(_, d) => update("TaskBarIconClickBehavior", parseInt(d.value, 10))}
@@ -1049,7 +1050,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">界面隐藏模式 (HideMode)</label>
+                                                    <label className="form-label">界面隐藏模式</label>
                                                     <Select
                                                         value={String(settings.HideMode ?? 0)}
                                                         onChange={(_, d) => update("HideMode", parseInt(d.value, 10))}
@@ -1060,7 +1061,7 @@ export default function SettingsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">触控渐隐持续毫秒 (TouchInFadingDurationMs)</label>
+                                                    <label className="form-label">触控渐隐持续毫秒</label>
                                                     <Input
                                                         type="number"
                                                         step={100}
@@ -1073,7 +1074,7 @@ export default function SettingsPage() {
 
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">上课时自动隐藏主界面 (HideOnClass)</div>
+                                                    <div className="settings-item-label">上课时自动隐藏主界面</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.HideOnClass}
@@ -1082,7 +1083,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">前景全屏程序时隐藏主界面 (HideOnFullscreen)</div>
+                                                    <div className="settings-item-label">前景全屏程序时隐藏主界面</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.HideOnFullscreen}
@@ -1091,7 +1092,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">前景窗口最大化时隐藏主界面 (HideOnMaxWindow)</div>
+                                                    <div className="settings-item-label">前景窗口最大化时隐藏主界面</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.HideOnMaxWindow}
@@ -1100,7 +1101,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">忽略桌面工作区限制 / 贴边停靠 (IsIgnoreWorkAreaEnabled)</div>
+                                                    <div className="settings-item-label">忽略桌面工作区限制 / 贴边停靠</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsIgnoreWorkAreaEnabled}
@@ -1109,7 +1110,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">允许主界面响应鼠标点击交互 (IsMouseClickingEnabled)</div>
+                                                    <div className="settings-item-label">允许主界面响应鼠标点击交互</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsMouseClickingEnabled}
@@ -1118,7 +1119,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">鼠标移入主窗口时渐隐穿透 (IsMouseInFadingEnabled)</div>
+                                                    <div className="settings-item-label">鼠标移入主窗口时渐隐穿透</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsMouseInFadingEnabled !== false}
@@ -1127,7 +1128,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">反转鼠标移入渐隐（移入时显现、移出时半透明）(IsMouseInFadingReversed)</div>
+                                                    <div className="settings-item-label">反转鼠标移入渐隐（移入时显现、移出时半透明）</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsMouseInFadingReversed}
@@ -1137,13 +1138,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 主界面 -> 外观 (AppearanceSettingsPage) */}
+                                    {/* 主界面 -> 外观 */}
                                     {activeTab === "appearance" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">主界面 · 外观、主题与字体 (AppearanceSettingsPage)</div>
+                                            <div className="settings-section-title">主界面 · 外观、主题与字体</div>
                                             <div className="grid-3">
                                                 <div className="form-group">
-                                                    <label className="form-label">应用明暗主题 (Theme)</label>
+                                                    <label className="form-label">应用明暗主题</label>
                                                     <Select
                                                         value={String(settings.Theme ?? 0)}
                                                         onChange={(_, d) => update("Theme", parseInt(d.value, 10))}
@@ -1155,7 +1156,7 @@ export default function SettingsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">主题色来源 (ColorSource)</label>
+                                                    <label className="form-label">主题色来源</label>
                                                     <Select
                                                         value={String(settings.ColorSource ?? 0)}
                                                         onChange={(_, d) => update("ColorSource", parseInt(d.value, 10))}
@@ -1167,7 +1168,7 @@ export default function SettingsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">界面缩放比例 (Scale)</label>
+                                                    <label className="form-label">界面缩放比例</label>
                                                     <Input
                                                         type="number"
                                                         step={0.05}
@@ -1182,7 +1183,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">主强调色 (PrimaryColor)</label>
+                                                    <label className="form-label">主强调色</label>
                                                     <div className="flex items-center gap-8">
                                                         <input
                                                             type="color"
@@ -1198,7 +1199,7 @@ export default function SettingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">次强调色 (SecondaryColor)</label>
+                                                    <label className="form-label">次强调色</label>
                                                     <div className="flex items-center gap-8">
                                                         <input
                                                             type="color"
@@ -1217,7 +1218,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-4">
                                                 <div className="form-group">
-                                                    <label className="form-label">背景不透明度 (Opacity, 0~1)</label>
+                                                    <label className="form-label">背景不透明度</label>
                                                     <Input
                                                         type="number"
                                                         step={0.05}
@@ -1229,7 +1230,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">圆角半径 X (RadiusX)</label>
+                                                    <label className="form-label">圆角半径 X</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.RadiusX ?? 8)}
@@ -1238,7 +1239,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">圆角半径 Y (RadiusY)</label>
+                                                    <label className="form-label">圆角半径 Y</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.RadiusY ?? 8)}
@@ -1247,7 +1248,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">行间垂直间距 (MainWindowLineVerticalMargin)</label>
+                                                    <label className="form-label">行间垂直间距</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.MainWindowLineVerticalMargin ?? 0)}
@@ -1259,7 +1260,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">主界面字体名称 (MainWindowFont)</label>
+                                                    <label className="form-label">主界面字体名称</label>
                                                     <Input
                                                         value={settings.MainWindowFont ?? "HarmonyOS Sans SC"}
                                                         onChange={(_, d) => update("MainWindowFont", d.value)}
@@ -1267,7 +1268,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">主界面字重 (MainWindowFontWeight2)</label>
+                                                    <label className="form-label">主界面字重</label>
                                                     <Input
                                                         type="number"
                                                         step={100}
@@ -1282,7 +1283,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-4">
                                                 <div className="form-group">
-                                                    <label className="form-label">次要字号 (SecondaryFontSize)</label>
+                                                    <label className="form-label">次要字号</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.MainWindowSecondaryFontSize ?? 14)}
@@ -1291,7 +1292,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">正文字号 (BodyFontSize)</label>
+                                                    <label className="form-label">正文字号</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.MainWindowBodyFontSize ?? 16)}
@@ -1300,7 +1301,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">强调字号 (EmphasizedFontSize)</label>
+                                                    <label className="form-label">强调字号</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.MainWindowEmphasizedFontSize ?? 18)}
@@ -1309,7 +1310,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">大号字号 (LargeFontSize)</label>
+                                                    <label className="form-label">大号字号</label>
                                                     <Input
                                                         type="number"
                                                         value={String(settings.MainWindowLargeFontSize ?? 20)}
@@ -1321,7 +1322,7 @@ export default function SettingsPage() {
 
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用分体主界面模式 (IsIslandSeperated)</div>
+                                                    <div className="settings-item-label">启用分体主界面模式</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsIslandSeperated}
@@ -1330,7 +1331,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用自定义背景色 (IsCustomBackgroundColorEnabled)</div>
+                                                    <div className="settings-item-label">启用自定义背景色</div>
                                                 </div>
                                                 <div className="flex items-center gap-8">
                                                     {settings.IsCustomBackgroundColorEnabled && (
@@ -1349,7 +1350,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用自定义前景色/文字颜色 (IsCustomForegroundColorEnabled)</div>
+                                                    <div className="settings-item-label">启用自定义前景色/文字颜色</div>
                                                 </div>
                                                 <div className="flex items-center gap-8">
                                                     {settings.IsCustomForegroundColorEnabled && (
@@ -1368,7 +1369,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">定时自动更新壁纸主题色 (IsWallpaperAutoUpdateEnabled)</div>
+                                                    <div className="settings-item-label">定时自动更新壁纸主题色</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.IsWallpaperAutoUpdateEnabled}
@@ -1378,13 +1379,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 功能与系统 -> 提醒与语音合成 (NotificationSettingsPage) */}
+                                    {/* 功能与系统 -> 提醒与语音合成 */}
                                     {activeTab === "notification" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">功能与系统 · 提醒、全屏波纹特效与语音合成 (NotificationSettingsPage)</div>
+                                            <div className="settings-section-title">功能与系统 · 提醒、全屏波纹特效与语音合成</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用提醒功能总开关 (IsNotificationEnabled)</div>
+                                                    <div className="settings-item-label">启用提醒功能总开关</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsNotificationEnabled !== false}
@@ -1393,7 +1394,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用提醒醒目全屏视觉特效 (IsNotificationEffectEnabled)</div>
+                                                    <div className="settings-item-label">启用提醒醒目全屏视觉特效</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsNotificationEffectEnabled !== false}
@@ -1402,7 +1403,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用提醒音效 (IsNotificationSoundEnabled)</div>
+                                                    <div className="settings-item-label">启用提醒音效</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsNotificationSoundEnabled !== false}
@@ -1411,7 +1412,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">提醒时强制窗口置顶 (IsNotificationTopmostEnabled)</div>
+                                                    <div className="settings-item-label">提醒时强制窗口置顶</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsNotificationTopmostEnabled !== false}
@@ -1420,7 +1421,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">使用独立 UI 线程渲染全屏提醒特效 (NotificationUseStandaloneEffectUiThread)</div>
+                                                    <div className="settings-item-label">使用独立 UI 线程渲染全屏提醒特效</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.NotificationUseStandaloneEffectUiThread !== false}
@@ -1429,7 +1430,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">允许提醒请求启用语音播报 (AllowNotificationSpeech)</div>
+                                                    <div className="settings-item-label">允许提醒请求启用语音播报</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.AllowNotificationSpeech !== false}
@@ -1438,7 +1439,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">允许提醒请求启用全屏特效 (AllowNotificationEffect)</div>
+                                                    <div className="settings-item-label">允许提醒请求启用全屏特效</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.AllowNotificationEffect !== false}
@@ -1447,7 +1448,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">允许提醒请求播放音效 (AllowNotificationSound)</div>
+                                                    <div className="settings-item-label">允许提醒请求播放音效</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.AllowNotificationSound !== false}
@@ -1456,7 +1457,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">允许提醒请求强制置顶 (AllowNotificationTopmost)</div>
+                                                    <div className="settings-item-label">允许提醒请求强制置顶</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.AllowNotificationTopmost !== false}
@@ -1466,7 +1467,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-3 mt-16">
                                                 <div className="form-group">
-                                                    <label className="form-label">提醒音效音量 (NotificationSoundVolume, 0~1)</label>
+                                                    <label className="form-label">提醒音效音量</label>
                                                     <Input
                                                         type="number"
                                                         step={0.05}
@@ -1478,7 +1479,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">自定义提醒音效路径 (NotificationSoundPath)</label>
+                                                    <label className="form-label">自定义提醒音效路径</label>
                                                     <Input
                                                         value={settings.NotificationSoundPath ?? ""}
                                                         onChange={(_, d) => update("NotificationSoundPath", d.value)}
@@ -1487,7 +1488,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">特效渲染精度缩放 (NotificationEffectRenderingScale)</label>
+                                                    <label className="form-label">特效渲染精度缩放</label>
                                                     <Input
                                                         type="number"
                                                         step={0.1}
@@ -1503,7 +1504,7 @@ export default function SettingsPage() {
                                             <div className="settings-section-title mt-16">语音合成引擎 (系统 TTS / EdgeTTS / GPT-SoVITS)</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用 TTS 语音合成播报 (IsSpeechEnabled)</div>
+                                                    <div className="settings-item-label">启用 TTS 语音合成播报</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsSpeechEnabled !== false}
@@ -1513,34 +1514,34 @@ export default function SettingsPage() {
 
                                             <div className="grid-2 mt-16">
                                                 <div className="form-group">
-                                                    <label className="form-label">语音合成源 (SpeechSource)</label>
+                                                    <label className="form-label">语音合成源</label>
                                                     <Select
                                                         value={String(settings.SpeechSource ?? 1)}
                                                         onChange={(_, d) => update("SpeechSource", parseInt(d.value, 10))}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value={0}>系统内置 TTS (System SAPI / 平台语音)</option>
-                                                        <option value={1}>微软 EdgeTTS 在线神经网络语音 (1)</option>
-                                                        <option value={2}>GPT-SoVITS 自定义语音服务 (2)</option>
+                                                        <option value={0}>系统内置 TTS</option>
+                                                        <option value={1}>微软 EdgeTTS 在线神经网络语音</option>
+                                                        <option value={2}>GPT-SoVITS 自定义语音服务</option>
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">语音服务提供商标识 (SelectedSpeechProvider)</label>
+                                                    <label className="form-label">语音服务提供商标识</label>
                                                     <Select
                                                         value={settings.SelectedSpeechProvider ?? "classisland.speech.edgeTts"}
                                                         onChange={(_, d) => update("SelectedSpeechProvider", d.value)}
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <option value="classisland.speech.system">系统内置语音 (classisland.speech.system)</option>
-                                                        <option value="classisland.speech.edgeTts">微软 EdgeTTS (classisland.speech.edgeTts)</option>
-                                                        <option value="classisland.speech.gptSoVits">GPT-SoVITS (classisland.speech.gptSoVits)</option>
+                                                        <option value="classisland.speech.system">系统内置语音</option>
+                                                        <option value="classisland.speech.edgeTts">微软 EdgeTTS</option>
+                                                        <option value="classisland.speech.gptSoVits">GPT-SoVITS</option>
                                                     </Select>
                                                 </div>
                                             </div>
 
                                             <div className="grid-2">
                                                 <div className="form-group">
-                                                    <label className="form-label">语音播报音量 (SpeechVolume, 0~1)</label>
+                                                    <label className="form-label">语音播报音量</label>
                                                     <Input
                                                         type="number"
                                                         step={0.05}
@@ -1552,7 +1553,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">EdgeTTS 发音人名称 (EdgeTtsVoiceName)</label>
+                                                    <label className="form-label">EdgeTTS 发音人名称</label>
                                                     <Input
                                                         value={settings.EdgeTtsVoiceName ?? "zh-CN-XiaoxiaoNeural"}
                                                         onChange={(_, d) => update("EdgeTtsVoiceName", d.value)}
@@ -1564,13 +1565,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 功能与系统 -> 天气 (WeatherSettingsPage) */}
+                                    {/* 功能与系统 -> 天气 */}
                                     {activeTab === "weather" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">功能与系统 · 天气数据源与城市定位 (WeatherSettingsPage)</div>
+                                            <div className="settings-section-title">功能与系统 · 天气数据源与城市定位</div>
                                             <div className="grid-3">
                                                 <div className="form-group">
-                                                    <label className="form-label">定位方式 (WeatherLocationSource)</label>
+                                                    <label className="form-label">定位方式</label>
                                                     <Select
                                                         value={String(settings.WeatherLocationSource ?? 0)}
                                                         onChange={(_, d) => update("WeatherLocationSource", parseInt(d.value, 10))}
@@ -1582,7 +1583,7 @@ export default function SettingsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">城市编码 (CityId)</label>
+                                                    <label className="form-label">城市编码</label>
                                                     <Input
                                                         value={settings.CityId ?? "101010100"}
                                                         onChange={(_, d) => update("CityId", d.value)}
@@ -1591,7 +1592,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">城市显示名称 (CityName)</label>
+                                                    <label className="form-label">城市显示名称</label>
                                                     <Input
                                                         value={settings.CityName ?? "北京 (北京, 中国)"}
                                                         onChange={(_, d) => update("CityName", d.value)}
@@ -1603,7 +1604,7 @@ export default function SettingsPage() {
 
                                             <div className="grid-3">
                                                 <div className="form-group">
-                                                    <label className="form-label">经度 (WeatherLongitude)</label>
+                                                    <label className="form-label">经度</label>
                                                     <Input
                                                         type="number"
                                                         step={0.0001}
@@ -1613,7 +1614,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">纬度 (WeatherLatitude)</label>
+                                                    <label className="form-label">纬度</label>
                                                     <Input
                                                         type="number"
                                                         step={0.0001}
@@ -1623,7 +1624,7 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <div className="form-group">
-                                                    <label className="form-label">天气图标方案 (WeatherIconId)</label>
+                                                    <label className="form-label">天气图标方案</label>
                                                     <Input
                                                         value={settings.WeatherIconId ?? "classisland.weatherIcons.lucide"}
                                                         onChange={(_, d) => update("WeatherIconId", d.value)}
@@ -1634,7 +1635,7 @@ export default function SettingsPage() {
 
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启动时自动刷新定位位置 (AutoRefreshWeatherLocation)</div>
+                                                    <div className="settings-item-label">启动时自动刷新定位位置</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.AutoRefreshWeatherLocation}
@@ -1643,7 +1644,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">使用无 TLS (HTTP) 请求获取天气数据以兼容老旧根证书系统 (NoTLSWeatherRequests)</div>
+                                                    <div className="settings-item-label">使用无 TLS 请求获取天气数据以兼容老旧根证书系统</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!settings.NoTLSWeatherRequests}
@@ -1653,13 +1654,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 功能与系统 -> 自动化 (AutomationSettingsPage) */}
+                                    {/* 功能与系统 -> 自动化 */}
                                     {activeTab === "automation" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">功能与系统 · 自动化工作流引擎 (AutomationSettingsPage)</div>
+                                            <div className="settings-section-title">功能与系统 · 自动化工作流引擎</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用自动化工作流引擎 (IsAutomationEnabled)</div>
+                                                    <div className="settings-item-label">启用自动化工作流引擎</div>
                                                     <div className="settings-item-hint">开启后客户端将按照当前自动化方案响应上下课、全屏、天气预警等触发器</div>
                                                 </div>
                                                 <Switch
@@ -1668,7 +1669,7 @@ export default function SettingsPage() {
                                                 />
                                             </div>
                                             <div className="form-group mt-16">
-                                                <label className="form-label">当前自动化配置方案名称 (CurrentAutomationConfig)</label>
+                                                <label className="form-label">当前自动化配置方案名称</label>
                                                 <Input
                                                     value={settings.CurrentAutomationConfig ?? "Default"}
                                                     onChange={(_, d) => update("CurrentAutomationConfig", d.value)}
@@ -1679,12 +1680,12 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 功能与系统 -> 更新 (UpdateSettingsPage) */}
+                                    {/* 功能与系统 -> 更新 */}
                                     {activeTab === "update" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">功能与系统 · 应用自动更新策略 (UpdateSettingsPage)</div>
+                                            <div className="settings-section-title">功能与系统 · 应用自动更新策略</div>
                                             <div className="form-group">
-                                                <label className="form-label">客户端应用更新模式 (UpdateMode)</label>
+                                                <label className="form-label">客户端应用更新模式</label>
                                                 <Select
                                                     value={String(settings.UpdateMode ?? 0)}
                                                     onChange={(_, d) => update("UpdateMode", parseInt(d.value, 10))}
@@ -1699,13 +1700,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 功能与系统 -> 插件 (PluginsSettingsPage) */}
+                                    {/* 功能与系统 -> 插件 */}
                                     {activeTab === "plugins" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">功能与系统 · 插件与插件市场管理 (PluginsSettingsPage)</div>
+                                            <div className="settings-section-title">功能与系统 · 插件与插件市场管理</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">自动更新已安装插件 (IsPluginsAutoUpdateEnabled)</div>
+                                                    <div className="settings-item-label">自动更新已安装插件</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.IsPluginsAutoUpdateEnabled !== false}
@@ -1714,7 +1715,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">自动禁用导致崩溃的损坏插件 (AutoDisableCorruptPlugins)</div>
+                                                    <div className="settings-item-label">自动禁用导致崩溃的损坏插件</div>
                                                 </div>
                                                 <Switch
                                                     checked={settings.AutoDisableCorruptPlugins !== false}
@@ -1724,13 +1725,13 @@ export default function SettingsPage() {
                                         </div>
                                     )}
 
-                                    {/* 功能与系统 -> 调试 (DebugPage) */}
+                                    {/* 功能与系统 -> 调试 */}
                                     {activeTab === "debug" && (
                                         <div className="settings-section">
-                                            <div className="settings-section-title">功能与系统 · 调试与开发者选项 (DebugPage)</div>
+                                            <div className="settings-section-title">功能与系统 · 调试与开发者选项</div>
                                             <div className="settings-item">
                                                 <div className="settings-item-info">
-                                                    <div className="settings-item-label">启用调试模式 (IsDebugEnabled)</div>
+                                                    <div className="settings-item-label">启用调试模式</div>
                                                     <div className="settings-item-hint">开启调试菜单、诊断浮层与详细日志输出</div>
                                                 </div>
                                                 <Switch

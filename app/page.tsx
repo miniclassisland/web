@@ -239,7 +239,7 @@ export default function UserCenterHomePage() {
 
                 <div className="stat-card">
                     <div className="stat-card-header">
-                        <span className="stat-card-label">两步验证 (2FA)</span>
+                        <span className="stat-card-label">两步验证</span>
                         <span className="stat-card-icon"><ShieldTask24Regular /></span>
                     </div>
                     <div className="stat-card-value" style={{ fontSize: 18 }}>
@@ -316,7 +316,7 @@ export default function UserCenterHomePage() {
                             <thead>
                                 <tr>
                                     <th>账户名称</th>
-                                    <th>子域名标识 (Slug)</th>
+                                    <th>子域名标识</th>
                                     <th>账户 ID</th>
                                     <th>终端接入策略</th>
                                     <th>状态</th>

@@ -120,7 +120,7 @@ export default function NotificationsPage() {
                                     <option value="">-- 选择单个目标客户端 --</option>
                                     {clientList.map((c) => (
                                         <option key={c.uid} value={c.uid}>
-                                            [{c.status === "online" ? "在线" : "离线"}] {c.display_name || c.client_id || c.uid} ({c.uid.slice(0, 8)}...)
+                                            [{c.status === "online" ? "在线" : "离线"}] {c.display_name || c.client_id || c.uid} 
                                         </option>
                                     ))}
                                 </Select>
@@ -138,7 +138,7 @@ export default function NotificationsPage() {
                             </div>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">遮罩标题 (MessageMask)</label>
+                            <label className="form-label">遮罩标题</label>
                             <Input
                                 value={form.MessageMask || ""}
                                 onChange={(_, d) => setForm({ ...form, MessageMask: d.value })}
@@ -147,7 +147,7 @@ export default function NotificationsPage() {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">详细通知正文 (MessageContent)</label>
+                            <label className="form-label">详细通知正文</label>
                             <Textarea
                                 value={form.MessageContent || ""}
                                 onChange={(_, d) => setForm({ ...form, MessageContent: d.value })}
@@ -158,7 +158,7 @@ export default function NotificationsPage() {
                         </div>
                         <div className="grid-2 mb-16">
                             <div className="form-group">
-                                <label className="form-label">重复播报次数 (RepeatCounts)</label>
+                                <label className="form-label">重复播报次数</label>
                                 <Input
                                     type="number"
                                     value={String(form.RepeatCounts || 1)}
@@ -169,7 +169,7 @@ export default function NotificationsPage() {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">左右侧图标编号 (Lucide Icon Index)</label>
+                                <label className="form-label">左右侧图标编号</label>
                                 <div className="flex gap-8">
                                     <Input
                                         type="number"

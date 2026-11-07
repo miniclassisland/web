@@ -41,6 +41,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     const showFullShell = initialized && isAuthenticated && !isExcluded;
 
+    React.useEffect(() => {
+        if (typeof document === "undefined") return;
+        const root = document.documentElement;
+        if (showFullShell) {
+            root.removeAttribute("data-auth-bg");
+        } else {
+            root.setAttribute("data-auth-bg", "1");
+        }
+    }, [showFullShell]);
+
     if (!initialized && !isExcluded) {
         return null;
     }

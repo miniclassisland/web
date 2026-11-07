@@ -121,7 +121,7 @@ export default function SecurityPage() {
             setResetPromptTriggered(true);
             setMsg({
                 type: "warning",
-                text: "您刚刚使用了倒数第二个（或最后一个）有效恢复码登录账户。为防止账户锁定，系统已为您开启两步验证 (TOTP) 重置向导，请立即重新绑定身份验证器并备份新的恢复码！",
+                text: "您刚刚使用了倒数第二个或最后一个有效恢复码登录账户。为防止账户锁定，系统已为您开启两步验证重置向导，请立即重新绑定身份验证器并备份新的恢复码！",
             });
             void (async () => {
                 setLoading(true);
@@ -261,7 +261,7 @@ export default function SecurityPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">个人资料与安全设置</h1>
-                    <p className="page-subtitle">管理您的个人账号信息、登录密码与两步验证 (2FA)</p>
+                    <p className="page-subtitle">管理您的个人账号信息、登录密码与两步验证</p>
                 </div>
             </div>
 
@@ -274,13 +274,20 @@ export default function SecurityPage() {
             <div className="grid-2">
                 {/* 个人资料卡片 */}
                 <div className="card">
-                    <div className="card-title flex items-center gap-8">
-                        <Person24Regular />
-                        个人资料
-                    </div>
                     <form onSubmit={handleSaveProfile}>
+                        <div className="card-title flex items-center justify-between gap-8">
+                            <span className="flex items-center gap-8">
+                                <Person24Regular />
+                                个人资料
+                            </span>
+                            {user?.role_code !== "pending" && (
+                                <Button appearance="primary" size="small" type="submit" disabled={loading}>
+                                    保存资料修改
+                                </Button>
+                            )}
+                        </div>
                         <div className="form-group">
-                            <label className="form-label">用户 ID (UUID)</label>
+                            <label className="form-label">用户唯一标识</label>
                             <div className="flex items-center gap-8">
                                 <Input
                                     value={user?.id || ""}
@@ -296,14 +303,13 @@ export default function SecurityPage() {
                                         icon={<Copy24Regular />}
                                         onClick={() => {
                                             navigator.clipboard.writeText(user.id);
-                                            setMsg({ type: "success", text: "用户 UUID 已复制到剪贴板" });
+                                            setMsg({ type: "success", text: "用户唯一标识已复制到剪贴板" });
                                         }}
                                     >
                                         复制
                                     </Button>
                                 )}
                             </div>
-                            <div className="form-hint">用户唯一标识 (UUID) 在生成时已锁定，不可修改</div>
                         </div>
                         <div className="form-group">
                             <label className="form-label">显示名称</label>
@@ -321,7 +327,7 @@ export default function SecurityPage() {
                                 style={{ width: "100%" }}
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: 0 }}>
                             <label className="form-label">绑定邮箱</label>
                             <Input
                                 type="email"
@@ -339,43 +345,26 @@ export default function SecurityPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">绑定 QQ (交流群)</label>
-                            <Input
-                                value={
-                                    user?.bound_qq_masked
-                                        ? `${user.bound_qq_masked}${
-                                              user.qq_bound_manual && user.qq_joined_group === false
-                                                  ? "（管理员已绑定，待加入群聊）"
-                                                  : "（已绑定）"
-                                          }`
-                                        : "未绑定"
-                                }
-                                readOnly
-                                disabled
-                                style={{ width: "100%", fontFamily: "var(--font-mono)" }}
-                            />
-                            <div className="form-hint">
-                                {user?.bound_qq_masked
-                                    ? "不支持手动解绑；如需换绑请直接退出交流群，或联系超级管理员"
-                                    : "可通过主页底部「加入交流群」获取入群密码并自动绑定"}
-                            </div>
-                        </div>
-                        {user?.role_code !== "pending" && (
-                            <Button appearance="primary" type="submit" disabled={loading}>
-                                保存资料修改
-                            </Button>
-                        )}
                     </form>
                 </div>
 
                 {/* 修改密码卡片 */}
                 <div className="card">
-                    <div className="card-title flex items-center gap-8">
-                        <Key24Regular />
-                        修改登录密码
-                    </div>
                     <form onSubmit={handleChangePassword}>
+                        <div className="card-title flex items-center justify-between gap-8">
+                            <span className="flex items-center gap-8">
+                                <Key24Regular />
+                                修改登录密码
+                            </span>
+                            <Button
+                                appearance="primary"
+                                size="small"
+                                type="submit"
+                                disabled={loading || !oldPassword || newPassword.length < 12}
+                            >
+                                更新密码
+                            </Button>
+                        </div>
                         <div className="form-group">
                             <label className="form-label">当前密码</label>
                             <Input
@@ -385,8 +374,8 @@ export default function SecurityPage() {
                                 style={{ width: "100%" }}
                             />
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">新密码（至少 12 位）</label>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label">新密码</label>
                             <Input
                                 type="password"
                                 value={newPassword}
@@ -395,13 +384,6 @@ export default function SecurityPage() {
                                 style={{ width: "100%" }}
                             />
                         </div>
-                        <Button
-                            appearance="primary"
-                            type="submit"
-                            disabled={loading || !oldPassword || newPassword.length < 12}
-                        >
-                            更新密码
-                        </Button>
                     </form>
                 </div>
             </div>
@@ -437,10 +419,10 @@ export default function SecurityPage() {
                 <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
                     <div className="card-title flex items-center gap-8" style={{ margin: 0 }}>
                         <ShieldKeyhole24Regular />
-                        两步验证 (TOTP)
+                        两步验证
                     </div>
                     <span className={`badge ${user?.totp_enabled ? "badge-success" : "badge-warning"}`}>
-                        {user?.totp_enabled ? "已启用 2FA" : "未启用"}
+                        {user?.totp_enabled ? "已启用两步验证" : "未启用"}
                     </span>
                 </div>
 
@@ -463,7 +445,7 @@ export default function SecurityPage() {
                             <div className="settings-section-title">1. 扫描二维码或手动输入密钥</div>
                             <QRCodeImage text={setupData.uri} />
                             <div className="form-group">
-                                <label className="form-label">TOTP URI</label>
+                                <label className="form-label">验证链接</label>
                                 <Input
                                     value={setupData.uri}
                                     readOnly
@@ -471,14 +453,14 @@ export default function SecurityPage() {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">密钥 (Secret)</label>
+                                <label className="form-label">密钥</label>
                                 <Input
                                     value={setupData.secret}
                                     readOnly
                                     style={{ width: "100%", fontFamily: "var(--font-mono)", letterSpacing: 2 }}
                                 />
                                 <div className="form-hint">
-                                    请将此密钥添加到您的身份验证器应用（如 Google Authenticator、Microsoft Authenticator、Authy）
+                                    请将此密钥添加到您的身份验证器应用
                                 </div>
                             </div>
                         </div>
@@ -562,7 +544,7 @@ export default function SecurityPage() {
 
                         {(disableMode === "pwd_totp" || disableMode === "totp_recovery") && (
                             <div className="form-group" style={{ maxWidth: 420 }}>
-                                <label className="form-label">TOTP 动态验证码 (6 位)</label>
+                                <label className="form-label">动态验证码</label>
                                 <Input
                                     value={disableTotpCode}
                                     onChange={(_, d) => setDisableTotpCode(d.value)}
@@ -588,7 +570,7 @@ export default function SecurityPage() {
 
                         {disableMode === "two_recovery" && (
                             <div className="form-group" style={{ maxWidth: 420 }}>
-                                <label className="form-label">第 2 个有效恢复码（需与第 1 个不同）</label>
+                                <label className="form-label">第 2 个有效恢复码</label>
                                 <Input
                                     value={disableRecoveryCode2}
                                     onChange={(_, d) => setDisableRecoveryCode2(d.value)}
@@ -605,7 +587,7 @@ export default function SecurityPage() {
                                 disabled={loading || !canSubmitDisable()}
                                 style={{ background: "var(--danger-color)" }}
                             >
-                                {loading ? <Spinner size="tiny" /> : "确认禁用 2FA"}
+                                {loading ? <Spinner size="tiny" /> : "确认禁用两步验证"}
                             </Button>
                             <Button appearance="secondary" onClick={() => setStep("idle")}>
                                 取消

@@ -61,9 +61,9 @@ export default function DownloadPresetPopoverButton({
     const presets = suggestedNames && suggestedNames.length > 0
         ? suggestedNames
         : [
-            { label: "具名区分文件 (推荐)", fileName: ensureJsonExt(defaultFileName) },
-            { label: "客户端自动加载名 (ManagementPreset.json)", fileName: "ManagementPreset.json" },
-            { label: "服务端标准配置名 (ManagementServer.json)", fileName: "ManagementServer.json" },
+            { label: "具名区分文件", fileName: ensureJsonExt(defaultFileName) },
+            { label: "客户端自动加载名", fileName: "ManagementPreset.json" },
+            { label: "服务端标准配置名", fileName: "ManagementServer.json" },
         ];
 
     async function handleConfirmDownload(e?: React.FormEvent) {

@@ -150,7 +150,7 @@ export default function AccountsPage() {
                         从本地上传配置
                     </Button>
                     <DownloadPresetPopoverButton
-                        buttonText="下载通用配置 (仅接口地址)"
+                        buttonText="下载通用配置"
                         appearance="primary"
                         defaultFileName={`ManagementPreset-${slugName}-generic.json`}
                         onFetchData={() => accounts.downloadPreset(accountId)}
@@ -218,7 +218,7 @@ export default function AccountsPage() {
                         </div>
 
                         <div className="detail-row">
-                            <div className="detail-label">账户 ID (UUID)</div>
+                            <div className="detail-label">账户 ID</div>
                             <div className="detail-value">
                                 <span className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
                                     <Input
@@ -234,20 +234,17 @@ export default function AccountsPage() {
                                         icon={<Copy24Regular />}
                                         onClick={() => {
                                             navigator.clipboard.writeText(accountInfo.id);
-                                            setMsg({ type: "success", text: "账户 UUID 已复制到剪贴板" });
+                                            setMsg({ type: "success", text: "账户 ID 已复制到剪贴板" });
                                         }}
                                     >
                                         复制
                                     </Button>
-                                    <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-                                        生成时已锁定，不可修改
-                                    </span>
                                 </span>
                             </div>
                         </div>
 
                         <div className="detail-row">
-                            <div className="detail-label">子域名标识 (Slug)</div>
+                            <div className="detail-label">子域名标识</div>
                             <div className="detail-value">
                                 {editingSlug ? (
                                     <form onSubmit={handleSlugChange} className="flex items-center gap-8">

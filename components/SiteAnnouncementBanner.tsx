@@ -2,12 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import {
+    Button,
     Dialog,
     DialogSurface,
     DialogBody,
     DialogTitle,
     DialogContent,
+    DialogActions,
 } from "@fluentui/react-components";
+import { Dismiss20Regular } from "@fluentui/react-icons";
 import { site } from "@/lib/api";
 
 export default function SiteAnnouncementBanner() {
@@ -93,6 +96,15 @@ export default function SiteAnnouncementBanner() {
                                 {announcement.subtitle || "暂无详细内容"}
                             </div>
                         </DialogContent>
+                        <DialogActions style={{ marginTop: 16, justifyContent: "flex-end" }}>
+                            <Button
+                                appearance="secondary"
+                                icon={<Dismiss20Regular />}
+                                onClick={() => setOpen(false)}
+                                aria-label="关闭通知"
+                                title="关闭通知"
+                            />
+                        </DialogActions>
                     </DialogBody>
                 </DialogSurface>
             </Dialog>

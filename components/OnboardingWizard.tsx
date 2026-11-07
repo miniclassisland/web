@@ -25,6 +25,7 @@ import {
     Settings24Regular,
     Key24Regular,
     CheckmarkCircle24Regular,
+    CheckmarkCircle16Regular,
     ArrowRight16Regular,
     ArrowLeft16Regular,
     Apps24Regular,
@@ -227,7 +228,7 @@ export default function OnboardingWizard({
                 if (subjectCount === 0 && timeLayoutCount === 0 && classPlanCount === 0) {
                     setMsg({
                         type: "error",
-                        text: "未在所选 JSON 中检测到 Subjects、TimeLayouts 或 ClassPlans 字段，请确认上传的是 ClassIsland 本地档案文件 (Profiles/*.json)",
+                        text: "未在所选 JSON 中检测到 Subjects、TimeLayouts 或 ClassPlans 字段，请确认上传的是 ClassIsland 本地档案文件",
                     });
                     return;
                 }
@@ -537,7 +538,7 @@ export default function OnboardingWizard({
                                         >
                                             {accounts.map((a) => (
                                                 <option key={a.id} value={a.id}>
-                                                    {a.name} ({a.slug})
+                                                    {a.name}
                                                 </option>
                                             ))}
                                         </Select>
@@ -574,7 +575,7 @@ export default function OnboardingWizard({
                         {step === 2 && (
                             <div>
                                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
-                                    您可以直接上传单机版 ClassIsland 的完整档案文件（通常位于客户端程序目录 <code>Profiles/default.json</code>），向导会自动将其中的 <strong>科目 (Subjects)</strong>、<strong>时间表 (TimeLayouts)</strong> 与 <strong>课表 (ClassPlans / ClassPlanGroups)</strong> 拆分为集控端的首个配置组。
+                                    您可以直接上传单机版 ClassIsland 的完整档案文件（通常位于客户端程序目录 <code>Profiles/default.json</code>），向导会自动将其中的 <strong>科目</strong>、<strong>时间表</strong> 与 <strong>课表</strong> 拆分为集控端的首个配置组。
                                 </p>
 
                                 <div className="grid-2 mb-16">
@@ -641,7 +642,7 @@ export default function OnboardingWizard({
                             </div>
                         )}
 
-                        {/* Step 3: 上载应用设置 (Settings.json) 与组件设置 (Components/*.json) */}
+                        {/* Step 3: 上载应用设置 与组件设置 (Components/*.json) */}
                         {step === 3 && (
                             <div>
                                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
@@ -659,7 +660,7 @@ export default function OnboardingWizard({
                                     >
                                         <div className="flex items-center gap-8 mb-8">
                                             <Settings24Regular style={{ color: "var(--accent-color)" }} />
-                                            <span style={{ fontWeight: 600, fontSize: 14 }}>应用设置 (Settings.json)</span>
+                                            <span style={{ fontWeight: 600, fontSize: 14 }}>应用设置</span>
                                         </div>
                                         <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
                                             包含窗口停靠、主题缩放、提醒特效、TTS 语音、天气与时间同步等全量客户端设置。
@@ -680,8 +681,8 @@ export default function OnboardingWizard({
                                             {settingsFileName ? `已选择: ${settingsFileName}` : "上传 Settings.json"}
                                         </Button>
                                         {settingsPayload && (
-                                            <div style={{ fontSize: 12, color: "var(--success-color)", marginTop: 8 }}>
-                                                ✓ 已识别 {Object.keys(settingsPayload).length} 项客户端设置字段
+                                            <div className="flex items-center gap-6" style={{ fontSize: 12, color: "var(--success-color)", marginTop: 8 }}>
+                                                <CheckmarkCircle16Regular /> 已识别 {Object.keys(settingsPayload).length} 项客户端设置字段
                                             </div>
                                         )}
                                     </div>
@@ -696,7 +697,7 @@ export default function OnboardingWizard({
                                     >
                                         <div className="flex items-center gap-8 mb-8">
                                             <Apps24Regular style={{ color: "var(--accent-color)" }} />
-                                            <span style={{ fontWeight: 600, fontSize: 14 }}>组件设置 (Components.json)</span>
+                                            <span style={{ fontWeight: 600, fontSize: 14 }}>组件设置</span>
                                         </div>
                                         <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
                                             包含 ClassIsland 主界面多行组件布局 (Lines) 及各子组件样式参数。
@@ -717,8 +718,8 @@ export default function OnboardingWizard({
                                             {componentsFileName ? `已选择: ${componentsFileName}` : "上传组件设置 JSON"}
                                         </Button>
                                         {componentsPayload && (
-                                            <div style={{ fontSize: 12, color: "var(--success-color)", marginTop: 8 }}>
-                                                ✓ 已识别 {componentsPayload.Lines.length} 行主界面布局（共{" "}
+                                            <div className="flex items-center gap-6" style={{ fontSize: 12, color: "var(--success-color)", marginTop: 8 }}>
+                                                <CheckmarkCircle16Regular /> 已识别 {componentsPayload.Lines.length} 行主界面布局（共{" "}
                                                 {componentsPayload.Lines.reduce((acc, l) => acc + (l.Children?.length || 0), 0)} 个组件）
                                             </div>
                                         )}
@@ -736,7 +737,7 @@ export default function OnboardingWizard({
 
                                 <div className="grid-2 mb-16">
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">终端用户密码 (UserCredential)</label>
+                                        <label className="form-label">终端用户密码</label>
                                         <Input
                                             type="password"
                                             value={userPassword}
@@ -746,7 +747,7 @@ export default function OnboardingWizard({
                                         />
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">终端管理员密码 (AdminCredential)</label>
+                                        <label className="form-label">终端管理员密码</label>
                                         <Input
                                             type="password"
                                             value={adminPassword}

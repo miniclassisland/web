@@ -63,9 +63,16 @@ export default function AuditPage() {
     function getDeviceLabel(uid: string) {
         const d = devices.find((item) => item.uid === uid);
         if (d) {
-            return `${d.display_name || d.client_id || d.uid} (${d.uid.slice(0, 8)}...)`;
+            return d.display_name || d.client_id || d.uid;
         }
         return uid;
+    }
+
+    function getAuditBadgeClass(eventType: number) {
+        if (eventType === 2 || eventType === 9) return "badge-danger";
+        if (eventType === 11 || eventType === 13) return "badge-warning";
+        if (eventType === 1 || eventType === 10) return "badge-success";
+        return "badge-info";
     }
 
     return (
@@ -157,15 +164,7 @@ export default function AuditPage() {
                                     <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>#{item.id}</td>
                                     <td style={{ fontWeight: 500 }}>{getDeviceLabel(item.client_uid)}</td>
                                     <td>
-                                        <span
-                                            className={`badge ${
-                                                item.event_type === 2 || item.event_type === 5
-                                                    ? "badge-danger"
-                                                    : item.event_type === 10
-                                                    ? "badge-warning"
-                                                    : "badge-info"
-                                            }`}
-                                        >
+                                        <span className={`badge ${getAuditBadgeClass(item.event_type)}`}>
                                             {AUDIT_EVENT_LABELS[item.event_type] || item.event_name}
                                         </span>
                                     </td>

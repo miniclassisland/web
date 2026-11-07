@@ -8,9 +8,9 @@
  */
 
 import React, { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { useAccount } from "@/lib/account-context";
+import { useAccount, isUserCenterPath } from "@/lib/account-context";
 import { useThemeMode, THEME_MODE_LABELS, type ThemeMode } from "@/lib/theme-context";
 import { token as tokenApi, getAdminSiteUrl } from "@/lib/api";
 import { ROLE_LABELS, SYSTEM_ROLES } from "@/lib/types";
@@ -25,12 +25,15 @@ import {
 
 export default function UserMenu() {
     const router = useRouter();
+    const pathname = usePathname();
     const { user, isSuperAdmin, logout, token } = useAuth();
     const { accounts, currentAccount, switchAccount } = useAccount();
     const { mode, setMode } = useThemeMode();
     const [open, setOpen] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const inUserCenter = isUserCenterPath(pathname);
+    const isUserHome = pathname === "/";
 
     React.useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
@@ -92,7 +95,7 @@ export default function UserMenu() {
 
                             <div className="user-menu-divider" />
 
-                            {currentAccount && (
+                            {!inUserCenter && currentAccount && (
                                 <div className="user-menu-section">
                                     <div className="user-menu-section-label">当前账户</div>
                                     <div className="user-menu-current-account">
@@ -112,22 +115,26 @@ export default function UserMenu() {
                                 </button>
                             )}
 
-                            <button
-                                className="user-menu-item"
-                                onClick={() => {
-                                    setOpen(false);
-                                    router.push("/");
-                                }}
-                            >
-                                <Home24Regular />
-                                <span>返回用户中心主页</span>
-                            </button>
+                            {!isUserHome && (
+                                <button
+                                    className="user-menu-item"
+                                    onClick={() => {
+                                        setOpen(false);
+                                        router.push("/");
+                                    }}
+                                >
+                                    <Home24Regular />
+                                    <span>返回用户中心主页</span>
+                                </button>
+                            )}
 
-                            <div className="user-menu-divider" />
+                            {(accounts.length > 0 || !isUserHome || (!inUserCenter && currentAccount)) && (
+                                <div className="user-menu-divider" />
+                            )}
 
                             <div className="user-menu-section">
                                 <div className="user-menu-section-label">
-                                    外观主题 ({THEME_MODE_LABELS[mode]})
+                                    外观主题 · {THEME_MODE_LABELS[mode]}
                                 </div>
                                 <div className="theme-switcher-group" style={{ width: "100%", marginTop: 4 }}>
                                     {themeOptions.map((opt) => (

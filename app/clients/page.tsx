@@ -445,7 +445,7 @@ export default function ClientsPage() {
                 </div>
                 <div className="flex gap-8">
                     <DownloadPresetPopoverButton
-                        buttonText="下载通用配置 (仅接口地址)"
+                        buttonText="下载通用配置"
                         appearance="secondary"
                         defaultFileName={`ManagementPreset-${slugName}-generic.json`}
                         onFetchData={() => accounts.downloadPreset(accountId)}
@@ -580,7 +580,7 @@ export default function ClientsPage() {
                                 </th>
                                 <th>设备名称 / 班级标识</th>
                                 <th>客户端 UID</th>
-                                <th>网络信息 (IP / MAC)</th>
+                                <th>网络信息</th>
                                 <th>状态</th>
                                 <th>下发档案策略</th>
                                 <th>最后活跃</th>
@@ -694,7 +694,7 @@ export default function ClientsPage() {
                                 <div className="grid-2">
                                     {RESOURCE_TYPES.map((rt) => (
                                         <div key={rt} className="form-group">
-                                            <label className="form-label">{RESOURCE_TYPE_LABELS[rt]} ({rt})</label>
+                                            <label className="form-label">{RESOURCE_TYPE_LABELS[rt]}</label>
                                             <Select
                                                 value={defaultProfileForm[rt] ?? ""}
                                                 onChange={(_, d) =>
@@ -735,7 +735,7 @@ export default function ClientsPage() {
                                 <div className="grid-2">
                                     {RESOURCE_TYPES.map((rt) => (
                                         <div key={rt} className="form-group">
-                                            <label className="form-label">{RESOURCE_TYPE_LABELS[rt]} ({rt})</label>
+                                            <label className="form-label">{RESOURCE_TYPE_LABELS[rt]}</label>
                                             <Select
                                                 value={batchProfileForm[rt] ?? ""}
                                                 onChange={(_, d) =>
@@ -828,7 +828,7 @@ export default function ClientsPage() {
                                                 />
                                             </div>
                                             <div className="form-group">
-                                                <label className="form-label">班级标识 (ClassIdentity)</label>
+                                                <label className="form-label">班级标识</label>
                                                 <Input
                                                     value={editClientId}
                                                     onChange={(_, d) => setEditClientId(d.value)}
@@ -929,7 +929,7 @@ export default function ClientsPage() {
                                             <div className="grid-2 mb-16">
                                                 {RESOURCE_TYPES.map((rt) => (
                                                     <div key={rt} className="form-group">
-                                                        <label className="form-label">{RESOURCE_TYPE_LABELS[rt]} ({rt})</label>
+                                                        <label className="form-label">{RESOURCE_TYPE_LABELS[rt]}</label>
                                                         <Select
                                                             value={editProfileForm[rt] ?? ""}
                                                             onChange={(_, d) =>
@@ -1123,7 +1123,7 @@ export default function ClientsPage() {
                                     <div>
                                         <div className="grid-2">
                                             <div className="form-group">
-                                                <label className="form-label">遮罩标题 (MessageMask)</label>
+                                                <label className="form-label">遮罩标题</label>
                                                 <Input
                                                     value={notifyForm.MessageMask || ""}
                                                     onChange={(_, d) => setNotifyForm({ ...notifyForm, MessageMask: d.value })}
@@ -1143,7 +1143,7 @@ export default function ClientsPage() {
                                             </div>
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">通知正文 (MessageContent)</label>
+                                            <label className="form-label">通知正文</label>
                                             <Textarea
                                                 value={notifyForm.MessageContent || ""}
                                                 onChange={(_, d) => setNotifyForm({ ...notifyForm, MessageContent: d.value })}

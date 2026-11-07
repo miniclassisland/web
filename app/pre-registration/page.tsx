@@ -222,7 +222,7 @@ export default function PreRegistrationPage() {
                 </div>
                 <div className="flex gap-8">
                     <DownloadPresetPopoverButton
-                        buttonText="下载通用配置 (仅接口地址)"
+                        buttonText="下载通用配置"
                         appearance="secondary"
                         defaultFileName={`ManagementPreset-${slugName}-generic.json`}
                         onFetchData={() => accounts.downloadPreset(accountId)}
@@ -258,7 +258,7 @@ export default function PreRegistrationPage() {
                         <thead>
                             <tr>
                                 <th>标签名称</th>
-                                <th>班级标识 (ClassIdentity)</th>
+                                <th>班级标识</th>
                                 <th>绑定 MAC 地址</th>
                                 <th>状态 / 已关联终端</th>
                                 <th>预设档案</th>
@@ -282,7 +282,7 @@ export default function PreRegistrationPage() {
                                             />
                                             {item.bound_client_uid ? (
                                                 <span className="badge badge-success" title={item.bound_client_uid}>
-                                                    已接入 ({item.bound_client_uid.slice(0, 8)}...)
+                                                    已接入
                                                 </span>
                                             ) : (
                                                 <span className="badge badge-info">待终端接入</span>
@@ -368,7 +368,7 @@ export default function PreRegistrationPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="form-label">班级标识 (ClassIdentity)</label>
+                                    <label className="form-label">班级标识</label>
                                     <Input
                                         placeholder="例如：class-101"
                                         value={form.class_identity}
@@ -441,7 +441,7 @@ export default function PreRegistrationPage() {
                                         <Input value={editLabel} onChange={(_, d) => setEditLabel(d.value)} style={{ width: "100%" }} />
                                     </div>
                                     <div>
-                                        <label className="form-label">班级标识 (ClassIdentity)</label>
+                                        <label className="form-label">班级标识</label>
                                         <Input value={editIdentity} onChange={(_, d) => setEditIdentity(d.value)} style={{ width: "100%" }} />
                                     </div>
                                     <div>

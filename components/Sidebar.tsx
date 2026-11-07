@@ -139,7 +139,7 @@ export default function Sidebar({
                         className="sidebar-back-link"
                     >
                         <ArrowLeft16Regular />
-                        <span>返回用户中心 (所有账户)</span>
+                        <span>返回用户中心</span>
                     </Link>
 
                     <div className="sidebar-section-label" style={{ paddingLeft: 0, marginTop: 8 }}>
@@ -158,7 +158,7 @@ export default function Sidebar({
                         >
                             {accounts.map((a) => (
                                 <option key={a.id} value={a.id}>
-                                    {a.name} ({a.slug})
+                                    {a.name}
                                 </option>
                             ))}
                         </Select>

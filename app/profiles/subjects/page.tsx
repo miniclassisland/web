@@ -12,7 +12,7 @@ import {
 } from "@fluentui/react-components";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
-    ArrowUp24Regular, ArrowDown24Regular, Code24Regular,
+    ArrowUp24Regular, ArrowDown24Regular, Code24Regular, DismissCircle24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import FileHistoryButton from "@/components/FileHistoryButton";
@@ -180,7 +180,7 @@ export default function SubjectsPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">科目管理</h1>
-                    <p className="page-subtitle">管理 ClassIsland 科目档案 (Subjects)</p>
+                    <p className="page-subtitle">管理 ClassIsland 科目档案</p>
                 </div>
                 <div className="flex gap-8">
                     <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建文件</Button>
@@ -274,7 +274,7 @@ export default function SubjectsPage() {
                                         appearance="secondary"
                                         defaultFileName={`Subjects-${selectedFile}.json`}
                                         suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `Subjects-${selectedFile}.json` },
+                                            { label: "具名区分文件", fileName: `Subjects-${selectedFile}.json` },
                                             { label: "档案原名", fileName: `${selectedFile}.json` },
                                             { label: "客户端标准资源名", fileName: "Subjects.json" },
                                         ]}
@@ -333,14 +333,15 @@ export default function SubjectsPage() {
                                             style={{
                                                 padding: 16,
                                                 margin: 0,
-                                                border: isSpecialEmpty ? "1px dashed var(--accent-primary)" : "1px solid var(--border-color)",
-                                                background: isSpecialEmpty ? "rgba(96,205,255,0.04)" : undefined,
+                                                border: isSpecialEmpty ? "1px dashed var(--accent-color)" : "1px solid var(--border-color)",
+                                                background: isSpecialEmpty ? "var(--bg-accent-subtle)" : undefined,
                                             }}
                                         >
                                             {isSpecialEmpty && (
                                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                                                    <span style={{ fontSize: 12, color: "var(--accent-primary)", fontWeight: 600 }}>
-                                                        ⭕ 特殊“空 / 未设置”占位科目 ({EMPTY_GUID}) — 课表与时间表中未分配科目的课程格默认指向此项
+                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--accent-color)", fontWeight: 600 }}>
+                                                        <DismissCircle24Regular style={{ width: 16, height: 16 }} />
+                                                        特殊“空 / 未设置”占位科目 — 课表与时间表中未分配科目的课程格默认指向此项
                                                     </span>
                                                     <Button
                                                         size="small"
@@ -358,11 +359,12 @@ export default function SubjectsPage() {
                                                         height: 44,
                                                         borderRadius: 8,
                                                         background: isSpecialEmpty
-                                                            ? "rgba(255,255,255,0.12)"
+                                                            ? "var(--bg-subtle)"
                                                             : sub.IsOutDoor
                                                                 ? "var(--success-color)"
                                                                 : "var(--accent-color)",
-                                                        color: "white",
+                                                        color: isSpecialEmpty ? "var(--text-secondary)" : "white",
+                                                        border: isSpecialEmpty ? "1px solid var(--border-color)" : "none",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -374,7 +376,7 @@ export default function SubjectsPage() {
                                                     {isSpecialEmpty ? "空" : (sub.Initial || sub.Name?.[0] || "?")}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 150 }}>
-                                                    <label className="form-label">科目名称 (Name)</label>
+                                                    <label className="form-label">科目名称</label>
                                                     <Input
                                                         value={sub.Name || ""}
                                                         placeholder={isSpecialEmpty ? "（空 / 未设置）" : ""}
@@ -383,7 +385,7 @@ export default function SubjectsPage() {
                                                     />
                                                 </div>
                                                 <div style={{ width: 90 }}>
-                                                    <label className="form-label">简称 (Initial)</label>
+                                                    <label className="form-label">简称</label>
                                                     <Input
                                                         value={sub.Initial || ""}
                                                         placeholder={isSpecialEmpty ? "空" : ""}
@@ -392,7 +394,7 @@ export default function SubjectsPage() {
                                                     />
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 150 }}>
-                                                    <label className="form-label">任课教师 (TeacherName)</label>
+                                                    <label className="form-label">任课教师</label>
                                                     <Input
                                                         value={sub.TeacherName || ""}
                                                         onChange={(_, d) => updateSubject(id, "TeacherName", d.value)}
@@ -433,9 +435,6 @@ export default function SubjectsPage() {
                                                         title="删除科目"
                                                     />
                                                 </div>
-                                            </div>
-                                            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>
-                                                科目 GUID: {id} {isSpecialEmpty ? "（系统 Guid.Empty 空引用标识）" : ""}
                                             </div>
                                         </div>
                                         );

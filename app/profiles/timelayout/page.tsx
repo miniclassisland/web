@@ -27,6 +27,7 @@ import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
     ArrowUp24Regular, ArrowDown24Regular, Code24Regular, ArrowSort24Regular,
+    Flash16Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import FileHistoryButton from "@/components/FileHistoryButton";
@@ -521,21 +522,21 @@ export default function TimeLayoutPage() {
             return (
                 <div style={{ display: "grid", gridTemplateColumns: "160px 1fr 1fr", gap: 8, marginTop: 8 }}>
                     <div>
-                        <label className="form-label" style={{ fontSize: 11 }}>运行类型 (RunType)</label>
+                        <label className="form-label" style={{ fontSize: 11 }}>运行类型</label>
                         <Select
                             size="small"
                             value={String(s.RunType ?? "Application")}
                             onChange={(_, d) => updateActionSettingsInItem(itemIdx, actionIdx, { RunType: d.value })}
                         >
-                            <option value="Application">应用程序 (.exe)</option>
-                            <option value="Command">终端命令 (cmd)</option>
+                            <option value="Application">应用程序</option>
+                            <option value="Command">终端命令</option>
                             <option value="File">打开文件</option>
                             <option value="Folder">打开文件夹</option>
-                            <option value="Url">打开网页链接 (URL)</option>
+                            <option value="Url">打开网页链接</option>
                         </Select>
                     </div>
                     <div>
-                        <label className="form-label" style={{ fontSize: 11 }}>路径 / 命令 / URL (Value)</label>
+                        <label className="form-label" style={{ fontSize: 11 }}>路径 / 命令 / 网址</label>
                         <Input
                             size="small"
                             value={String(s.Value ?? "")}
@@ -545,7 +546,7 @@ export default function TimeLayoutPage() {
                         />
                     </div>
                     <div>
-                        <label className="form-label" style={{ fontSize: 11 }}>启动参数 (Args，可选)</label>
+                        <label className="form-label" style={{ fontSize: 11 }}>启动参数（可选）</label>
                         <Input
                             size="small"
                             value={String(s.Args ?? "")}
@@ -563,7 +564,7 @@ export default function TimeLayoutPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 110px", gap: 8, alignItems: "center" }}>
                         <div>
-                            <label className="form-label" style={{ fontSize: 11 }}>提醒遮罩标题 (Mask)</label>
+                            <label className="form-label" style={{ fontSize: 11 }}>提醒遮罩标题</label>
                             <Input
                                 size="small"
                                 value={String(s.Mask ?? "")}
@@ -593,7 +594,7 @@ export default function TimeLayoutPage() {
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 110px", gap: 8, alignItems: "center" }}>
                         <div>
-                            <label className="form-label" style={{ fontSize: 11 }}>提醒正文内容 (Content，可选)</label>
+                            <label className="form-label" style={{ fontSize: 11 }}>提醒正文内容（可选）</label>
                             <Input
                                 size="small"
                                 value={String(s.Content ?? "")}
@@ -627,7 +628,7 @@ export default function TimeLayoutPage() {
         if (action.Id === "classisland.notification.weather") {
             return (
                 <div style={{ marginTop: 8, maxWidth: 280 }}>
-                    <label className="form-label" style={{ fontSize: 11 }}>天气提醒类型 (NotificationKind)</label>
+                    <label className="form-label" style={{ fontSize: 11 }}>天气提醒类型</label>
                     <Select
                         size="small"
                         value={String(s.NotificationKind ?? 0)}
@@ -645,7 +646,7 @@ export default function TimeLayoutPage() {
             return (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 8, marginTop: 8, alignItems: "center" }}>
                     <div>
-                        <label className="form-label" style={{ fontSize: 11 }}>广播信号名称 (SignalName)</label>
+                        <label className="form-label" style={{ fontSize: 11 }}>广播信号名称</label>
                         <Input
                             size="small"
                             value={String(s.SignalName ?? "")}
@@ -668,7 +669,7 @@ export default function TimeLayoutPage() {
         if (action.Id === "classisland.action.sleep") {
             return (
                 <div style={{ marginTop: 8, maxWidth: 220 }}>
-                    <label className="form-label" style={{ fontSize: 11 }}>等待秒数 (Value 秒)</label>
+                    <label className="form-label" style={{ fontSize: 11 }}>等待秒数</label>
                     <Input
                         size="small"
                         type="number"
@@ -684,7 +685,7 @@ export default function TimeLayoutPage() {
             return (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
                     <div>
-                        <label className="form-label" style={{ fontSize: 11 }}>设置属性名 (Name)</label>
+                        <label className="form-label" style={{ fontSize: 11 }}>设置属性名</label>
                         <Input
                             size="small"
                             value={String(s.Name ?? "")}
@@ -694,7 +695,7 @@ export default function TimeLayoutPage() {
                         />
                     </div>
                     <div>
-                        <label className="form-label" style={{ fontSize: 11 }}>目标值 (Value)</label>
+                        <label className="form-label" style={{ fontSize: 11 }}>目标值</label>
                         <Input
                             size="small"
                             value={String(s.Value ?? "")}
@@ -714,7 +715,7 @@ export default function TimeLayoutPage() {
                         checked={!!s.Value}
                         onChange={(_, d) => updateActionSettingsInItem(itemIdx, actionIdx, { Value: d.checked })}
                     />
-                    <span style={{ fontSize: 12 }}>以静默模式重启 (-m)</span>
+                    <span style={{ fontSize: 12 }}>以静默模式重启</span>
                 </div>
             );
         }
@@ -726,7 +727,7 @@ export default function TimeLayoutPage() {
         // 自定义或插件行动 JSON 参数编辑
         return (
             <div style={{ marginTop: 8 }}>
-                <label className="form-label" style={{ fontSize: 11 }}>行动参数 JSON (Settings)</label>
+                <label className="form-label" style={{ fontSize: 11 }}>行动参数 JSON</label>
                 <Textarea
                     rows={2}
                     value={action.Settings ? JSON.stringify(action.Settings) : "{}"}
@@ -752,7 +753,7 @@ export default function TimeLayoutPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">时间表编辑器</h1>
-                    <p className="page-subtitle">管理 ClassIsland 时间表档案 (TimeLayout) — 支持上课、课间、分割线与自动化行动时间点编辑</p>
+                    <p className="page-subtitle">管理 ClassIsland 时间表档案 — 支持上课、课间、分割线与自动化行动时间点编辑</p>
                 </div>
                 <div className="flex gap-8">
                     <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建文件</Button>
@@ -896,7 +897,7 @@ export default function TimeLayoutPage() {
                                         appearance="secondary"
                                         defaultFileName={`TimeLayout-${selectedFile}.json`}
                                         suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `TimeLayout-${selectedFile}.json` },
+                                            { label: "具名区分文件", fileName: `TimeLayout-${selectedFile}.json` },
                                             { label: "档案原名", fileName: `${selectedFile}.json` },
                                             { label: "客户端标准资源名", fileName: "TimeLayout.json" },
                                         ]}
@@ -929,7 +930,7 @@ export default function TimeLayoutPage() {
                                                 icon={<Add24Regular />}
                                                 onClick={() => addTimeItem(0)}
                                             >
-                                                + 上课
+                                                上课
                                             </Button>
                                             <Button
                                                 appearance="secondary"
@@ -937,7 +938,7 @@ export default function TimeLayoutPage() {
                                                 icon={<Add24Regular />}
                                                 onClick={() => addTimeItem(1)}
                                             >
-                                                + 课间
+                                                课间
                                             </Button>
                                             <Button
                                                 appearance="secondary"
@@ -945,15 +946,15 @@ export default function TimeLayoutPage() {
                                                 icon={<Add24Regular />}
                                                 onClick={() => addTimeItem(2)}
                                             >
-                                                + 分割线
+                                                分割线
                                             </Button>
                                             <Button
                                                 appearance="secondary"
                                                 size="small"
-                                                icon={<Add24Regular />}
+                                                icon={<Flash16Regular />}
                                                 onClick={() => addTimeItem(3)}
                                             >
-                                                ⚡ + 行动
+                                                行动
                                             </Button>
                                             <Button
                                                 appearance="subtle"
@@ -995,13 +996,10 @@ export default function TimeLayoutPage() {
                                 </div>
                             ) : (
                                 <div>
-                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
-                                        时间表 GUID: {selectedLayoutId}
-                                    </div>
                                     <div className="timeline-editor">
                                         {(currentLayout.Layouts || []).length === 0 ? (
                                             <div className="empty-state">
-                                                <div className="empty-state-text">暂无时间段，点击上方「+ 上课 / + 课间 / + 分割线 / ⚡ + 行动」添加</div>
+                                                <div className="empty-state-text">暂无时间段，点击上方「上课 / 课间 / 分割线 / 行动」按钮添加</div>
                                             </div>
                                         ) : (
                                             (currentLayout.Layouts || []).map((item, idx, arr) => {
@@ -1023,14 +1021,14 @@ export default function TimeLayoutPage() {
                                                     >
                                                         {/* 第一行：时间选择器 + 类型 + 基础属性 + 操作按钮 */}
                                                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", width: "100%" }}>
-                                                            {/* 时间选择区（加宽至 152px 彻底解决 07:30 AM 截断问题） */}
+                                                            {/* 时间选择区（加宽至 176px 彻底解决 07:30 AM 截断问题） */}
                                                             <div className="flex items-center gap-6" style={{ flexShrink: 0 }}>
                                                                 <Input
                                                                     type="time"
                                                                     size="small"
                                                                     value={startHHMM}
                                                                     onChange={(_, d) => updateTimeItemClock(idx, "start", d.value)}
-                                                                    style={{ width: 152, minWidth: 148 }}
+                                                                    style={{ width: 176, minWidth: 172 }}
                                                                     title="开始时间点"
                                                                 />
                                                                 {!isPointTime && (
@@ -1041,7 +1039,7 @@ export default function TimeLayoutPage() {
                                                                             size="small"
                                                                             value={endHHMM}
                                                                             onChange={(_, d) => updateTimeItemClock(idx, "end", d.value)}
-                                                                            style={{ width: 152, minWidth: 148 }}
+                                                                            style={{ width: 176, minWidth: 172 }}
                                                                             title="结束时间点"
                                                                         />
                                                                     </>
@@ -1100,8 +1098,9 @@ export default function TimeLayoutPage() {
 
                                                                 {item.TimeType === 3 && actionSet && (
                                                                     <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
-                                                                        <span className="badge badge-warning">
-                                                                            ⚡ 自动化行动 ({(actionSet.Actions || []).length} 项)
+                                                                        <span className="badge badge-warning" style={{ gap: 4 }}>
+                                                                            <Flash16Regular />
+                                                                            自动化行动 ({(actionSet.Actions || []).length} 项)
                                                                         </span>
                                                                         <Input
                                                                             size="small"
@@ -1170,7 +1169,7 @@ export default function TimeLayoutPage() {
                                                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                                                                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                                                         <span style={{ fontSize: 12.5, fontWeight: 600 }}>
-                                                                            达到时间点 {startHHMM} 时执行的行动列表 (ActionSet.Actions)
+                                                                            达到时间点 {startHHMM} 时执行的行动列表
                                                                         </span>
                                                                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                                                             <Switch
@@ -1192,7 +1191,7 @@ export default function TimeLayoutPage() {
                                                                             <option value="">+ 添加要执行的行动...</option>
                                                                             {BUILTIN_ACTIONS.map((ba) => (
                                                                                 <option key={ba.id} value={ba.id}>
-                                                                                    [{ba.category}] {ba.name} ({ba.id})
+                                                                                    [{ba.category}] {ba.name}
                                                                                 </option>
                                                                             ))}
                                                                         </Select>
@@ -1236,11 +1235,11 @@ export default function TimeLayoutPage() {
                                                                                             >
                                                                                                 {BUILTIN_ACTIONS.map((ba) => (
                                                                                                     <option key={ba.id} value={ba.id}>
-                                                                                                        {ba.name} ({ba.id})
+                                                                                                        {ba.name}
                                                                                                     </option>
                                                                                                 ))}
                                                                                                 {!actMeta && (
-                                                                                                    <option value={act.Id}>自定义 ({act.Id})</option>
+                                                                                                    <option value={act.Id}>自定义行动</option>
                                                                                                 )}
                                                                                             </Select>
                                                                                             <Input

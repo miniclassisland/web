@@ -23,7 +23,9 @@ import {
 import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular,
-    ArrowUp24Regular, ArrowDown24Regular, Code24Regular,
+    ArrowUp24Regular, ArrowDown24Regular, ArrowLeft24Regular, ArrowRight24Regular,
+    Code24Regular, Box16Regular, Box24Regular, Apps24Regular, Settings24Regular,
+    Wrench24Regular, TextAlignDistributed24Regular, Copy24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import FileHistoryButton from "@/components/FileHistoryButton";
@@ -544,8 +546,8 @@ export default function ComponentsPage() {
         if (compId === "1db2017d-e374-4bc6-9d57-0b4adf03a6b8") {
             return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                        <div className="section-title" style={{ marginBottom: 0 }}>时间点附加信息与倒计时</div>
+                    <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div className="settings-section-title" style={{ marginBottom: 0 }}>时间点附加信息与倒计时</div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div>
                                 <div style={{ fontWeight: 600 }}>在当前时间点上显示附加信息</div>
@@ -586,7 +588,7 @@ export default function ComponentsPage() {
                             </div>
                         )}
 
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
                             <div>
                                 <div style={{ fontWeight: 600 }}>启用时间点结束倒计时</div>
                                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>在上下课即将结束前显示倒计时进度</div>
@@ -617,11 +619,11 @@ export default function ComponentsPage() {
                         )}
                     </div>
 
-                    <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                        <div className="section-title" style={{ marginBottom: 0 }}>课程显示与占位设置</div>
+                    <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div className="settings-section-title" style={{ marginBottom: 0 }}>课程显示与占位设置</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">课程间距缩放 (ScheduleSpacing)</label>
+                                <label className="form-label">课程间距缩放</label>
                                 <Input
                                     type="number"
                                     step={0.1}
@@ -674,7 +676,7 @@ export default function ComponentsPage() {
                             </div>
                         </div>
 
-                        <div style={{ borderTop: "1px solid var(--stroke-divider)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: 13, fontWeight: 600 }}>无课程或全部结束时显示占位文本</span>
                                 <Switch
@@ -709,11 +711,11 @@ export default function ComponentsPage() {
         // 2. 时钟 (ClockComponent - ClockComponentSettings)
         if (compId === "9e1af71d-8f77-4b21-a342-448787104dd9") {
             return (
-                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>时钟组件设置 (ClockComponentSettings)</div>
+                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="settings-section-title" style={{ marginBottom: 0 }}>时钟组件设置</div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>显示秒数 (ShowSeconds)</div>
+                            <div style={{ fontWeight: 600 }}>显示秒数</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>以 HH:mm:ss 格式精确显示到秒</div>
                         </div>
                         <Switch
@@ -724,7 +726,7 @@ export default function ComponentsPage() {
                     {!s.ShowSeconds && (
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div>
-                                <div style={{ fontWeight: 600 }}>闪烁时间分隔符 (FlashTimeSeparator)</div>
+                                <div style={{ fontWeight: 600 }}>闪烁时间分隔符</div>
                                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>不显示秒数时，每秒闪烁一次冒号分隔符</div>
                             </div>
                             <Switch
@@ -735,7 +737,7 @@ export default function ComponentsPage() {
                     )}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>显示真实系统时间 (ShowRealTime)</div>
+                            <div style={{ fontWeight: 600 }}>显示真实系统时间</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>忽略应用设置中的时间偏移校准，直接显示系统时间</div>
                         </div>
                         <Switch
@@ -750,11 +752,11 @@ export default function ComponentsPage() {
         // 3. 天气简报 (WeatherComponent - WeatherComponentSettings)
         if (compId === "ca495086-e297-4beb-9603-c5c1c1a8551e") {
             return (
-                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>天气简报组件设置 (WeatherComponentSettings)</div>
+                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="settings-section-title" style={{ marginBottom: 0 }}>天气简报组件设置</div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>显示主要天气信息 (ShowMainWeatherInfo)</div>
+                            <div style={{ fontWeight: 600 }}>显示主要天气信息</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>显示天气图标与指定的主要气象指标</div>
                         </div>
                         <Switch
@@ -764,7 +766,7 @@ export default function ComponentsPage() {
                     </div>
                     {s.ShowMainWeatherInfo !== false && (
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">主要天气信息类型 (MainWeatherInfoKind)</label>
+                            <label className="form-label">主要天气信息类型</label>
                             <Select
                                 value={String(s.MainWeatherInfoKind ?? 0)}
                                 onChange={(_, d) => updateCurrentCompSettings({ MainWeatherInfoKind: parseInt(d.value, 10) })}
@@ -778,9 +780,9 @@ export default function ComponentsPage() {
                             </Select>
                         </div>
                     )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>显示气象预警 (ShowAlerts)</div>
+                            <div style={{ fontWeight: 600 }}>显示气象预警</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>当所在地发布气象预警时在组件内展示</div>
                         </div>
                         <Switch
@@ -790,7 +792,7 @@ export default function ComponentsPage() {
                     </div>
                     {s.ShowAlerts !== false && (
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">预警标题显示模式 (AlertsTitleShowMode)</label>
+                            <label className="form-label">预警标题显示模式</label>
                             <Select
                                 value={String(s.AlertsTitleShowMode ?? 1)}
                                 onChange={(_, d) => updateCurrentCompSettings({ AlertsTitleShowMode: parseInt(d.value, 10) })}
@@ -801,9 +803,9 @@ export default function ComponentsPage() {
                             </Select>
                         </div>
                     )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>显示降水倒计时提示 (ShowRainTime)</div>
+                            <div style={{ fontWeight: 600 }}>显示降水倒计时提示</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>显示距离降雨开始或雨停的预计分钟数</div>
                         </div>
                         <Switch
@@ -813,7 +815,7 @@ export default function ComponentsPage() {
                     </div>
                     {s.ShowRainTime !== false && (
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: 13 }}>模糊化较长时间的降水预测 (IsFuzzyLongRainCountdownEnabled)</span>
+                            <span style={{ fontSize: 13 }}>模糊化较长时间的降水预测</span>
                             <Switch
                                 checked={s.IsFuzzyLongRainCountdownEnabled !== false}
                                 onChange={(_, d) => updateCurrentCompSettings({ IsFuzzyLongRainCountdownEnabled: d.checked })}
@@ -833,26 +835,26 @@ export default function ComponentsPage() {
             };
             return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                        <div className="section-title" style={{ marginBottom: 0 }}>倒计时基本与时间源设置</div>
+                    <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div className="settings-section-title" style={{ marginBottom: 0 }}>倒计时基本与时间源设置</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">倒计时名称 (CountDownName)</label>
+                                <label className="form-label">倒计时名称</label>
                                 <Input
                                     value={String(s.CountDownName ?? "倒计时")}
                                     onChange={(_, d) => updateCurrentCompSettings({ CountDownName: d.value })}
                                 />
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">计时源类型 (CountdownSource)</label>
+                                <label className="form-label">计时源类型</label>
                                 <Select
                                     value={String(source)}
                                     onChange={(_, d) => updateCurrentCompSettings({ CountdownSource: parseInt(d.value, 10) })}
                                 >
-                                    <option value="0">固定目标时间 (Fixed)</option>
-                                    <option value="1">循环周期计时 (Cycle)</option>
-                                    <option value="2">今日剩余时间 (Today)</option>
-                                    <option value="3">本周剩余时间 (ThisWeek)</option>
+                                    <option value="0">固定目标时间</option>
+                                    <option value="1">循环周期计时</option>
+                                    <option value="2">今日剩余时间</option>
+                                    <option value="3">本周剩余时间</option>
                                 </Select>
                             </div>
                         </div>
@@ -860,7 +862,7 @@ export default function ComponentsPage() {
                         {source === 0 && (
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label">开始时间 (StartTime，用于计算进度)</label>
+                                    <label className="form-label">开始时间（用于计算进度）</label>
                                     <Input
                                         type="datetime-local"
                                         value={extractDateInput(s.StartTime)}
@@ -868,7 +870,7 @@ export default function ComponentsPage() {
                                     />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label">目标结束时间 (OverTime)</label>
+                                    <label className="form-label">目标结束时间</label>
                                     <Input
                                         type="datetime-local"
                                         value={extractDateInput(s.OverTime)}
@@ -879,10 +881,10 @@ export default function ComponentsPage() {
                         )}
 
                         {source === 1 && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">周期起始时间 (CycleStartTime)</label>
+                                        <label className="form-label">周期起始时间</label>
                                         <Input
                                             type="datetime-local"
                                             value={extractDateInput(s.CycleStartTime)}
@@ -890,7 +892,7 @@ export default function ComponentsPage() {
                                         />
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">周期持续时长 (CycleDuration，如 1.00:00:00)</label>
+                                        <label className="form-label">周期持续时长（如 1.00:00:00）</label>
                                         <Input
                                             value={String(s.CycleDuration ?? "1.00:00:00")}
                                             onChange={(_, d) => updateCurrentCompSettings({ CycleDuration: d.value })}
@@ -907,14 +909,14 @@ export default function ComponentsPage() {
                                 {!!s.IsAdvancedCycleTimingEnabled && (
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">前置时长 (CycleBeforeDuration)</label>
+                                            <label className="form-label">前置时长</label>
                                             <Input
                                                 value={String(s.CycleBeforeDuration ?? "00:00:00")}
                                                 onChange={(_, d) => updateCurrentCompSettings({ CycleBeforeDuration: d.value })}
                                             />
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">后置时长 (CycleAfterDuration)</label>
+                                            <label className="form-label">后置时长</label>
                                             <Input
                                                 value={String(s.CycleAfterDuration ?? "00:00:00")}
                                                 onChange={(_, d) => updateCurrentCompSettings({ CycleAfterDuration: d.value })}
@@ -942,7 +944,7 @@ export default function ComponentsPage() {
                         {(source === 2 || source === 3) && (
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label">自然时间/课程时间模式 (NatureTimeUseMode)</label>
+                                    <label className="form-label">自然时间/课程时间模式</label>
                                     <Select
                                         value={String(s.NatureTimeUseMode ?? 0)}
                                         onChange={(_, d) => updateCurrentCompSettings({ NatureTimeUseMode: parseInt(d.value, 10) })}
@@ -954,7 +956,7 @@ export default function ComponentsPage() {
                                 </div>
                                 {source === 3 && (
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">每周起始日 (WeekCountdownStartDay)</label>
+                                        <label className="form-label">每周起始日</label>
                                         <Select
                                             value={String(s.WeekCountdownStartDay ?? 1)}
                                             onChange={(_, d) => updateCurrentCompSettings({
@@ -976,11 +978,11 @@ export default function ComponentsPage() {
                         )}
                     </div>
 
-                    <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                        <div className="section-title" style={{ marginBottom: 0 }}>显示格式、进度条与外观</div>
+                    <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div className="settings-section-title" style={{ marginBottom: 0 }}>显示格式、进度条与外观</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">连接词文本 (CountDownConnector)</label>
+                                <label className="form-label">连接词文本</label>
                                 <Input
                                     value={String(s.CountDownConnector ?? "还有")}
                                     onChange={(_, d) => updateCurrentCompSettings({ CountDownConnector: d.value })}
@@ -988,7 +990,7 @@ export default function ComponentsPage() {
                                 />
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">时间格式字符串 (CustomStringFormat)</label>
+                                <label className="form-label">时间格式字符串</label>
                                 <Input
                                     value={String(s.CustomStringFormat ?? "%D天")}
                                     onChange={(_, d) => updateCurrentCompSettings({ CustomStringFormat: d.value })}
@@ -1002,7 +1004,7 @@ export default function ComponentsPage() {
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "center" }}>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">数字高亮颜色 (FontColor)</label>
+                                <label className="form-label">数字高亮颜色</label>
                                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                     <input
                                         type="color"
@@ -1018,7 +1020,7 @@ export default function ComponentsPage() {
                                 </div>
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">字体大小 (FontSize px)</label>
+                                <label className="form-label">字体大小 (px)</label>
                                 <Input
                                     type="number"
                                     value={String(s.FontSize ?? 16)}
@@ -1043,9 +1045,9 @@ export default function ComponentsPage() {
                             </div>
                         </div>
 
-                        <div style={{ borderTop: "1px solid var(--stroke-divider)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 13, fontWeight: 600 }}>显示可视化进度条/进度环 (ShowProgress)</span>
+                                <span style={{ fontSize: 13, fontWeight: 600 }}>显示可视化进度条/进度环</span>
                                 <Switch
                                     checked={!!s.ShowProgress}
                                     onChange={(_, d) => updateCurrentCompSettings({ ShowProgress: d.checked })}
@@ -1059,8 +1061,8 @@ export default function ComponentsPage() {
                                             value={String(s.ProgressBarMode ?? 0)}
                                             onChange={(_, d) => updateCurrentCompSettings({ ProgressBarMode: parseInt(d.value, 10) })}
                                         >
-                                            <option value="0">环形进度 (Ring)</option>
-                                            <option value="1">条形进度 (Bar)</option>
+                                            <option value="0">环形进度</option>
+                                            <option value="1">条形进度</option>
                                         </Select>
                                     </div>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
@@ -1088,10 +1090,10 @@ export default function ComponentsPage() {
         // 5. 文本 (TextComponent - TextComponentSettings)
         if (compId === "ee8f66bd-c423-4e7c-ab46-aa9976b00e08") {
             return (
-                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>文本组件设置 (TextComponentSettings)</div>
+                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="settings-section-title" style={{ marginBottom: 0 }}>文本组件设置</div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">显示文本内容 (TextContent)</label>
+                        <label className="form-label">显示文本内容</label>
                         <Input
                             value={String(s.TextContent ?? "")}
                             onChange={(_, d) => updateCurrentCompSettings({ TextContent: d.value })}
@@ -1100,7 +1102,7 @@ export default function ComponentsPage() {
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "center" }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">字体大小 (FontSize px)</label>
+                            <label className="form-label">字体大小 (px)</label>
                             <Input
                                 type="number"
                                 value={String(s.FontSize ?? 16)}
@@ -1139,11 +1141,11 @@ export default function ComponentsPage() {
         // 6. 轮播容器 (SlideComponent - SlideComponentSettings)
         if (compId === "7e19a113-d281-4f33-970a-834a0b78b5ad") {
             return (
-                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>轮播容器设置 (SlideComponentSettings)</div>
+                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="settings-section-title" style={{ marginBottom: 0 }}>轮播容器设置</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">轮播间隔时长 (SlideSeconds 秒)</label>
+                            <label className="form-label">轮播间隔时长 (秒)</label>
                             <Input
                                 type="number"
                                 value={String(s.SlideSeconds ?? 15)}
@@ -1151,20 +1153,20 @@ export default function ComponentsPage() {
                             />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">轮播切换模式 (SlideMode)</label>
+                            <label className="form-label">轮播切换模式</label>
                             <Select
                                 value={String(s.SlideMode ?? 0)}
                                 onChange={(_, d) => updateCurrentCompSettings({ SlideMode: parseInt(d.value, 10) })}
                             >
-                                <option value="0">顺序循环 (Loop)</option>
-                                <option value="1">随机展示 (Random)</option>
-                                <option value="2">往复乒乓 (PingPong)</option>
+                                <option value="0">顺序循环</option>
+                                <option value="1">随机展示</option>
+                                <option value="2">往复乒乓</option>
                             </Select>
                         </div>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>启用切换过渡动画 (IsAnimationEnabled)</div>
+                            <div style={{ fontWeight: 600 }}>启用切换过渡动画</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>子组件轮播切换时播放平滑过渡动画</div>
                         </div>
                         <Switch
@@ -1173,14 +1175,14 @@ export default function ComponentsPage() {
                         />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 13 }}>满足规则时暂停轮播 (IsPauseOnRuleEnabled)</span>
+                        <span style={{ fontSize: 13 }}>满足规则时暂停轮播</span>
                         <Switch
                             checked={!!s.IsPauseOnRuleEnabled}
                             onChange={(_, d) => updateCurrentCompSettings({ IsPauseOnRuleEnabled: d.checked })}
                         />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 13 }}>满足规则时停止轮播 (IsStopOnRuleEnabled)</span>
+                        <span style={{ fontSize: 13 }}>满足规则时停止轮播</span>
                         <Switch
                             checked={!!s.IsStopOnRuleEnabled}
                             onChange={(_, d) => updateCurrentCompSettings({ IsStopOnRuleEnabled: d.checked })}
@@ -1193,10 +1195,10 @@ export default function ComponentsPage() {
         // 7. 滚动容器 (RollingComponent - RollingComponentSettings)
         if (compId === "70fcd5ea-3fae-4e06-aca2-4f4df47f9acd") {
             return (
-                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>滚动容器设置 (RollingComponentSettings)</div>
+                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="settings-section-title" style={{ marginBottom: 0 }}>滚动容器设置</div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">滚动速度 (SpeedPixelPerSecond px/s)</label>
+                        <label className="form-label">滚动速度 (px/s)</label>
                         <Input
                             type="number"
                             value={String(s.SpeedPixelPerSecond ?? 40)}
@@ -1205,7 +1207,7 @@ export default function ComponentsPage() {
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>滚动一轮后暂停停留 (IsPauseEnabled)</div>
+                            <div style={{ fontWeight: 600 }}>滚动一轮后暂停停留</div>
                             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>每次滚动到指定偏移位置时暂停一段时间</div>
                         </div>
                         <Switch
@@ -1216,7 +1218,7 @@ export default function ComponentsPage() {
                     {s.IsPauseEnabled !== false && (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">暂停停留时长 (PauseSeconds 秒)</label>
+                                <label className="form-label">暂停停留时长 (秒)</label>
                                 <Input
                                     type="number"
                                     value={String(s.PauseSeconds ?? 10)}
@@ -1224,7 +1226,7 @@ export default function ComponentsPage() {
                                 />
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">暂停位置水平偏移 (PauseOffsetX px)</label>
+                                <label className="form-label">暂停位置水平偏移 (px)</label>
                                 <Input
                                     type="number"
                                     value={String(s.PauseOffsetX ?? 0)}
@@ -1234,14 +1236,14 @@ export default function ComponentsPage() {
                         </div>
                     )}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 13 }}>满足规则时暂停滚动 (PauseOnRule)</span>
+                        <span style={{ fontSize: 13 }}>满足规则时暂停滚动</span>
                         <Switch
                             checked={!!s.PauseOnRule}
                             onChange={(_, d) => updateCurrentCompSettings({ PauseOnRule: d.checked })}
                         />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 13 }}>满足规则时停止滚动并归位 (StopOnRule)</span>
+                        <span style={{ fontSize: 13 }}>满足规则时停止滚动并归位</span>
                         <Switch
                             checked={!!s.StopOnRule}
                             onChange={(_, d) => updateCurrentCompSettings({ StopOnRule: d.checked })}
@@ -1253,11 +1255,11 @@ export default function ComponentsPage() {
 
         // 无独立设置项的内置组件（日期、分割线、分组容器、堆叠容器）或第三方插件组件
         return (
-            <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                     {meta && !meta.hasSettings
                         ? `“${meta.name}”组件没有专属功能设置项（可在“高级设置”标签页配置外观、字体与边距${meta.isContainer ? "，或点击上方“管理子组件”编辑内部组件" : ""}）。`
-                        : "自定义/插件组件专属设置 JSON (Settings)："}
+                        : "自定义/插件组件专属设置 JSON："}
                 </div>
                 <Textarea
                     rows={5}
@@ -1278,18 +1280,18 @@ export default function ComponentsPage() {
     }
 
     if (loading) {
-        return <div className="loading-center"><Spinner size="medium" label="加载组件配置列表中..." /></div>;
+        return <div className="empty-state"><Spinner size="medium" label="加载组件配置列表中..." /></div>;
     }
 
     return (
-        <div>
-            <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="fade-in">
+            <div className="page-header">
                 <div>
-                    <h1>组件布局配置 (Components)</h1>
-                    <p>原位对照 ClassIsland 客户端【设置 → 组件】多行视图、容器子组件栈、组件专属设置与高级布局覆盖</p>
+                    <h1 className="page-title">组件布局配置</h1>
+                    <p className="page-subtitle">原位对照 ClassIsland 客户端【设置 → 组件】多行视图、容器子组件栈、组件专属设置与高级布局覆盖</p>
                 </div>
-                <div className="toolbar">
-                    <Button icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建配置</Button>
+                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                    <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建配置</Button>
                     {selectedFile && (
                         <>
                             <FileHistoryButton
@@ -1315,7 +1317,7 @@ export default function ComponentsPage() {
                                 appearance="secondary"
                                 defaultFileName={`Components-${selectedFile}.json`}
                                 suggestedNames={[
-                                    { label: "具名区分文件 (推荐)", fileName: `Components-${selectedFile}.json` },
+                                    { label: "具名区分文件", fileName: `Components-${selectedFile}.json` },
                                     { label: "档案原名", fileName: `${selectedFile}.json` },
                                     { label: "客户端标准资源名", fileName: "Components.json" },
                                 ]}
@@ -1324,7 +1326,7 @@ export default function ComponentsPage() {
                             />
                             <Button
                                 icon={<Code24Regular />}
-                                appearance={jsonMode ? "primary" : "secondary"}
+                                appearance={jsonMode ? "primary" : "subtle"}
                                 onClick={() => {
                                     if (!jsonMode) setJsonText(JSON.stringify(profile, null, 2));
                                     setJsonMode(!jsonMode);
@@ -1332,7 +1334,7 @@ export default function ComponentsPage() {
                             >
                                 {jsonMode ? "可视化模式" : "JSON 模式"}
                             </Button>
-                            <Button icon={<ArrowSync24Regular />} onClick={() => selectFile(selectedFile)}>刷新</Button>
+                            <Button appearance="secondary" icon={<ArrowSync24Regular />} onClick={() => selectFile(selectedFile)}>刷新</Button>
                             <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
                                 {saving ? "保存中..." : "保存"}
                             </Button>
@@ -1355,57 +1357,72 @@ export default function ComponentsPage() {
                 </MessageBar>
             )}
 
-            <div className="split-panel">
-                {/* 左侧文件列表 */}
-                <div className="split-left">
-                    <div className="section-title">组件配置文件</div>
+            {/* 顶部组件配置文件切换条（使主界面组件行视图与下方四标签面板获得 100% 宽度） */}
+            <div className="card" style={{ padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>组件配置文件：</span>
                     {fileList.length === 0 ? (
-                        <div className="empty-state"><p>暂无组件配置</p></div>
+                        <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>暂无组件配置</span>
                     ) : (
-                        <div className="file-list">
-                            {fileList.map((f) => (
-                                <div
-                                    key={f}
-                                    className={`file-item ${selectedFile === f ? "selected" : ""}`}
-                                    onClick={() => selectFile(f)}
-                                    style={{ justifyContent: "space-between" }}
-                                >
-                                    <span>🧩 {f}</span>
-                                    <Button
-                                        size="small"
-                                        appearance="subtle"
-                                        icon={<Delete24Regular />}
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                        fileList.map((f) => (
+                            <div
+                                key={f}
+                                onClick={() => selectFile(f)}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    height: 32,
+                                    padding: "0 6px 0 12px",
+                                    borderRadius: "var(--radius-sm)",
+                                    border: selectedFile === f ? "1px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                    background: selectedFile === f ? "var(--bg-accent-subtle)" : "var(--bg-subtle)",
+                                    color: selectedFile === f ? "var(--accent-color)" : "var(--text-primary)",
+                                    fontWeight: selectedFile === f ? 600 : 500,
+                                    fontSize: 13,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <span>{f}</span>
+                                <Button
+                                    size="small"
+                                    appearance="subtle"
+                                    icon={<Delete24Regular />}
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
+                                    style={{ color: "var(--danger-color)", minWidth: 22, height: 22, padding: 2 }}
+                                    title="删除此组件配置文件"
+                                />
+                            </div>
+                        ))
                     )}
                 </div>
+            </div>
 
-                {/* 右侧原位模拟上游 ComponentsSettingsPage 编辑器 */}
-                <div className="split-right">
+            <div>
+                {/* 原位模拟上游 ComponentsSettingsPage 编辑器 */}
+                <div style={{ minWidth: 0 }}>
                     {!selectedFile ? (
-                        <div className="empty-state"><p>请从左侧选择一个组件配置文件</p></div>
+                        <div className="card"><div className="empty-state"><div className="empty-state-text">请从上方选择或新建一个组件配置文件</div></div></div>
                     ) : dataLoading ? (
-                        <div className="loading-center"><Spinner size="medium" /></div>
+                        <div className="card"><div className="empty-state"><Spinner size="medium" /></div></div>
                     ) : jsonMode ? (
-                        <div>
-                            <div className="section-title">JSON 编辑器 — {selectedFile}</div>
-                            <textarea
-                                className="json-editor"
-                                value={jsonText}
-                                onChange={(e) => setJsonText(e.target.value)}
-                                style={{ minHeight: 540 }}
-                            />
+                        <div className="card">
+                            <div className="card-title">JSON 编辑器 — {selectedFile}</div>
+                            <div className="json-editor">
+                                <textarea
+                                    value={jsonText}
+                                    onChange={(e) => setJsonText(e.target.value)}
+                                    style={{ minHeight: 540 }}
+                                />
+                            </div>
                         </div>
                     ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                             {/* ── 顶部：主界面行可视化预览区 (对应上游 ListBoxMainWindowLines) ── */}
-                            <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span style={{ fontWeight: 600, fontSize: 14 }}>主界面组件行视图 (MainWindowLines)</span>
+                                        <span style={{ fontWeight: 600, fontSize: 14 }}>主界面组件行视图</span>
                                         <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                                             共 {lines.length} 行 · 点击行内组件可直接编辑，双击容器组件可展开子组件
                                         </span>
@@ -1434,8 +1451,8 @@ export default function ComponentsPage() {
                                                     gap: 10,
                                                     padding: "10px 12px",
                                                     borderRadius: 10,
-                                                    border: isLineSelected ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
-                                                    background: isLineSelected ? "rgba(96, 205, 255, 0.06)" : "var(--bg-layer-alt)",
+                                                    border: isLineSelected ? "1.5px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                    background: isLineSelected ? "var(--bg-accent-subtle)" : "var(--bg-subtle)",
                                                     cursor: "pointer",
                                                     transition: "all 0.12s ease",
                                                 }}
@@ -1445,19 +1462,19 @@ export default function ComponentsPage() {
                                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                                         <span style={{ fontWeight: 600, fontSize: 13 }}>第 {lIdx + 1} 行</span>
                                                         {line.IsEnabled === false && (
-                                                            <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: "rgba(255,99,71,0.18)", color: "#ff7b72" }}>
+                                                            <span className="badge badge-danger" style={{ fontSize: 10, padding: "1px 6px" }}>
                                                                 已禁用
                                                             </span>
                                                         )}
                                                     </div>
                                                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                                                         {line.IsMainLine && (
-                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 99, background: "rgba(96,205,255,0.2)", color: "var(--accent-primary)" }}>
+                                                            <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px" }}>
                                                                 主要行
                                                             </span>
                                                         )}
                                                         {line.IsNotificationEnabled && (
-                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 99, background: "rgba(16,185,129,0.2)", color: "#34d399" }}>
+                                                            <span className="badge badge-success" style={{ fontSize: 10, padding: "1px 6px" }}>
                                                                 提醒行
                                                             </span>
                                                         )}
@@ -1474,8 +1491,8 @@ export default function ComponentsPage() {
                                                         overflowX: "auto",
                                                         padding: "6px 10px",
                                                         borderRadius: 999,
-                                                        background: "rgba(0,0,0,0.26)",
-                                                        border: "1px solid var(--stroke-divider)",
+                                                        background: "var(--bg-card)",
+                                                        border: "1px solid var(--border-color)",
                                                         minHeight: 42,
                                                     }}
                                                 >
@@ -1516,14 +1533,18 @@ export default function ComponentsPage() {
                                                                         padding: "5px 12px",
                                                                         borderRadius: 999,
                                                                         background: isCompActive || isContainerOpen
-                                                                            ? "var(--accent-primary)"
-                                                                            : "rgba(255,255,255,0.08)",
-                                                                        color: isCompActive || isContainerOpen ? "#000" : "var(--text-primary)",
+                                                                            ? "var(--accent-color)"
+                                                                            : "var(--bg-subtle)",
+                                                                        color: isCompActive || isContainerOpen ? "#ffffff" : "var(--text-primary)",
                                                                         fontWeight: isCompActive || isContainerOpen ? 600 : 500,
                                                                         fontSize: 12.5,
                                                                         whiteSpace: "nowrap",
                                                                         cursor: "pointer",
-                                                                        border: isContainer ? "1px dashed rgba(255,255,255,0.35)" : "1px solid transparent",
+                                                                        border: isCompActive || isContainerOpen
+                                                                            ? "1px solid var(--accent-color)"
+                                                                            : isContainer
+                                                                                ? "1px dashed var(--accent-color)"
+                                                                                : "1px solid var(--border-color)",
                                                                     }}
                                                                     title={isContainer ? "单击选中，双击展开容器子组件" : comp.Id}
                                                                 >
@@ -1537,14 +1558,18 @@ export default function ComponentsPage() {
                                                                                 setTimeout(() => openContainerChildren(cIdx), 0);
                                                                             }}
                                                                             style={{
+                                                                                display: "inline-flex",
+                                                                                alignItems: "center",
+                                                                                gap: 3,
                                                                                 fontSize: 10,
                                                                                 padding: "1px 5px",
                                                                                 borderRadius: 99,
-                                                                                background: isCompActive || isContainerOpen ? "rgba(0,0,0,0.2)" : "rgba(96,205,255,0.18)",
-                                                                                color: isCompActive || isContainerOpen ? "#000" : "var(--accent-primary)",
+                                                                                background: isCompActive || isContainerOpen ? "rgba(255,255,255,0.22)" : "var(--bg-accent-subtle)",
+                                                                                color: isCompActive || isContainerOpen ? "#ffffff" : "var(--accent-color)",
                                                                             }}
                                                                         >
-                                                                            📦 {childCount}
+                                                                            <Box16Regular style={{ width: 12, height: 12 }} />
+                                                                            {childCount}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -1554,12 +1579,12 @@ export default function ComponentsPage() {
                                                 </div>
 
                                                 {/* 行快捷操作按钮组 (对应上游行右侧按钮) */}
-                                                <div style={{ display: "flex", gap: 2 }} onClick={(e) => e.stopPropagation()}>
+                                                <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
                                                     <Button
                                                         size="small"
                                                         appearance={line.IsMainLine ? "primary" : "subtle"}
                                                         onClick={() => setMainLine(lIdx)}
-                                                        title="设为主要行 (IsMainLine)"
+                                                        title="设为主要行"
                                                     >
                                                         主行
                                                     </Button>
@@ -1567,7 +1592,7 @@ export default function ComponentsPage() {
                                                         size="small"
                                                         appearance={line.IsNotificationEnabled ? "primary" : "subtle"}
                                                         onClick={() => setNotificationLine(lIdx)}
-                                                        title="设为提醒显示行 (IsNotificationEnabled)"
+                                                        title="设为提醒显示行"
                                                     >
                                                         提醒
                                                     </Button>
@@ -1575,7 +1600,7 @@ export default function ComponentsPage() {
                                                     <Button size="small" appearance="subtle" icon={<ArrowDown24Regular />} disabled={lIdx === lines.length - 1} onClick={() => moveLine(lIdx, 1)} title="下移此行" />
                                                     <Button size="small" appearance="subtle" icon={<Add24Regular />} onClick={() => addLineBelow(lIdx)} title="在下方插入新行" />
                                                     {lines.length > 1 && (
-                                                        <Button size="small" appearance="subtle" icon={<Delete24Regular />} onClick={() => removeLine(lIdx)} title="删除此行" />
+                                                        <Button size="small" appearance="subtle" icon={<Delete24Regular />} onClick={() => removeLine(lIdx)} title="删除此行" style={{ color: "var(--danger-color)" }} />
                                                     )}
                                                 </div>
                                             </div>
@@ -1586,10 +1611,11 @@ export default function ComponentsPage() {
 
                             {/* ── 容器子组件展开面板 (对应上游 GridComponentChildrenView) ── */}
                             {containerStack.length > 0 && (
-                                <div className="fluent-card" style={{ padding: 12, border: "1.5px solid var(--accent-primary)", background: "rgba(96,205,255,0.05)" }}>
+                                <div className="card" style={{ padding: 14, marginBottom: 0, border: "1.5px solid var(--accent-color)", background: "var(--bg-accent-subtle)" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 13 }}>
-                                            <span style={{ fontWeight: 600 }}>📦 容器子组件视图：</span>
+                                            <Box16Regular style={{ color: "var(--accent-color)" }} />
+                                            <span style={{ fontWeight: 600 }}>容器子组件视图：</span>
                                             <Button size="small" appearance="subtle" onClick={() => popContainerTo(-1)}>
                                                 第 {selectedLineIdx + 1} 行
                                             </Button>
@@ -1617,7 +1643,7 @@ export default function ComponentsPage() {
                                             </Button>
                                         </div>
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto", padding: "8px 10px", borderRadius: 8, background: "rgba(0,0,0,0.22)" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto", padding: "8px 10px", borderRadius: 8, background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
                                         {activeChildren.length === 0 ? (
                                             <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
                                                 当前容器内暂无子组件，请从下方“组件库”点击添加
@@ -1638,15 +1664,16 @@ export default function ComponentsPage() {
                                                             gap: 6,
                                                             padding: "5px 12px",
                                                             borderRadius: 999,
-                                                            background: isSelected ? "var(--accent-primary)" : "rgba(255,255,255,0.08)",
-                                                            color: isSelected ? "#000" : "var(--text-primary)",
+                                                            background: isSelected ? "var(--accent-color)" : "var(--bg-subtle)",
+                                                            color: isSelected ? "#ffffff" : "var(--text-primary)",
+                                                            border: isSelected ? "1px solid var(--accent-color)" : "1px solid var(--border-color)",
                                                             fontWeight: isSelected ? 600 : 500,
                                                             fontSize: 12.5,
                                                             cursor: "pointer",
                                                         }}
                                                     >
                                                         <span>{comp.NameCache || meta?.name || "子组件"}</span>
-                                                        {isContainer && <span style={{ fontSize: 11 }}>📦</span>}
+                                                        {isContainer && <Box16Regular style={{ width: 13, height: 13 }} />}
                                                     </div>
                                                 );
                                             })
@@ -1656,29 +1683,24 @@ export default function ComponentsPage() {
                             )}
 
                             {/* ── 当前选中组件的操作条 ── */}
-                            <div className="fluent-card" style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                            <div className="card" style={{ padding: "12px 16px", marginBottom: 0, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                     <span style={{ fontSize: 13, fontWeight: 600 }}>
                                         {currentComp
                                             ? `当前选中：${currentComp.NameCache || currentCompMeta?.name || "组件"} (${containerStack.length > 0 ? `${containerStack[containerStack.length - 1].title} 内部` : `第 ${selectedLineIdx + 1} 行`} #${selectedCompIdx + 1})`
                                             : `当前作用域：${containerStack.length > 0 ? `容器「${containerStack[containerStack.length - 1].title}」` : `第 ${selectedLineIdx + 1} 行`}（未选中组件）`}
                                     </span>
-                                    {currentComp && (
-                                        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}>
-                                            GUID: {currentComp.Id}
-                                        </span>
-                                    )}
                                 </div>
                                 {currentComp && (
                                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                                         {isContainerComponent(currentComp) && (
-                                            <Button size="small" appearance="primary" onClick={() => openContainerChildren(selectedCompIdx)}>
-                                                📦 管理子组件
+                                            <Button size="small" appearance="primary" icon={<Box24Regular />} onClick={() => openContainerChildren(selectedCompIdx)}>
+                                                管理子组件
                                             </Button>
                                         )}
                                         <Button
                                             size="small"
-                                            icon={<ArrowUp24Regular />}
+                                            icon={<ArrowLeft24Regular />}
                                             disabled={selectedCompIdx <= 0}
                                             onClick={() => moveComponent(selectedCompIdx, -1)}
                                         >
@@ -1686,13 +1708,13 @@ export default function ComponentsPage() {
                                         </Button>
                                         <Button
                                             size="small"
-                                            icon={<ArrowDown24Regular />}
+                                            icon={<ArrowRight24Regular />}
                                             disabled={selectedCompIdx >= activeChildren.length - 1}
                                             onClick={() => moveComponent(selectedCompIdx, 1)}
                                         >
                                             右移
                                         </Button>
-                                        <Button size="small" onClick={() => duplicateComponent(selectedCompIdx)}>
+                                        <Button size="small" icon={<Copy24Regular />} onClick={() => duplicateComponent(selectedCompIdx)}>
                                             创建副本
                                         </Button>
                                         <Select
@@ -1700,7 +1722,7 @@ export default function ComponentsPage() {
                                             onChange={(_, d) => {
                                                 if (d.value) wrapInContainer(selectedCompIdx, d.value);
                                             }}
-                                            style={{ width: 150 }}
+                                            style={{ width: 165 }}
                                         >
                                             <option value="">包裹到新容器...</option>
                                             <option value="c911d762-107f-40c6-84cc-0146ab3c86b1">包裹到分组容器</option>
@@ -1713,7 +1735,7 @@ export default function ComponentsPage() {
                                             appearance="subtle"
                                             icon={<Delete24Regular />}
                                             onClick={() => removeComponent(selectedCompIdx)}
-                                            style={{ color: "#ff7b72" }}
+                                            style={{ color: "var(--danger-color)" }}
                                         >
                                             删除组件
                                         </Button>
@@ -1722,30 +1744,34 @@ export default function ComponentsPage() {
                             </div>
 
                             {/* ── 底部四标签页切换器 (严格对应上游 ComponentsSettingsPage 底部 TabControl: 组件库 / 组件设置 / 高级设置 / 行设置) ── */}
-                            <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--stroke-divider)", paddingBottom: 8 }}>
+                            <div className="tab-bar" style={{ marginBottom: 4 }}>
                                 <Button
                                     appearance={activeTab === "library" ? "primary" : "subtle"}
+                                    icon={<Apps24Regular />}
                                     onClick={() => setActiveTab("library")}
                                 >
-                                    📚 组件库
+                                    组件库
                                 </Button>
                                 <Button
                                     appearance={activeTab === "settings" ? "primary" : "subtle"}
+                                    icon={<Settings24Regular />}
                                     onClick={() => setActiveTab("settings")}
                                 >
-                                    ⚙️ 组件设置
+                                    组件设置
                                 </Button>
                                 <Button
                                     appearance={activeTab === "advanced" ? "primary" : "subtle"}
+                                    icon={<Wrench24Regular />}
                                     onClick={() => setActiveTab("advanced")}
                                 >
-                                    🛠️ 高级设置
+                                    高级设置
                                 </Button>
                                 <Button
                                     appearance={activeTab === "line" ? "primary" : "subtle"}
+                                    icon={<TextAlignDistributed24Regular />}
                                     onClick={() => setActiveTab("line")}
                                 >
-                                    📏 行设置 (第 {selectedLineIdx + 1} 行)
+                                    行设置 (第 {selectedLineIdx + 1} 行)
                                 </Button>
                             </div>
 
@@ -1759,15 +1785,16 @@ export default function ComponentsPage() {
                                         {BUILTIN_COMPONENTS.map((bc) => (
                                             <div
                                                 key={bc.id}
-                                                className="fluent-card"
+                                                className="card"
                                                 style={{
-                                                    padding: 12,
+                                                    padding: 14,
+                                                    marginBottom: 0,
                                                     display: "flex",
                                                     flexDirection: "column",
                                                     justifyContent: "space-between",
                                                     gap: 8,
                                                     cursor: "pointer",
-                                                    border: bc.isContainer ? "1px dashed var(--accent-primary)" : undefined,
+                                                    border: bc.isContainer ? "1px dashed var(--accent-color)" : "1px solid var(--border-color)",
                                                 }}
                                                 onClick={() => addComponent(bc.id, bc.name)}
                                             >
@@ -1775,24 +1802,22 @@ export default function ComponentsPage() {
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                                                         <span style={{ fontWeight: 600, fontSize: 13.5 }}>{bc.name}</span>
                                                         {bc.isContainer && (
-                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 99, background: "rgba(96,205,255,0.18)", color: "var(--accent-primary)" }}>
+                                                            <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px", gap: 3 }}>
+                                                                <Box16Regular style={{ width: 11, height: 11 }} />
                                                                 容器
                                                             </span>
                                                         )}
                                                     </div>
                                                     <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>{bc.desc}</div>
                                                 </div>
-                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                                                    <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}>
-                                                        {bc.id.slice(0, 8)}...
-                                                    </span>
-                                                    <span style={{ fontSize: 12, color: "var(--accent-primary)", fontWeight: 600 }}>+ 添加</span>
+                                                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 4 }}>
+                                                    <span style={{ fontSize: 12, color: "var(--accent-color)", fontWeight: 600 }}>+ 添加</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
 
-                                    <div className="fluent-card" style={{ padding: 12, display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+                                    <div className="card" style={{ padding: 14, marginBottom: 0, display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
                                         <div className="form-group" style={{ marginBottom: 0, flex: 1, minWidth: 220 }}>
                                             <label className="form-label">第三方插件组件 GUID</label>
                                             <Input
@@ -1839,18 +1864,18 @@ export default function ComponentsPage() {
                                     <div className="empty-state"><p>请先在上方行视图中点击选择一个组件</p></div>
                                 ) : (
                                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                                        <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                                            <div className="section-title" style={{ marginBottom: 0 }}>基本标识与规则隐藏</div>
+                                        <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                                            <div className="settings-section-title" style={{ marginBottom: 0 }}>基本标识与规则隐藏</div>
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                                    <label className="form-label">组件类型 GUID (Id)</label>
+                                                    <label className="form-label">组件类型标识</label>
                                                     <Input
                                                         value={currentComp.Id || ""}
                                                         onChange={(_, d) => updateCurrentComp({ Id: d.value })}
                                                     />
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                                    <label className="form-label">组件名称缓存 (NameCache)</label>
+                                                    <label className="form-label">组件显示名称</label>
                                                     <Input
                                                         value={currentComp.NameCache || ""}
                                                         onChange={(_, d) => updateCurrentComp({ NameCache: d.value })}
@@ -1859,8 +1884,8 @@ export default function ComponentsPage() {
                                             </div>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                                 <div>
-                                                    <div style={{ fontWeight: 600 }}>满足规则时隐藏此组件 (HideOnRule)</div>
-                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>当触发指定的 HidingRules 规则集时自动隐藏该组件</div>
+                                                    <div style={{ fontWeight: 600 }}>满足规则时隐藏此组件</div>
+                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>当触发指定的隐藏规则集时自动隐藏该组件</div>
                                                 </div>
                                                 <Switch
                                                     checked={!!currentComp.HideOnRule}
@@ -1869,11 +1894,11 @@ export default function ComponentsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                                            <div className="section-title" style={{ marginBottom: 0 }}>布局、宽度与自定义边距 (Layout & Margins)</div>
+                                        <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                                            <div className="settings-section-title" style={{ marginBottom: 0 }}>布局、宽度与自定义边距</div>
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                                    <label className="form-label">水平对齐方式 (HorizontalAlignment)</label>
+                                                    <label className="form-label">水平对齐方式</label>
                                                     <Select
                                                         value={String(currentComp.HorizontalAlignment ?? 1)}
                                                         onChange={(_, d) => updateCurrentComp({ HorizontalAlignment: parseInt(d.value, 10) as HorizontalAlignmentType })}
@@ -1884,7 +1909,7 @@ export default function ComponentsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                                    <label className="form-label">整体不透明度 (Opacity, 0.0 ~ 1.0)</label>
+                                                    <label className="form-label">整体不透明度 (0.0 ~ 1.0)</label>
                                                     <Input
                                                         type="number"
                                                         step={0.05}
@@ -1947,8 +1972,8 @@ export default function ComponentsPage() {
                                                 </div>
                                             </div>
 
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
-                                                <span style={{ fontSize: 13, fontWeight: 600 }}>自定义四周边距 (IsCustomMarginEnabled)</span>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
+                                                <span style={{ fontSize: 13, fontWeight: 600 }}>自定义四周边距</span>
                                                 <Switch
                                                     checked={!!currentComp.IsCustomMarginEnabled}
                                                     onChange={(_, d) => updateCurrentComp({ IsCustomMarginEnabled: d.checked })}
@@ -1957,7 +1982,7 @@ export default function ComponentsPage() {
                                             {currentComp.IsCustomMarginEnabled && (
                                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">左边距 (Left)</label>
+                                                        <label className="form-label">左边距</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MarginLeft ?? 0)}
@@ -1965,7 +1990,7 @@ export default function ComponentsPage() {
                                                         />
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">上边距 (Top)</label>
+                                                        <label className="form-label">上边距</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MarginTop ?? 0)}
@@ -1973,7 +1998,7 @@ export default function ComponentsPage() {
                                                         />
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">右边距 (Right)</label>
+                                                        <label className="form-label">右边距</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MarginRight ?? 0)}
@@ -1981,7 +2006,7 @@ export default function ComponentsPage() {
                                                         />
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">下边距 (Bottom)</label>
+                                                        <label className="form-label">下边距</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MarginBottom ?? 0)}
@@ -1992,8 +2017,8 @@ export default function ComponentsPage() {
                                             )}
                                         </div>
 
-                                        <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                                            <div className="section-title" style={{ marginBottom: 0 }}>自定义外观与字体大小覆盖</div>
+                                        <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                                            <div className="settings-section-title" style={{ marginBottom: 0 }}>自定义外观与字体大小覆盖</div>
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
@@ -2060,8 +2085,8 @@ export default function ComponentsPage() {
                                                 </div>
                                             </div>
 
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
-                                                <span style={{ fontSize: 13, fontWeight: 600 }}>覆盖组件四级字体字号 (IsResourceOverridingEnabled)</span>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
+                                                <span style={{ fontSize: 13, fontWeight: 600 }}>覆盖组件四级字体字号</span>
                                                 <Switch
                                                     checked={!!currentComp.IsResourceOverridingEnabled}
                                                     onChange={(_, d) => updateCurrentComp({ IsResourceOverridingEnabled: d.checked })}
@@ -2070,7 +2095,7 @@ export default function ComponentsPage() {
                                             {currentComp.IsResourceOverridingEnabled && (
                                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">次级字号 (Secondary)</label>
+                                                        <label className="form-label">次级字号</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MainWindowSecondaryFontSize ?? 14)}
@@ -2078,7 +2103,7 @@ export default function ComponentsPage() {
                                                         />
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">正文字号 (Body)</label>
+                                                        <label className="form-label">正文字号</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MainWindowBodyFontSize ?? 16)}
@@ -2086,7 +2111,7 @@ export default function ComponentsPage() {
                                                         />
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">强调字号 (Emphasized)</label>
+                                                        <label className="form-label">强调字号</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MainWindowEmphasizedFontSize ?? 18)}
@@ -2094,7 +2119,7 @@ export default function ComponentsPage() {
                                                         />
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label className="form-label">大号字号 (Large)</label>
+                                                        <label className="form-label">大号字号</label>
                                                         <Input
                                                             type="number"
                                                             value={String(currentComp.MainWindowLargeFontSize ?? 20)}
@@ -2110,14 +2135,14 @@ export default function ComponentsPage() {
 
                             {/* ── Tab 4: 行设置 (对应上游 MainWindowLineSettings) ── */}
                             {activeTab === "line" && currentLine && (
-                                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                                    <div className="section-title" style={{ marginBottom: 0 }}>
-                                        第 {selectedLineIdx + 1} 行属性设置 (MainWindowLineSettings)
+                                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                                    <div className="settings-section-title" style={{ marginBottom: 0 }}>
+                                        第 {selectedLineIdx + 1} 行属性设置
                                     </div>
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                             <div>
-                                                <div style={{ fontWeight: 600 }}>启用此行 (IsEnabled)</div>
+                                                <div style={{ fontWeight: 600 }}>启用此行</div>
                                                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>关闭后主界面将不显示该行</div>
                                             </div>
                                             <Switch
@@ -2127,7 +2152,7 @@ export default function ComponentsPage() {
                                         </div>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                             <div>
-                                                <div style={{ fontWeight: 600 }}>主要行 (IsMainLine)</div>
+                                                <div style={{ fontWeight: 600 }}>主要行</div>
                                                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>作为主界面的主基准行</div>
                                             </div>
                                             <Switch
@@ -2137,7 +2162,7 @@ export default function ComponentsPage() {
                                         </div>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                             <div>
-                                                <div style={{ fontWeight: 600 }}>承载提醒通知 (IsNotificationEnabled)</div>
+                                                <div style={{ fontWeight: 600 }}>承载提醒通知</div>
                                                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>提醒横幅与遮罩动画将在此行弹出</div>
                                             </div>
                                             <Switch
@@ -2147,7 +2172,7 @@ export default function ComponentsPage() {
                                         </div>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                             <div>
-                                                <div style={{ fontWeight: 600 }}>满足规则时隐藏整行 (HideOnRule)</div>
+                                                <div style={{ fontWeight: 600 }}>满足规则时隐藏整行</div>
                                                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>触发行级规则集时自动隐藏该行</div>
                                             </div>
                                             <Switch
@@ -2157,20 +2182,20 @@ export default function ComponentsPage() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid var(--stroke-divider)", paddingTop: 12 }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid var(--border-color)", paddingTop: 12 }}>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">分体主界面模式 (IslandSeparationMode)</label>
+                                            <label className="form-label">分体主界面模式</label>
                                             <Select
                                                 value={String(currentLine.IslandSeparationMode ?? 0)}
                                                 onChange={(_, d) => updateCurrentLine({ IslandSeparationMode: parseInt(d.value, 10) })}
                                             >
-                                                <option value="0">继承全局设置 (Default)</option>
+                                                <option value="0">继承全局设置</option>
                                                 <option value="1">禁用分体模式 (合并为整条顶栏)</option>
                                                 <option value="2">启用分体模式 (各组件独立成岛)</option>
                                             </Select>
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">整行不透明度 (Opacity, 0.0 ~ 1.0)</label>
+                                            <label className="form-label">整行不透明度 (0.0 ~ 1.0)</label>
                                             <Input
                                                 type="number"
                                                 step={0.05}
@@ -2182,7 +2207,7 @@ export default function ComponentsPage() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid var(--stroke-divider)", paddingTop: 12 }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, borderTop: "1px solid var(--border-color)", paddingTop: 12 }}>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                                                 <label className="form-label" style={{ marginBottom: 0 }}>自定义行文字颜色</label>
@@ -2248,8 +2273,8 @@ export default function ComponentsPage() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
-                                        <span style={{ fontSize: 13, fontWeight: 600 }}>覆盖本行四级字体字号 (IsResourceOverridingEnabled)</span>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
+                                        <span style={{ fontSize: 13, fontWeight: 600 }}>覆盖本行四级字体字号</span>
                                         <Switch
                                             checked={!!currentLine.IsResourceOverridingEnabled}
                                             onChange={(_, d) => updateCurrentLine({ IsResourceOverridingEnabled: d.checked })}
@@ -2258,7 +2283,7 @@ export default function ComponentsPage() {
                                     {currentLine.IsResourceOverridingEnabled && (
                                         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label className="form-label">次级字号 (Secondary)</label>
+                                                <label className="form-label">次级字号</label>
                                                 <Input
                                                     type="number"
                                                     value={String(currentLine.MainWindowSecondaryFontSize ?? 14)}
@@ -2266,7 +2291,7 @@ export default function ComponentsPage() {
                                                 />
                                             </div>
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label className="form-label">正文字号 (Body)</label>
+                                                <label className="form-label">正文字号</label>
                                                 <Input
                                                     type="number"
                                                     value={String(currentLine.MainWindowBodyFontSize ?? 16)}
@@ -2274,7 +2299,7 @@ export default function ComponentsPage() {
                                                 />
                                             </div>
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label className="form-label">强调字号 (Emphasized)</label>
+                                                <label className="form-label">强调字号</label>
                                                 <Input
                                                     type="number"
                                                     value={String(currentLine.MainWindowEmphasizedFontSize ?? 18)}
@@ -2282,7 +2307,7 @@ export default function ComponentsPage() {
                                                 />
                                             </div>
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label className="form-label">大号字号 (Large)</label>
+                                                <label className="form-label">大号字号</label>
                                                 <Input
                                                     type="number"
                                                     value={String(currentLine.MainWindowLargeFontSize ?? 20)}

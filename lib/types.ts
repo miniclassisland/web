@@ -103,9 +103,9 @@ export interface PasswordChange {
 export type RegistrationMode = "open" | "pairing" | "pre_reg";
 
 export const REGISTRATION_MODE_LABELS: Record<RegistrationMode, string> = {
-    open: "开放接入 (无需配对与白名单)",
-    pairing: "配对码审批接入 (需管理员审批)",
-    pre_reg: "预注册白名单接入 (仅限已登记设备)",
+    open: "开放接入",
+    pairing: "配对码审批接入",
+    pre_reg: "预注册白名单接入",
 };
 
 export interface AccountOut {
@@ -160,32 +160,32 @@ export interface QuotaSetRequest {
 
 export const QUOTA_META: Record<string, { label: string; hint: string; type: "number" | "boolean"; defaultMax: number }> = {
     max_clients: {
-        label: "允许注册的设备数 (max_clients)",
-        hint: "该账户允许登记注册的最大终端设备数量 (默认 6 台，-1 表示不限制)",
+        label: "允许注册的设备数",
+        hint: "该账户允许登记注册的最大终端设备数量，默认 6 台，-1 表示不限制",
         type: "number",
         defaultMax: 6,
     },
     max_grpc_connections: {
-        label: "允许 gRPC 长连接的设备数量 (max_grpc_connections)",
-        hint: "该账户允许同时建立 gRPC 实时双向长连接会话的最大在线终端数量 (默认 4 个，-1 表示不限制)",
+        label: "允许实时长连接的设备数量",
+        hint: "该账户允许同时建立实时双向长连接会话的最大在线终端数量，默认 4 个，-1 表示不限制",
         type: "number",
         defaultMax: 4,
     },
     max_bandwidth_mb: {
-        label: "月度流量配额 (MB)",
-        hint: "该账户允许的最大配置与资源分发流量 (默认 100 MB，-1 表示不限制)",
+        label: "月度流量配额",
+        hint: "该账户允许的最大配置与资源分发流量，默认 100 MB，-1 表示不限制",
         type: "number",
         defaultMax: 100,
     },
     "feature.ota": {
-        label: "OTA 策略与组件分发",
-        hint: "允许该账户使用远程组件与策略分发能力 (1=开启, 0=关闭)",
+        label: "策略与组件分发",
+        hint: "允许该账户使用远程组件与策略分发能力",
         type: "boolean",
         defaultMax: 1,
     },
     "feature.audit": {
         label: "终端安全审计日志",
-        hint: "允许该账户收集并检索客户端事件审计日志 (1=开启, 0=关闭)",
+        hint: "允许该账户收集并检索客户端事件审计日志",
         type: "boolean",
         defaultMax: 1,
     },
@@ -681,8 +681,8 @@ export interface ManagementPolicy {
 export type ManagementServerKind = 0 | 1;
 
 export const MANAGEMENT_SERVER_KIND_LABELS: Record<ManagementServerKind, string> = {
-    0: "无服务器 (Serverless)",
-    1: "集控服务器 (ManagementServer)",
+    0: "无服务器",
+    1: "集控服务器",
 };
 
 /** 引导设置 (ManagementSettings / ManagementPreset.json) */
@@ -861,12 +861,12 @@ export interface AppDefaultSettings {
 export type AuthorizeLevel = 0 | 1 | 2;
 
 export const AUTHORIZE_LEVEL_LABELS: Record<AuthorizeLevel, string> = {
-    0: "无需认证 (None)",
-    1: "用户认证 (User)",
-    2: "管理员认证 (Admin)",
+    0: "无需认证",
+    1: "用户认证",
+    2: "管理员认证",
 };
 
-/** 凭据配置 (ManagementCredentialConfig) */
+/** 凭据配置 */
 export interface ManagementCredentialConfig {
     UserCredential?: string;
     AdminCredential?: string;
@@ -881,14 +881,14 @@ export interface ManagementCredentialConfig {
     ChangeLessonsAuthorizeLevel?: AuthorizeLevel;
 }
 
-/** 水平对齐方式: 0=Stretch, 1=Left, 2=Center, 3=Right */
+/** 水平对齐方式 */
 export type HorizontalAlignmentType = 0 | 1 | 2 | 3;
 
 export const HORIZONTAL_ALIGNMENT_LABELS: Record<HorizontalAlignmentType, string> = {
-    0: "拉伸 (Stretch)",
-    1: "左对齐 (Left)",
-    2: "居中 (Center)",
-    3: "右对齐 (Right)",
+    0: "拉伸",
+    1: "左对齐",
+    2: "居中",
+    3: "右对齐",
 };
 
 /** 组件设置项 (ComponentSettings) */
@@ -1173,12 +1173,12 @@ export interface ClientInfo extends Partial<ClientDeviceOut> {
 }
 
 export const CONFIG_TYPE_LABELS: Record<number, string> = {
-    1: "应用设置 (AppSettings)",
-    2: "当前档案 (Profile)",
-    3: "组件配置 (Components)",
-    4: "自动化配置 (Automations)",
-    5: "运行日志 (Logs)",
-    6: "已安装插件 (Plugins)",
+    1: "应用设置",
+    2: "当前档案",
+    3: "组件配置",
+    4: "自动化配置",
+    5: "运行日志",
+    6: "已安装插件",
 };
 
 export interface ConfigUploadItem {
@@ -1195,19 +1195,18 @@ export interface ConfigUploadItem {
 
 export const AUDIT_EVENT_LABELS: Record<number, string> = {
     0: "未指定事件",
-    1: "授权成功 (AuthorizeSuccess)",
-    2: "授权失败 (AuthorizeFailed)",
-    3: "应用启动 (AppStarted)",
-    4: "正常退出 (AppExited)",
-    5: "应用崩溃 (AppCrashed)",
-    6: "设置变更 (AppSettingsChanged)",
-    7: "插件安装 (PluginInstalled)",
-    8: "插件卸载 (PluginUninstalled)",
-    9: "集控加入 (ManagementJoined)",
-    10: "集控退出 (ManagementExited)",
-    11: "配置同步完成 (ConfigUpdated)",
-    12: "课表换课 (ClassPlanChanged)",
-    13: "规则状态变更 (RulesetChanged)",
+    1: "授权验证成功",
+    2: "授权验证失败",
+    4: "应用设置更新",
+    5: "换课操作完成",
+    6: "课表更新",
+    7: "时间表更新",
+    8: "科目更新",
+    9: "应用异常崩溃",
+    10: "应用启动",
+    11: "应用正常退出",
+    12: "插件安装",
+    13: "插件卸载",
 };
 
 export interface AuditLogItem {

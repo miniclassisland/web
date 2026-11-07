@@ -19,15 +19,15 @@ import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButto
 import FileHistoryButton from "@/components/FileHistoryButton";
 
 const AUTH_LEVEL_FIELDS: { key: keyof ManagementCredentialConfig; label: string; hint: string }[] = [
-    { key: "EditAuthorizeSettingsAuthorizeLevel", label: "编辑授权设置 (EditAuthorizeSettingsAuthorizeLevel)", hint: "修改认证与授权配置所需的权限等级" },
-    { key: "EditPolicyAuthorizeLevel", label: "编辑集控策略 (EditPolicyAuthorizeLevel)", hint: "修改限制策略所需的权限等级" },
-    { key: "ExitManagementAuthorizeLevel", label: "退出集控管理 (ExitManagementAuthorizeLevel)", hint: "脱离集控管理模式所需的权限等级" },
-    { key: "EditProfileAuthorizeLevel", label: "编辑本地档案 (EditProfileAuthorizeLevel)", hint: "打开档案编辑器所需的权限等级" },
-    { key: "EditSettingsAuthorizeLevel", label: "修改应用设置 (EditSettingsAuthorizeLevel)", hint: "进入应用设置页面所需的权限等级" },
-    { key: "ExitApplicationAuthorizeLevel", label: "关闭/退出应用 (ExitApplicationAuthorizeLevel)", hint: "退出或重启 ClassIsland 应用所需的权限等级" },
-    { key: "EditComponentsAuthorizeLevel", label: "编辑组件布局 (EditComponentsAuthorizeLevel)", hint: "修改主界面组件配置所需的权限等级" },
-    { key: "PluginManagementAuthorizeLevel", label: "管理插件市场 (PluginManagementAuthorizeLevel)", hint: "安装、启用或卸载插件所需的权限等级" },
-    { key: "ChangeLessonsAuthorizeLevel", label: "临时换课操作 (ChangeLessonsAuthorizeLevel)", hint: "在主界面执行临时换课所需的权限等级" },
+    { key: "EditAuthorizeSettingsAuthorizeLevel", label: "编辑授权设置", hint: "修改认证与授权配置所需的权限等级" },
+    { key: "EditPolicyAuthorizeLevel", label: "编辑集控策略", hint: "修改限制策略所需的权限等级" },
+    { key: "ExitManagementAuthorizeLevel", label: "退出集控管理", hint: "脱离集控管理模式所需的权限等级" },
+    { key: "EditProfileAuthorizeLevel", label: "编辑本地档案", hint: "打开档案编辑器所需的权限等级" },
+    { key: "EditSettingsAuthorizeLevel", label: "修改应用设置", hint: "进入应用设置页面所需的权限等级" },
+    { key: "ExitApplicationAuthorizeLevel", label: "关闭/退出应用", hint: "退出或重启 ClassIsland 应用所需的权限等级" },
+    { key: "EditComponentsAuthorizeLevel", label: "编辑组件布局", hint: "修改主界面组件配置所需的权限等级" },
+    { key: "PluginManagementAuthorizeLevel", label: "管理插件市场", hint: "安装、启用或卸载插件所需的权限等级" },
+    { key: "ChangeLessonsAuthorizeLevel", label: "临时换课操作", hint: "在主界面执行临时换课所需的权限等级" },
 ];
 
 export default function CredentialsPage() {
@@ -171,7 +171,7 @@ export default function CredentialsPage() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">凭据管理</h1>
-                    <p className="page-subtitle">管理 ClassIsland 客户端密码凭据与敏感操作授权等级 (ManagementCredentialConfig)</p>
+                    <p className="page-subtitle">管理 ClassIsland 客户端密码凭据与敏感操作授权等级</p>
                 </div>
                 <div className="flex gap-8">
                     <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建文件</Button>
@@ -247,7 +247,7 @@ export default function CredentialsPage() {
                                         appearance="secondary"
                                         defaultFileName={`Credentials-${selectedFile}.json`}
                                         suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `Credentials-${selectedFile}.json` },
+                                            { label: "具名区分文件", fileName: `Credentials-${selectedFile}.json` },
                                             { label: "档案原名", fileName: `${selectedFile}.json` },
                                             { label: "客户端标准资源名", fileName: "Credentials.json" },
                                         ]}
@@ -284,7 +284,7 @@ export default function CredentialsPage() {
                                         <div className="grid-2">
                                             <div className="form-group">
                                                 <div className="flex items-center justify-between mb-8">
-                                                    <label className="form-label" style={{ margin: 0 }}>用户凭据 (UserCredential)</label>
+                                                    <label className="form-label" style={{ margin: 0 }}>用户凭据</label>
                                                     <span className={`badge ${cred.UserCredential ? "badge-success" : "badge-warning"}`}>
                                                         {cred.UserCredential ? "已配置加密凭据" : "未设置密码"}
                                                     </span>
@@ -315,12 +315,12 @@ export default function CredentialsPage() {
                                                         </Button>
                                                     )}
                                                 </div>
-                                                <div className="form-hint">用于「用户认证 (User)」等级操作时在终端验证</div>
+                                                <div className="form-hint">用于「用户认证」等级操作时在终端验证</div>
                                             </div>
 
                                             <div className="form-group">
                                                 <div className="flex items-center justify-between mb-8">
-                                                    <label className="form-label" style={{ margin: 0 }}>管理员凭据 (AdminCredential)</label>
+                                                    <label className="form-label" style={{ margin: 0 }}>管理员凭据</label>
                                                     <span className={`badge ${cred.AdminCredential ? "badge-success" : "badge-warning"}`}>
                                                         {cred.AdminCredential ? "已配置加密凭据" : "未设置密码"}
                                                     </span>
@@ -351,7 +351,7 @@ export default function CredentialsPage() {
                                                         </Button>
                                                     )}
                                                 </div>
-                                                <div className="form-hint">用于「管理员认证 (Admin)」等级操作时在终端验证</div>
+                                                <div className="form-hint">用于「管理员认证」等级操作时在终端验证</div>
                                             </div>
                                         </div>
                                     </div>

@@ -27,6 +27,8 @@ import {
 import { Select } from "@/components/CustomSelect";
 import {
     Add24Regular, Delete24Regular, Save24Regular, ArrowSync24Regular, Code24Regular,
+    Prohibited16Regular, Clock16Regular, Settings24Regular, Layer24Regular,
+    Flash16Regular, BookOpen24Regular, ClipboardTextLtr24Regular, Copy24Regular,
 } from "@fluentui/react-icons";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import FileHistoryButton from "@/components/FileHistoryButton";
@@ -454,7 +456,7 @@ export default function ClassPlanPage() {
     });
 
     if (loading) {
-        return <div className="loading-center"><Spinner size="medium" label="加载课表配置中..." /></div>;
+        return <div className="empty-state"><Spinner size="medium" label="加载课表配置中..." /></div>;
     }
 
     const totalClassSlots = currentPlan
@@ -462,14 +464,14 @@ export default function ClassPlanPage() {
         : 0;
 
     return (
-        <div>
-            <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="fade-in">
+            <div className="page-header">
                 <div>
-                    <h1>课表编辑器 (ClassPlan)</h1>
-                    <p>原位对照 ClassIsland【档案编辑 → 课表】三栏布局：课表与触发规则列表、时间轴课程表、右侧快速选课盘与多周轮换规则</p>
+                    <h1 className="page-title">课表编辑器</h1>
+                    <p className="page-subtitle">原位对照 ClassIsland【档案编辑 → 课表】三栏布局：课表与触发规则列表、时间轴课程表、右侧快速选课盘与多周轮换规则</p>
                 </div>
-                <div className="toolbar">
-                    <Button icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建课表文件</Button>
+                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                    <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建课表文件</Button>
                     {selectedFile && (
                         <>
                             <FileHistoryButton
@@ -504,7 +506,7 @@ export default function ClassPlanPage() {
                                 appearance="secondary"
                                 defaultFileName={`ClassPlan-${selectedFile}.json`}
                                 suggestedNames={[
-                                    { label: "具名区分文件 (推荐)", fileName: `ClassPlan-${selectedFile}.json` },
+                                    { label: "具名区分文件", fileName: `ClassPlan-${selectedFile}.json` },
                                     { label: "档案原名", fileName: `${selectedFile}.json` },
                                     { label: "客户端标准资源名", fileName: "ClassPlan.json" },
                                 ]}
@@ -513,7 +515,7 @@ export default function ClassPlanPage() {
                             />
                             <Button
                                 icon={<Code24Regular />}
-                                appearance={jsonMode ? "primary" : "secondary"}
+                                appearance={jsonMode ? "primary" : "subtle"}
                                 onClick={() => {
                                     if (!jsonMode) setJsonText(JSON.stringify(plans, null, 2));
                                     setJsonMode(!jsonMode);
@@ -521,7 +523,7 @@ export default function ClassPlanPage() {
                             >
                                 {jsonMode ? "可视化模式" : "JSON 模式"}
                             </Button>
-                            <Button icon={<ArrowSync24Regular />} onClick={() => selectFile(selectedFile)}>刷新</Button>
+                            <Button appearance="secondary" icon={<ArrowSync24Regular />} onClick={() => selectFile(selectedFile)}>刷新</Button>
                             <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
                                 {saving ? "保存中..." : "保存"}
                             </Button>
@@ -536,76 +538,90 @@ export default function ClassPlanPage() {
                 </MessageBar>
             )}
 
-            <div className="split-panel">
-                {/* 左侧文件选择与参考库 */}
-                <div className="split-left">
-                    <div className="section-title">课表文件</div>
+            {/* 顶部课表文件与关联参考库工具条（消除原本四栏并排挤压，完整释放三栏编辑宽度） */}
+            <div className="card" style={{ padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>课表文件：</span>
                     {fileList.length === 0 ? (
-                        <div className="empty-state"><p>暂无课表文件</p></div>
+                        <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>暂无课表文件</span>
                     ) : (
-                        <div className="file-list">
-                            {fileList.map((f) => (
-                                <div
-                                    key={f}
-                                    className={`file-item ${selectedFile === f ? "selected" : ""}`}
-                                    onClick={() => selectFile(f)}
-                                    style={{ justifyContent: "space-between" }}
-                                >
-                                    <span>📅 {f}</span>
-                                    <Button
-                                        size="small"
-                                        appearance="subtle"
-                                        icon={<Delete24Regular />}
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                        fileList.map((f) => (
+                            <div
+                                key={f}
+                                onClick={() => selectFile(f)}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    height: 32,
+                                    padding: "0 6px 0 12px",
+                                    borderRadius: "var(--radius-sm)",
+                                    border: selectedFile === f ? "1px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                    background: selectedFile === f ? "var(--bg-accent-subtle)" : "var(--bg-subtle)",
+                                    color: selectedFile === f ? "var(--accent-color)" : "var(--text-primary)",
+                                    fontWeight: selectedFile === f ? 600 : 500,
+                                    fontSize: 13,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <span>{f}</span>
+                                <Button
+                                    size="small"
+                                    appearance="subtle"
+                                    icon={<Delete24Regular />}
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
+                                    style={{ color: "var(--danger-color)", minWidth: 22, height: 22, padding: 2 }}
+                                    title="删除此课表文件"
+                                />
+                            </div>
+                        ))
                     )}
-
-                    <div style={{ marginTop: 18, borderTop: "1px solid var(--stroke-divider)", paddingTop: 14 }}>
-                        <div className="section-title">关联参考档案库</div>
-                        <div className="form-group" style={{ marginBottom: 10 }}>
-                            <label className="form-label" style={{ fontSize: 12 }}>参考时间表文件 (TimeLayout)</label>
-                            <Select value={selectedTlFile} onChange={(_, d) => loadReferenceTl(d.value)}>
-                                {tlFileList.length === 0 && <option value="">(无时间表文件)</option>}
-                                {tlFileList.map((f) => (
-                                    <option key={f} value={f}>{f}</option>
-                                ))}
-                            </Select>
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label" style={{ fontSize: 12 }}>参考科目库文件 (Subjects)</label>
-                            <Select value={selectedSubFile} onChange={(_, d) => loadReferenceSub(d.value)}>
-                                {subFileList.length === 0 && <option value="">(无科目文件)</option>}
-                                {subFileList.map((f) => (
-                                    <option key={f} value={f}>{f}</option>
-                                ))}
-                            </Select>
-                        </div>
-                    </div>
                 </div>
 
-                {/* 右侧原位三栏课表编辑器 (对应上游 ProfileSettingsWindow ClassPlans Tab) */}
-                <div className="split-right">
+                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>参考时间表：</span>
+                        <Select size="small" value={selectedTlFile} onChange={(_, d) => loadReferenceTl(d.value)} style={{ width: 140 }}>
+                            {tlFileList.length === 0 && <option value="">(无时间表文件)</option>}
+                            {tlFileList.map((f) => (
+                                <option key={f} value={f}>{f}</option>
+                            ))}
+                        </Select>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>参考科目库：</span>
+                        <Select size="small" value={selectedSubFile} onChange={(_, d) => loadReferenceSub(d.value)} style={{ width: 140 }}>
+                            {subFileList.length === 0 && <option value="">(无科目文件)</option>}
+                            {subFileList.map((f) => (
+                                <option key={f} value={f}>{f}</option>
+                            ))}
+                        </Select>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                {/* 原位三栏课表编辑器 (对应上游 ProfileSettingsWindow ClassPlans Tab) */}
+                <div style={{ minWidth: 0 }}>
                     {!selectedFile ? (
-                        <div className="empty-state"><p>请从左侧选择一个课表文件</p></div>
+                        <div className="card"><div className="empty-state"><div className="empty-state-text">请从上方选择或新建一个课表文件</div></div></div>
                     ) : dataLoading ? (
-                        <div className="loading-center"><Spinner size="medium" /></div>
+                        <div className="card"><div className="empty-state"><Spinner size="medium" /></div></div>
                     ) : jsonMode ? (
-                        <div>
-                            <div className="section-title">JSON 编辑器 — {selectedFile}</div>
-                            <textarea
-                                className="json-editor"
-                                value={jsonText}
-                                onChange={(e) => setJsonText(e.target.value)}
-                                style={{ minHeight: 520 }}
-                            />
+                        <div className="card">
+                            <div className="card-title">JSON 编辑器 — {selectedFile}</div>
+                            <div className="json-editor">
+                                <textarea
+                                    value={jsonText}
+                                    onChange={(e) => setJsonText(e.target.value)}
+                                    style={{ minHeight: 520 }}
+                                />
+                            </div>
                         </div>
                     ) : (
-                        <div style={{ display: "grid", gridTemplateColumns: "255px 1fr 295px", gap: 14, alignItems: "start" }}>
+                        <div className="classplan-3col-grid">
                             {/* ── 第一栏：课表群筛选 + 课表列表（含上游触发规则与时间表徽标） ── */}
-                            <div className="fluent-card" style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div className="card" style={{ padding: 14, marginBottom: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                                     <Select
                                         size="small"
@@ -627,13 +643,13 @@ export default function ClassPlanPage() {
                                         添加课表
                                     </Button>
                                     {selectedPlanId && (
-                                        <Button size="small" onClick={() => duplicatePlan(selectedPlanId)} title="复制当前选中课表">
+                                        <Button size="small" icon={<Copy24Regular />} onClick={() => duplicatePlan(selectedPlanId)} title="复制当前选中课表">
                                             复制
                                         </Button>
                                     )}
                                 </div>
 
-                                <div className="file-list" style={{ maxHeight: 520, overflowY: "auto" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 520, overflowY: "auto" }}>
                                     {filteredPlanEntries.length === 0 ? (
                                         <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: 12, textAlign: "center" }}>
                                             当前筛选下暂无课表
@@ -650,7 +666,7 @@ export default function ClassPlanPage() {
                                             return (
                                                 <div
                                                     key={id}
-                                                    className={`file-item ${isSelected ? "selected" : ""}`}
+                                                    className={`sidebar-link ${isSelected ? "active" : ""}`}
                                                     onClick={() => {
                                                         setSelectedPlanId(id);
                                                         setSelectedLessonIdx(0);
@@ -660,6 +676,7 @@ export default function ClassPlanPage() {
                                                         alignItems: "stretch",
                                                         gap: 6,
                                                         padding: "9px 10px",
+                                                        border: isSelected ? "1px solid var(--accent-color)" : "1px solid var(--border-color)",
                                                     }}
                                                 >
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
@@ -667,7 +684,7 @@ export default function ClassPlanPage() {
                                                             {cp.Name || "未命名课表"}
                                                         </span>
                                                         {cp.IsOverlay && (
-                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(96,205,255,0.2)", color: "var(--accent-primary)" }}>
+                                                            <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px" }}>
                                                                 临时层
                                                             </span>
                                                         )}
@@ -676,31 +693,34 @@ export default function ClassPlanPage() {
                                                     {/* 上游风格胶囊标签行：触发星期 + 多周轮换 + 时间表名称 */}
                                                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
                                                         {cp.IsEnabled === false ? (
-                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(255,99,71,0.18)", color: "#ff7b72" }}>
-                                                                🚫 不自动启用
+                                                            <span className="badge badge-danger" style={{ fontSize: 10, padding: "1px 6px", gap: 3 }}>
+                                                                <Prohibited16Regular style={{ width: 11, height: 11 }} />
+                                                                不自动启用
                                                             </span>
                                                         ) : (
                                                             <>
-                                                                <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(96,205,255,0.16)", color: "var(--accent-primary)" }}>
+                                                                <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px" }}>
                                                                     {weekDayLabel}
                                                                 </span>
                                                                 {div > 0 && (
-                                                                    <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(168,85,247,0.18)", color: "#c084fc" }}>
+                                                                    <span className="badge badge-warning" style={{ fontSize: 10, padding: "1px 6px" }}>
                                                                         {div}/{total}周
                                                                     </span>
                                                                 )}
                                                             </>
                                                         )}
                                                         <span
+                                                            className={`badge ${isEmptyGuid(tlId) || !tlObj ? "badge-warning" : ""}`}
                                                             style={{
                                                                 fontSize: 10,
                                                                 padding: "1px 6px",
-                                                                borderRadius: 4,
-                                                                background: isEmptyGuid(tlId) || !tlObj ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.08)",
-                                                                color: isEmptyGuid(tlId) || !tlObj ? "#fbbf24" : "var(--text-secondary)",
+                                                                gap: 3,
+                                                                background: !(isEmptyGuid(tlId) || !tlObj) ? "var(--bg-subtle)" : undefined,
+                                                                color: !(isEmptyGuid(tlId) || !tlObj) ? "var(--text-secondary)" : undefined,
                                                             }}
                                                         >
-                                                            🕒 {isEmptyGuid(tlId) ? "未设置时间表" : (tlObj?.Name || "未知时间表")}
+                                                            <Clock16Regular style={{ width: 11, height: 11 }} />
+                                                            {isEmptyGuid(tlId) ? "未设置时间表" : (tlObj?.Name || "未知时间表")}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -712,27 +732,29 @@ export default function ClassPlanPage() {
 
                             {/* ── 第二栏（中间）：课表工具栏 + 状态提示栏 + 课程时间轴表格 ── */}
                             {!currentPlan ? (
-                                <div className="empty-state"><p>请从左侧选择或添加一个课表</p></div>
+                                <div className="card"><div className="empty-state"><div className="empty-state-text">请从左侧选择或添加一个课表</div></div></div>
                             ) : (
-                                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                                <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
                                     {/* 顶部 CommandBar (对应上游课表顶部工具栏) */}
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, borderBottom: "1px solid var(--stroke-divider)", paddingBottom: 10 }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, borderBottom: "1px solid var(--border-color)", paddingBottom: 10 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                             <span style={{ fontWeight: 700, fontSize: 15 }}>{currentPlan.Name || "未命名课表"}</span>
                                             <Button
                                                 size="small"
+                                                icon={<Settings24Regular />}
                                                 appearance={rightDrawerTab === "info" ? "primary" : "secondary"}
                                                 onClick={() => setRightDrawerTab("info")}
                                             >
-                                                ⚙️ 课表信息与触发规则
+                                                课表信息与触发规则
                                             </Button>
                                             {!currentPlan.IsOverlay && (
                                                 <Button
                                                     size="small"
+                                                    icon={<Layer24Regular />}
                                                     onClick={() => selectedPlanId && createTempOverlayPlan(selectedPlanId)}
                                                     title="基于此课表创建临时换课层"
                                                 >
-                                                    📑 创建临时层
+                                                    创建临时层
                                                 </Button>
                                             )}
                                         </div>
@@ -746,32 +768,32 @@ export default function ClassPlanPage() {
                                                 appearance="subtle"
                                                 icon={<Delete24Regular />}
                                                 onClick={() => selectedPlanId && removePlan(selectedPlanId)}
-                                                style={{ color: "#ff7b72" }}
+                                                style={{ color: "var(--danger-color)" }}
                                             >
                                                 删除课表
                                             </Button>
                                         </div>
                                     </div>
 
-                                    {/* 00000000-0000-0000-0000-000000000000 时间表未设置提醒条 (对应上游 InfoBar) */}
+                                    {/* 时间表未设置提醒条 (对应上游 InfoBar) */}
                                     {isEmptyGuid(currentTlId) && (
                                         <MessageBar intent="warning">
                                             <MessageBarBody>
-                                                此课表尚未关联时间表（当前为 <code>{EMPTY_GUID}</code> 空引用）。请在右侧「课表信息」中选择一个有效的时间表，以便对齐每日上课时间点。
+                                                此课表尚未关联时间表。请在右侧「课表信息」中选择一个有效的时间表，以便对齐每日上课时间点。
                                             </MessageBarBody>
                                         </MessageBar>
                                     )}
                                     {!isEmptyGuid(currentTlId) && !currentTl && (
                                         <MessageBar intent="warning">
                                             <MessageBarBody>
-                                                此课表关联的时间表 GUID (<code>{currentTlId.slice(0, 8)}...</code>) 在当前参考时间表文件「{selectedTlFile}」中不存在，请切换左侧参考时间表文件或重新绑定时间表。
+                                                此课表关联的时间表在当前参考时间表文件「{selectedTlFile}」中不存在，请切换左侧参考时间表文件或重新绑定时间表。
                                             </MessageBarBody>
                                         </MessageBar>
                                     )}
                                     {currentPlan.IsOverlay && (
                                         <MessageBar intent="info">
                                             <MessageBarBody>
-                                                当前课表为<strong>临时层课表 (IsOverlay)</strong>，将在预定日期覆盖原课表并在过期后自动清除。
+                                                当前课表为<strong>临时层课表</strong>，将在预定日期覆盖原课表并在过期后自动清除。
                                             </MessageBarBody>
                                         </MessageBar>
                                     )}
@@ -780,7 +802,7 @@ export default function ClassPlanPage() {
                                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                         {totalClassSlots === 0 && (!showBreaks || (currentTl?.Layouts || []).length === 0) ? (
                                             <div className="empty-state" style={{ padding: 28 }}>
-                                                <p>当前课表暂无课程节次，请先绑定时间表或点击下方「+ 手动添加节次」</p>
+                                                <div className="empty-state-text">当前课表暂无课程节次，请先绑定时间表或点击下方「手动添加节次」</div>
                                             </div>
                                         ) : showBreaks && currentTl ? (
                                             // 混排展示时间表所有时间点（上课 + 课间 + 分割线 + 行动）
@@ -797,16 +819,24 @@ export default function ClassPlanPage() {
                                                                     justifyContent: "space-between",
                                                                     padding: "6px 12px",
                                                                     borderRadius: 6,
-                                                                    background: "rgba(255,255,255,0.03)",
-                                                                    borderLeft: tlItem.TimeType === 3 ? "3px solid #fbbf24" : "3px solid #34d399",
+                                                                    background: "var(--bg-subtle)",
+                                                                    borderLeft: tlItem.TimeType === 3 ? "3px solid var(--warning-color)" : "3px solid var(--success-color)",
                                                                     fontSize: 12,
                                                                     color: "var(--text-secondary)",
                                                                 }}
                                                             >
-                                                                <span>
-                                                                    {tlItem.TimeType === 2
-                                                                        ? "── 分割线 ──"
-                                                                        : `${formatItemTime(tlItem)} · ${tlItem.TimeType === 1 ? (tlItem.BreakName || "课间休息") : `⚡ 行动 (${tlItem.ActionSet?.Name || "行动时间点"})`}`}
+                                                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                                                    {tlItem.TimeType === 2 ? (
+                                                                        "── 分割线 ──"
+                                                                    ) : tlItem.TimeType === 1 ? (
+                                                                        `${formatItemTime(tlItem)} · ${tlItem.BreakName || "课间休息"}`
+                                                                    ) : (
+                                                                        <>
+                                                                            {formatItemTime(tlItem)} ·
+                                                                            <Flash16Regular style={{ color: "var(--warning-color)" }} />
+                                                                            行动 ({tlItem.ActionSet?.Name || "行动时间点"})
+                                                                        </>
+                                                                    )}
                                                                 </span>
                                                                 <span>{TIME_TYPE_LABELS[tlItem.TimeType]}</span>
                                                             </div>
@@ -832,13 +862,13 @@ export default function ClassPlanPage() {
                                                             }}
                                                             style={{
                                                                 display: "grid",
-                                                                gridTemplateColumns: "52px 150px 1fr auto",
+                                                                gridTemplateColumns: "46px auto 1fr auto",
                                                                 alignItems: "center",
-                                                                gap: 10,
-                                                                padding: "8px 12px",
+                                                                gap: 8,
+                                                                padding: "8px 10px",
                                                                 borderRadius: 8,
-                                                                border: isRowSelected ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
-                                                                background: isRowSelected ? "rgba(96,205,255,0.09)" : "var(--bg-layer-alt)",
+                                                                border: isRowSelected ? "1.5px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                                background: isRowSelected ? "var(--bg-accent-subtle)" : "var(--bg-card)",
                                                                 cursor: "pointer",
                                                             }}
                                                         >
@@ -848,10 +878,10 @@ export default function ClassPlanPage() {
                                                                     onChange={(_, d) => updateLessonAt(cIdx, { IsEnabled: d.checked })}
                                                                 />
                                                             </div>
-                                                            <div style={{ fontSize: 12.5, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
-                                                                第 {cIdx + 1} 节 · {formatItemTime(tlItem)}
+                                                            <div style={{ fontSize: 12, fontFamily: "var(--font-mono)", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                                                                第{cIdx + 1}节 {formatItemTime(tlItem)}
                                                             </div>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                                                                 <span
                                                                     style={{
                                                                         display: "inline-flex",
@@ -859,25 +889,27 @@ export default function ClassPlanPage() {
                                                                         justifyContent: "center",
                                                                         width: 26,
                                                                         height: 26,
+                                                                        flexShrink: 0,
                                                                         borderRadius: 6,
-                                                                        background: isEmptySub ? "rgba(255,255,255,0.08)" : "var(--accent-primary)",
-                                                                        color: isEmptySub ? "var(--text-tertiary)" : "#000",
+                                                                        background: isEmptySub ? "var(--bg-subtle)" : "var(--accent-color)",
+                                                                        color: isEmptySub ? "var(--text-secondary)" : "#ffffff",
+                                                                        border: isEmptySub ? "1px solid var(--border-color)" : "none",
                                                                         fontWeight: 700,
                                                                         fontSize: 12,
                                                                     }}
                                                                 >
                                                                     {isEmptySub ? "空" : (subObj?.Initial || subObj?.Name?.[0] || "?")}
                                                                 </span>
-                                                                <span style={{ fontWeight: isEmptySub ? 400 : 600, color: isEmptySub ? "var(--text-tertiary)" : "var(--text-primary)" }}>
-                                                                    {isEmptySub ? "（未设置科目）" : (subObj?.Name || `未知科目 (${subId.slice(0, 6)})`)}
+                                                                <span style={{ fontWeight: isEmptySub ? 400 : 600, color: isEmptySub ? "var(--text-tertiary)" : "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                                    {isEmptySub ? "（未设置科目）" : (subObj?.Name || `未知科目`)}
                                                                 </span>
                                                                 {subObj?.TeacherName && (
-                                                                    <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                                                    <span style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
                                                                         ({subObj.TeacherName})
                                                                     </span>
                                                                 )}
                                                                 {ci.IsChangedClass && (
-                                                                    <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: "rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+                                                                    <span className="badge badge-warning" style={{ fontSize: 10, padding: "1px 6px", flexShrink: 0 }}>
                                                                         换课
                                                                     </span>
                                                                 )}
@@ -888,7 +920,7 @@ export default function ClassPlanPage() {
                                                                         size="small"
                                                                         appearance="subtle"
                                                                         onClick={() => updateLessonAt(cIdx, { SubjectId: EMPTY_GUID })}
-                                                                        title={`置空为 ${EMPTY_GUID}`}
+                                                                        title="将此节设为空科目"
                                                                     >
                                                                         置空
                                                                     </Button>
@@ -920,13 +952,13 @@ export default function ClassPlanPage() {
                                                         }}
                                                         style={{
                                                             display: "grid",
-                                                            gridTemplateColumns: "52px 156px 1fr auto",
+                                                            gridTemplateColumns: "46px auto 1fr auto",
                                                             alignItems: "center",
-                                                            gap: 10,
-                                                            padding: "8px 12px",
+                                                            gap: 8,
+                                                            padding: "8px 10px",
                                                             borderRadius: 8,
-                                                            border: isRowSelected ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
-                                                            background: isRowSelected ? "rgba(96,205,255,0.09)" : "var(--bg-layer-alt)",
+                                                            border: isRowSelected ? "1.5px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                            background: isRowSelected ? "var(--bg-accent-subtle)" : "var(--bg-card)",
                                                             cursor: "pointer",
                                                             opacity: ci.IsEnabled === false ? 0.55 : 1,
                                                         }}
@@ -937,10 +969,10 @@ export default function ClassPlanPage() {
                                                                 onChange={(_, d) => updateLessonAt(cIdx, { IsEnabled: d.checked })}
                                                             />
                                                         </div>
-                                                        <div style={{ fontSize: 12.5, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
-                                                            第 {cIdx + 1} 节 {tlItem ? `· ${formatItemTime(tlItem)}` : ""}
+                                                        <div style={{ fontSize: 12, fontFamily: "var(--font-mono)", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                                                            第{cIdx + 1}节 {tlItem ? formatItemTime(tlItem) : ""}
                                                         </div>
-                                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                                                             <span
                                                                 style={{
                                                                     display: "inline-flex",
@@ -948,25 +980,27 @@ export default function ClassPlanPage() {
                                                                     justifyContent: "center",
                                                                     width: 26,
                                                                     height: 26,
+                                                                    flexShrink: 0,
                                                                     borderRadius: 6,
-                                                                    background: isEmptySub ? "rgba(255,255,255,0.08)" : "var(--accent-primary)",
-                                                                    color: isEmptySub ? "var(--text-tertiary)" : "#000",
+                                                                    background: isEmptySub ? "var(--bg-subtle)" : "var(--accent-color)",
+                                                                    color: isEmptySub ? "var(--text-secondary)" : "#ffffff",
+                                                                    border: isEmptySub ? "1px solid var(--border-color)" : "none",
                                                                     fontWeight: 700,
                                                                     fontSize: 12,
                                                                 }}
                                                             >
                                                                 {isEmptySub ? "空" : (subObj?.Initial || subObj?.Name?.[0] || "?")}
                                                             </span>
-                                                            <span style={{ fontWeight: isEmptySub ? 400 : 600, color: isEmptySub ? "var(--text-tertiary)" : "var(--text-primary)" }}>
-                                                                {isEmptySub ? "（未设置科目）" : (subObj?.Name || `未知科目 (${subId.slice(0, 6)})`)}
+                                                            <span style={{ fontWeight: isEmptySub ? 400 : 600, color: isEmptySub ? "var(--text-tertiary)" : "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                                {isEmptySub ? "（未设置科目）" : (subObj?.Name || `未知科目`)}
                                                             </span>
                                                             {subObj?.TeacherName && (
-                                                                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                                                <span style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
                                                                     ({subObj.TeacherName})
                                                                 </span>
                                                             )}
                                                             {ci.IsChangedClass && (
-                                                                <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: "rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+                                                                <span className="badge badge-warning" style={{ fontSize: 10, padding: "1px 6px", flexShrink: 0 }}>
                                                                     换课
                                                                 </span>
                                                             )}
@@ -977,7 +1011,7 @@ export default function ClassPlanPage() {
                                                                     size="small"
                                                                     appearance="subtle"
                                                                     onClick={() => updateLessonAt(cIdx, { SubjectId: EMPTY_GUID })}
-                                                                    title={`将此节设为空科目 (${EMPTY_GUID})`}
+                                                                    title="将此节设为空科目"
                                                                 >
                                                                     置空
                                                                 </Button>
@@ -988,6 +1022,7 @@ export default function ClassPlanPage() {
                                                                     appearance="subtle"
                                                                     icon={<Delete24Regular />}
                                                                     onClick={() => removeClassSlot(cIdx)}
+                                                                    style={{ color: "var(--danger-color)" }}
                                                                 />
                                                             )}
                                                         </div>
@@ -1024,23 +1059,25 @@ export default function ClassPlanPage() {
                             )}
 
                             {/* ── 第三栏（右侧）：原位对照上游 TabControl（编辑科目选课盘 / 课表详细信息与 TimeRuleEditControl） ── */}
-                            <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                                <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--stroke-divider)", paddingBottom: 8 }}>
+                            <div className="card" style={{ padding: 16, marginBottom: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                                <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--border-color)", paddingBottom: 8 }}>
                                     <Button
                                         size="small"
+                                        icon={<BookOpen24Regular />}
                                         appearance={rightDrawerTab === "subject" ? "primary" : "subtle"}
                                         onClick={() => setRightDrawerTab("subject")}
                                         style={{ flex: 1 }}
                                     >
-                                        🎯 编辑科目
+                                        编辑科目
                                     </Button>
                                     <Button
                                         size="small"
+                                        icon={<ClipboardTextLtr24Regular />}
                                         appearance={rightDrawerTab === "info" ? "primary" : "subtle"}
                                         onClick={() => setRightDrawerTab("info")}
                                         style={{ flex: 1 }}
                                     >
-                                        📋 课表信息
+                                        课表信息
                                     </Button>
                                 </div>
 
@@ -1070,9 +1107,11 @@ export default function ClassPlanPage() {
                                                 padding: "8px 12px",
                                                 borderRadius: 8,
                                                 border: isEmptyGuid(currentPlan.Classes?.[selectedLessonIdx]?.SubjectId)
-                                                    ? "1.5px solid var(--accent-primary)"
-                                                    : "1px dashed var(--stroke-card)",
-                                                background: "rgba(255,255,255,0.03)",
+                                                    ? "1.5px solid var(--accent-color)"
+                                                    : "1px dashed var(--border-color)",
+                                                background: isEmptyGuid(currentPlan.Classes?.[selectedLessonIdx]?.SubjectId)
+                                                    ? "var(--bg-accent-subtle)"
+                                                    : "var(--bg-subtle)",
                                                 cursor: "pointer",
                                             }}
                                         >
@@ -1082,7 +1121,9 @@ export default function ClassPlanPage() {
                                                         width: 28,
                                                         height: 28,
                                                         borderRadius: 6,
-                                                        background: "rgba(255,255,255,0.08)",
+                                                        background: "var(--bg-card)",
+                                                        border: "1px solid var(--border-color)",
+                                                        color: "var(--text-secondary)",
                                                         display: "inline-flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -1094,8 +1135,8 @@ export default function ClassPlanPage() {
                                                 </span>
                                                 <div>
                                                     <div style={{ fontSize: 12.5, fontWeight: 600 }}>（空 / 未设置科目）</div>
-                                                    <div style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}>
-                                                        {EMPTY_GUID}
+                                                    <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                                                        点击将当前节次设为空课程
                                                     </div>
                                                 </div>
                                             </div>
@@ -1126,15 +1167,15 @@ export default function ClassPlanPage() {
                                                             justifyContent: "center",
                                                             padding: "10px 6px",
                                                             borderRadius: 8,
-                                                            border: isCurrentSub ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
-                                                            background: isCurrentSub ? "rgba(96,205,255,0.18)" : "var(--bg-layer-alt)",
+                                                            border: isCurrentSub ? "1.5px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                            background: isCurrentSub ? "var(--bg-accent-subtle)" : "var(--bg-subtle)",
                                                             cursor: "pointer",
                                                             textAlign: "center",
                                                             gap: 2,
                                                         }}
                                                         title={`${sub.Name}${sub.TeacherName ? ` (${sub.TeacherName})` : ""}`}
                                                     >
-                                                        <span style={{ fontSize: 18, fontWeight: 700, color: isCurrentSub ? "var(--accent-primary)" : "var(--text-primary)" }}>
+                                                        <span style={{ fontSize: 18, fontWeight: 700, color: isCurrentSub ? "var(--accent-color)" : "var(--text-primary)" }}>
                                                             {sub.Initial || sub.Name?.[0] || "?"}
                                                         </span>
                                                         <span style={{ fontSize: 11, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
@@ -1146,7 +1187,7 @@ export default function ClassPlanPage() {
                                         </div>
 
                                         {/* 底部：选完科目自动移动到下一个课程 (对应上游 CheckBox) */}
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
                                             <span style={{ fontSize: 12.5 }}>选完科目自动移动到下一个课程</span>
                                             <Switch checked={autoMoveNext} onChange={(_, d) => setAutoMoveNext(d.checked)} />
                                         </div>
@@ -1155,7 +1196,7 @@ export default function ClassPlanPage() {
                                     /* 右侧面板 2：原位复刻上游 ClassPlansInfoEditor + TimeRuleEditControl */
                                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">课表名称 (Name)</label>
+                                            <label className="form-label">课表名称</label>
                                             <Input
                                                 value={currentPlan.Name || ""}
                                                 onChange={(_, d) => updatePlan({ Name: d.value })}
@@ -1163,12 +1204,12 @@ export default function ClassPlanPage() {
                                         </div>
 
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">使用的时间表 (TimeLayoutId)</label>
+                                            <label className="form-label">使用的时间表</label>
                                             <Select
                                                 value={currentTlId}
                                                 onChange={(_, d) => handleTimeLayoutChange(d.value)}
                                             >
-                                                <option value={EMPTY_GUID}>（未设置时间表 / 000...000）</option>
+                                                <option value={EMPTY_GUID}>（未设置时间表）</option>
                                                 {Object.entries(timeLayouts).map(([tlId, tl]) => (
                                                     <option key={tlId} value={tlId}>
                                                         {tl.Name || tlId.slice(0, 8)}
@@ -1181,12 +1222,12 @@ export default function ClassPlanPage() {
                                         </div>
 
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">所属课表群 (AssociatedGroup)</label>
+                                            <label className="form-label">所属课表群</label>
                                             <Select
                                                 value={toUpstreamGuidOrEmpty(currentPlan.AssociatedGroup)}
                                                 onChange={(_, d) => updatePlan({ AssociatedGroup: toUpstreamGuidOrEmpty(d.value) })}
                                             >
-                                                <option value={EMPTY_GUID}>默认课表群 (000...000)</option>
+                                                <option value={EMPTY_GUID}>默认课表群</option>
                                                 {Object.entries(groups)
                                                     .filter(([gid]) => !isEmptyGuid(gid))
                                                     .map(([gid, g]) => (
@@ -1201,17 +1242,17 @@ export default function ClassPlanPage() {
                                                     placeholder="新建课表群名称..."
                                                     style={{ flex: 1 }}
                                                 />
-                                                <Button size="small" onClick={addClassPlanGroup} disabled={!newGroupName.trim()}>
-                                                    + 新建群
+                                                <Button size="small" icon={<Add24Regular />} onClick={addClassPlanGroup} disabled={!newGroupName.trim()}>
+                                                    新建群
                                                 </Button>
                                             </div>
                                         </div>
 
                                         {!currentPlan.IsOverlay && (
                                             <>
-                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-color)", paddingTop: 10 }}>
                                                     <div>
-                                                        <div style={{ fontWeight: 600, fontSize: 13 }}>自动启用此课表 (IsEnabled)</div>
+                                                        <div style={{ fontWeight: 600, fontSize: 13 }}>自动启用此课表</div>
                                                         <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>按下方时间规则自动加载该课表</div>
                                                     </div>
                                                     <Switch
@@ -1222,11 +1263,11 @@ export default function ClassPlanPage() {
 
                                                 {/* 原位复刻上游 TimeRuleEditControl: 星期 7 列胶囊 + 每 N 周的第 k 周 */}
                                                 {currentPlan.IsEnabled !== false && (
-                                                    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 10, borderRadius: 8, background: "rgba(0,0,0,0.2)", border: "1px solid var(--stroke-divider)" }}>
-                                                        <div style={{ fontSize: 12, fontWeight: 600 }}>触发规则 (TimeRule)</div>
+                                                    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 10, borderRadius: 8, background: "var(--bg-subtle)", border: "1px solid var(--border-color)" }}>
+                                                        <div style={{ fontSize: 12, fontWeight: 600 }}>触发规则</div>
 
                                                         <div>
-                                                            <label className="form-label" style={{ fontSize: 11 }}>每周启用星期 (WeekDay)</label>
+                                                            <label className="form-label" style={{ fontSize: 11 }}>每周启用星期</label>
                                                             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
                                                                 {WEEKDAY_LABELS.map((label, dayIdx) => {
                                                                     const isDaySelected = (currentPlan.TimeRule?.WeekDay ?? 1) === dayIdx;
@@ -1238,9 +1279,9 @@ export default function ClassPlanPage() {
                                                                             style={{
                                                                                 padding: "6px 0",
                                                                                 borderRadius: 6,
-                                                                                border: isDaySelected ? "1px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
-                                                                                background: isDaySelected ? "var(--accent-primary)" : "transparent",
-                                                                                color: isDaySelected ? "#000" : "var(--text-primary)",
+                                                                                border: isDaySelected ? "1px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                                                background: isDaySelected ? "var(--accent-color)" : "var(--bg-card)",
+                                                                                color: isDaySelected ? "#ffffff" : "var(--text-primary)",
                                                                                 fontWeight: isDaySelected ? 700 : 500,
                                                                                 fontSize: 11.5,
                                                                                 cursor: "pointer",
@@ -1287,10 +1328,6 @@ export default function ClassPlanPage() {
                                                 )}
                                             </>
                                         )}
-
-                                        <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>
-                                            课表 GUID: {selectedPlanId}
-                                        </div>
                                     </div>
                                 )}
                             </div>

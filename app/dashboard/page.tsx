@@ -128,7 +128,7 @@ export default function DashboardPage() {
                         从本地上传配置
                     </Button>
                     <DownloadPresetPopoverButton
-                        buttonText="下载通用配置 (仅接口地址)"
+                        buttonText="下载通用配置"
                         appearance="primary"
                         defaultFileName={`ManagementPreset-${slugName}-generic.json`}
                         onFetchData={() => accounts.downloadPreset(accountId)}
