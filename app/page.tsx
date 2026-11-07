@@ -49,7 +49,8 @@ export default function UserCenterHomePage() {
     }, [isAuthenticated]);
 
     useEffect(() => {
-        if (!isAuthenticated || loading) return;
+        if (!isAuthenticated || loading || !profile) return;
+        if (profile.role_code === "pending") return;
         if (accounts.length === 0 && typeof window !== "undefined") {
             const done = localStorage.getItem("miniclassisland_onboarding_completed");
             if (!done) {
@@ -57,7 +58,7 @@ export default function UserCenterHomePage() {
                 setWizardOpen(true);
             }
         }
-    }, [isAuthenticated, loading, accounts.length]);
+    }, [isAuthenticated, loading, accounts.length, profile]);
 
     const filteredAccounts = useMemo(() => {
         if (!searchQuery.trim()) return accounts;
@@ -111,6 +112,7 @@ export default function UserCenterHomePage() {
 
     if (!isAuthenticated) return null;
 
+    const isPendingUser = profile?.role_code === "pending";
     const displayName = profile?.display_name || profile?.username || "管理员";
     const roleLabel = profile?.role_code
         ? (ROLE_LABELS[profile.role_code] || profile.role_code)
@@ -125,77 +127,87 @@ export default function UserCenterHomePage() {
                         用户中心主页 · 从左侧导航栏或下方列表选择任一账户，即可进入对应的集控账户中心
                     </p>
                 </div>
-                <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
-                    <Popover
-                        withArrow
-                        positioning="below-end"
-                        open={createOpen}
-                        onOpenChange={(_, d) => {
-                            setCreateOpen(d.open);
-                            if (!d.open) setCreateError(null);
-                        }}
-                    >
-                        <PopoverTrigger disableButtonEnhancement>
-                            <Button
-                                appearance="primary"
-                                icon={<Add24Regular />}
-                            >
-                                创建新账户
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverSurface style={{ width: 340, padding: 18 }}>
-                            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--text-primary)" }}>
-                                创建新集控账户
-                            </div>
-                            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
-                                创建一个新的学校或组织集控账户中心
-                            </div>
-                            {createError && (
-                                <MessageBar intent="error" style={{ marginBottom: 10 }}>
-                                    <MessageBarBody>{createError}</MessageBarBody>
-                                </MessageBar>
-                            )}
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    void handleCreateAccount();
-                                }}
-                            >
-                                <div className="form-group" style={{ marginBottom: 10 }}>
-                                    <label className="form-label">账户 / 组织名称 *</label>
-                                    <Input
-                                        value={newAccountName}
-                                        onChange={(_, d) => setNewAccountName(d.value)}
-                                        placeholder="例如：第一中学电教中心"
-                                        style={{ width: "100%" }}
-                                        autoFocus
-                                    />
+                {!isPendingUser && (
+                    <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                        <Popover
+                            withArrow
+                            positioning="below-end"
+                            open={createOpen}
+                            onOpenChange={(_, d) => {
+                                setCreateOpen(d.open);
+                                if (!d.open) setCreateError(null);
+                            }}
+                        >
+                            <PopoverTrigger disableButtonEnhancement>
+                                <Button
+                                    appearance="primary"
+                                    icon={<Add24Regular />}
+                                >
+                                    创建新账户
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverSurface style={{ width: 340, padding: 18 }}>
+                                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--text-primary)" }}>
+                                    创建新集控账户
                                 </div>
-                                <div className="form-group" style={{ marginBottom: 14 }}>
-                                    <label className="form-label">子域名标识 Slug（可选）</label>
-                                    <Input
-                                        value={newAccountSlug}
-                                        onChange={(_, d) => setNewAccountSlug(d.value)}
-                                        placeholder="例如：no1-school (留空自动生成)"
-                                        style={{ width: "100%" }}
-                                    />
-                                    <div className="form-hint">3-64 位小写字母、数字或连字符</div>
+                                <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                                    创建一个新的学校或组织集控账户中心
                                 </div>
-                                <div className="flex gap-8" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
-                                    <Button
-                                        size="small"
-                                        appearance="primary"
-                                        type="submit"
-                                        disabled={creating || !newAccountName.trim()}
-                                    >
-                                        {creating ? <Spinner size="tiny" /> : "立即创建"}
-                                    </Button>
-                                </div>
-                            </form>
-                        </PopoverSurface>
-                    </Popover>
-                </div>
+                                {createError && (
+                                    <MessageBar intent="error" style={{ marginBottom: 10 }}>
+                                        <MessageBarBody>{createError}</MessageBarBody>
+                                    </MessageBar>
+                                )}
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        void handleCreateAccount();
+                                    }}
+                                >
+                                    <div className="form-group" style={{ marginBottom: 10 }}>
+                                        <label className="form-label">账户 / 组织名称 *</label>
+                                        <Input
+                                            value={newAccountName}
+                                            onChange={(_, d) => setNewAccountName(d.value)}
+                                            placeholder="例如：第一中学电教中心"
+                                            style={{ width: "100%" }}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ marginBottom: 14 }}>
+                                        <label className="form-label">子域名标识 Slug（可选）</label>
+                                        <Input
+                                            value={newAccountSlug}
+                                            onChange={(_, d) => setNewAccountSlug(d.value)}
+                                            placeholder="留空随机生成如 account_1234abcd"
+                                            style={{ width: "100%" }}
+                                        />
+                                        <div className="form-hint">3-64 位小写字母、数字、连字符或下划线（默认格式如 account_1234abcd）</div>
+                                    </div>
+                                    <div className="flex gap-8" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
+                                        <Button
+                                            size="small"
+                                            appearance="primary"
+                                            type="submit"
+                                            disabled={creating || !newAccountName.trim()}
+                                        >
+                                            {creating ? <Spinner size="tiny" /> : "立即创建"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </PopoverSurface>
+                        </Popover>
+                    </div>
+                )}
             </div>
+
+            {isPendingUser && (
+                <MessageBar intent="warning" style={{ marginBottom: 16 }}>
+                    <MessageBarBody>
+                        您的账号当前处于待审核状态：暂不会创建默认租户，仅支持在页脚获取交流群入群码或通过邀请码加入组织（批准前在组织内强制设定为观察员 Viewer 层级权限）。
+                    </MessageBarBody>
+                </MessageBar>
+            )}
 
             {msg && (
                 <MessageBar intent={msg.type} style={{ marginBottom: 16 }}>
@@ -250,14 +262,14 @@ export default function UserCenterHomePage() {
             <div className="card">
                 <div className="card-title">
                     <span>您的集控账户中心 ({filteredAccounts.length})</span>
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-8" style={{ maxWidth: "100%" }}>
                         <Input
                             size="small"
                             placeholder="搜索账户名称、Slug 或账户 ID..."
                             value={searchQuery}
                             onChange={(_, d) => setSearchQuery(d.value)}
                             contentBefore={<Search24Regular />}
-                            style={{ width: 280 }}
+                            style={{ width: 280, maxWidth: "100%" }}
                         />
                     </div>
                 </div>
@@ -272,16 +284,20 @@ export default function UserCenterHomePage() {
                         <PersonAccounts24Regular style={{ fontSize: 48, color: "var(--text-tertiary)" }} />
                         <p className="accounts-list-empty-text">暂无可用账户</p>
                         <p className="accounts-list-empty-hint">
-                            您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。
+                            {isPendingUser
+                                ? "您的账号正在等待管理员批准，目前可使用邀请码加入现有组织（将以观察员 Viewer 身份加入）。"
+                                : "您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。"}
                         </p>
                         <div className="flex gap-8" style={{ flexWrap: "wrap", justifyContent: "center" }}>
-                            <Button
-                                appearance="primary"
-                                icon={<Add24Regular />}
-                                onClick={() => setCreateOpen(true)}
-                            >
-                                创建新账户
-                            </Button>
+                            {!isPendingUser && (
+                                <Button
+                                    appearance="primary"
+                                    icon={<Add24Regular />}
+                                    onClick={() => setCreateOpen(true)}
+                                >
+                                    创建新账户
+                                </Button>
+                            )}
                             <Button
                                 appearance="secondary"
                                 onClick={() => router.push("/security")}
@@ -358,22 +374,26 @@ export default function UserCenterHomePage() {
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <div className="flex items-center justify-between gap-8" style={{ justifyContent: "flex-end" }}>
-                                                <Button
-                                                    size="small"
-                                                    appearance="subtle"
-                                                    icon={<ArrowUpload24Regular />}
-                                                    onClick={() => handleImportLocalConfig(account)}
-                                                >
-                                                    导入本地配置
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    appearance="subtle"
-                                                    icon={<Settings24Regular />}
-                                                    onClick={() => handleOpenAccountSettings(account)}
-                                                >
-                                                    基础信息
-                                                </Button>
+                                                {!isPendingUser && (
+                                                    <>
+                                                        <Button
+                                                            size="small"
+                                                            appearance="subtle"
+                                                            icon={<ArrowUpload24Regular />}
+                                                            onClick={() => handleImportLocalConfig(account)}
+                                                        >
+                                                            导入本地配置
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            appearance="subtle"
+                                                            icon={<Settings24Regular />}
+                                                            onClick={() => handleOpenAccountSettings(account)}
+                                                        >
+                                                            基础信息
+                                                        </Button>
+                                                    </>
+                                                )}
                                                 <Button
                                                     size="small"
                                                     appearance="primary"

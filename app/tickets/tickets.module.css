@@ -20,7 +20,7 @@
     padding: 14px 16px;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    background: var(--bg-secondary);
+    background: var(--bg-card);
     color: var(--text-primary);
     text-align: left;
     font: inherit;
@@ -102,7 +102,7 @@
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
+    background: var(--bg-subtle);
 }
 
 .messageAdmin {

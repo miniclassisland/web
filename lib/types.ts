@@ -56,7 +56,21 @@ export interface UserOut {
     is_active: boolean;
     can_create_account?: boolean;
     totp_enabled?: boolean;
+    bound_qq_masked?: string | null;
+    bound_qq?: string | null;
+    qq_bound_manual?: boolean | null;
+    qq_joined_group?: boolean | null;
     created_at: string;
+}
+
+export interface CommunityStatusResponse {
+    bound: boolean;
+    status: "unbound" | "joined" | "manual_pending";
+    qq_masked: string | null;
+    masked_qq?: string | null;
+    is_manual: boolean;
+    is_joined: boolean;
+    prompt?: string;
 }
 
 export interface UserUpdateRequest {

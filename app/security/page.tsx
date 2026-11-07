@@ -12,7 +12,7 @@ import {
 } from "@fluentui/react-components";
 import { Select } from "@/components/CustomSelect";
 import QRCode from "qrcode";
-import { ShieldKeyhole24Regular, Person24Regular, Key24Regular, PeopleAdd24Regular } from "@fluentui/react-icons";
+import { ShieldKeyhole24Regular, Person24Regular, Key24Regular, PeopleAdd24Regular, Copy24Regular } from "@fluentui/react-icons";
 
 type DisableMode = "pwd_totp" | "pwd_recovery" | "totp_recovery" | "two_recovery";
 
@@ -280,6 +280,32 @@ export default function SecurityPage() {
                     </div>
                     <form onSubmit={handleSaveProfile}>
                         <div className="form-group">
+                            <label className="form-label">用户 ID (UUID)</label>
+                            <div className="flex items-center gap-8">
+                                <Input
+                                    value={user?.id || ""}
+                                    readOnly
+                                    disabled
+                                    style={{ flex: 1, fontFamily: "var(--font-mono)" }}
+                                />
+                                {user?.id && (
+                                    <Button
+                                        appearance="subtle"
+                                        size="small"
+                                        type="button"
+                                        icon={<Copy24Regular />}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(user.id);
+                                            setMsg({ type: "success", text: "用户 UUID 已复制到剪贴板" });
+                                        }}
+                                    >
+                                        复制
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="form-hint">用户唯一标识 (UUID) 在生成时已锁定，不可修改</div>
+                        </div>
+                        <div className="form-group">
                             <label className="form-label">显示名称</label>
                             <Input
                                 value={displayName}
@@ -313,9 +339,33 @@ export default function SecurityPage() {
                                 </div>
                             )}
                         </div>
-                        <Button appearance="primary" type="submit" disabled={loading}>
-                            保存资料修改
-                        </Button>
+                        <div className="form-group">
+                            <label className="form-label">绑定 QQ (交流群)</label>
+                            <Input
+                                value={
+                                    user?.bound_qq_masked
+                                        ? `${user.bound_qq_masked}${
+                                              user.qq_bound_manual && user.qq_joined_group === false
+                                                  ? "（管理员已绑定，待加入群聊）"
+                                                  : "（已绑定）"
+                                          }`
+                                        : "未绑定"
+                                }
+                                readOnly
+                                disabled
+                                style={{ width: "100%", fontFamily: "var(--font-mono)" }}
+                            />
+                            <div className="form-hint">
+                                {user?.bound_qq_masked
+                                    ? "不支持手动解绑；如需换绑请直接退出交流群，或联系超级管理员"
+                                    : "可通过主页底部「加入交流群」获取入群密码并自动绑定"}
+                            </div>
+                        </div>
+                        {user?.role_code !== "pending" && (
+                            <Button appearance="primary" type="submit" disabled={loading}>
+                                保存资料修改
+                            </Button>
+                        )}
                     </form>
                 </div>
 

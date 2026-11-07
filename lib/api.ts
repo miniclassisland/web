@@ -503,8 +503,11 @@ export const auth = {
 };
 
 export const community = {
+    getStatus: () =>
+        get<import("./types").CommunityStatusResponse>("/community/status"),
+
     getCode: (cfTurnstileResponse: string) =>
-        post<{ code: string }>("/community/code", {
+        post<{ code: string; expires_in?: number }>("/community/code", {
             cf_turnstile_response: cfTurnstileResponse,
         }),
 };

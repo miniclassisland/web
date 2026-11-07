@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useAccount } from "@/lib/account-context";
+import { useAccount, isUserCenterPath } from "@/lib/account-context";
 import { useAuth } from "@/lib/auth-context";
 import { token as tokenApi, getAdminSiteUrl } from "@/lib/api";
 import { Select } from "./CustomSelect";
@@ -97,10 +97,7 @@ export default function Sidebar({
     const { accounts, accountId, currentAccount, switchAccount } = useAccount();
     const { isSuperAdmin, token } = useAuth();
 
-    const isUserCenter =
-        pathname === "/" ||
-        pathname.startsWith("/security") ||
-        pathname.startsWith("/tickets");
+    const isUserCenter = isUserCenterPath(pathname);
 
     const sections = isUserCenter ? USER_CENTER_SECTIONS : ACCOUNT_CENTER_SECTIONS;
 

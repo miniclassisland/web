@@ -18,12 +18,10 @@ import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButto
 import OnboardingWizard from "@/components/OnboardingWizard";
 
 export default function AccountsPage() {
-    const { accountId, currentAccount, refreshAccounts, switchAccount } = useAccount();
+    const { accountId, currentAccount, refreshAccounts } = useAccount();
     const router = useRouter();
     const [accountInfo, setAccountInfo] = useState<AccountOut | null>(null);
     const [loading, setLoading] = useState(true);
-    const [editingId, setEditingId] = useState(false);
-    const [newId, setNewId] = useState("");
     const [editingName, setEditingName] = useState(false);
     const [newName, setNewName] = useState("");
     const [editingSlug, setEditingSlug] = useState(false);
@@ -54,24 +52,6 @@ export default function AccountsPage() {
     useEffect(() => {
         loadData();
     }, [loadData]);
-
-    async function handleIdChange(e: React.FormEvent) {
-        e.preventDefault();
-        if (!accountId || !newId.trim()) return;
-        setSaving(true);
-        setMsg(null);
-        try {
-            const updated = await accounts.changeId(accountId, { new_id: newId.trim() });
-            setAccountInfo(updated);
-            setEditingId(false);
-            setMsg({ type: "success", text: `账户 ID 已更新为 ${updated.id}` });
-            await refreshAccounts();
-            switchAccount(updated.id);
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "更新账户 ID 失败" });
-        }
-        setSaving(false);
-    }
 
     async function handleNameChange(e: React.FormEvent) {
         e.preventDefault();
@@ -238,40 +218,31 @@ export default function AccountsPage() {
                         </div>
 
                         <div className="detail-row">
-                            <div className="detail-label">账户 ID</div>
+                            <div className="detail-label">账户 ID (UUID)</div>
                             <div className="detail-value">
-                                {editingId ? (
-                                    <form onSubmit={handleIdChange} className="flex items-center gap-8">
-                                        <Input
-                                            value={newId}
-                                            onChange={(_, d) => setNewId(d.value)}
-                                            placeholder="3-64 位字母/数字/连字符/下划线"
-                                            size="small"
-                                            style={{ minWidth: 260 }}
-                                        />
-                                        <Button appearance="primary" size="small" type="submit" disabled={saving || !newId.trim()}>
-                                            保存
-                                        </Button>
-                                        <Button appearance="subtle" size="small" onClick={() => setEditingId(false)}>
-                                            取消
-                                        </Button>
-                                    </form>
-                                ) : (
-                                    <span className="flex items-center gap-8">
-                                        <span className="api-key-cell" style={{ fontSize: 13 }}>{accountInfo.id}</span>
-                                        <Button
-                                            appearance="subtle"
-                                            size="small"
-                                            icon={<Edit24Regular />}
-                                            onClick={() => {
-                                                setNewId(accountInfo.id);
-                                                setEditingId(true);
-                                            }}
-                                        >
-                                            修改 ID
-                                        </Button>
+                                <span className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                                    <Input
+                                        value={accountInfo.id}
+                                        readOnly
+                                        disabled
+                                        size="small"
+                                        style={{ minWidth: 280, fontFamily: "var(--font-mono)" }}
+                                    />
+                                    <Button
+                                        appearance="subtle"
+                                        size="small"
+                                        icon={<Copy24Regular />}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(accountInfo.id);
+                                            setMsg({ type: "success", text: "账户 UUID 已复制到剪贴板" });
+                                        }}
+                                    >
+                                        复制
+                                    </Button>
+                                    <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                                        生成时已锁定，不可修改
                                     </span>
-                                )}
+                                </span>
                             </div>
                         </div>
 
@@ -283,7 +254,7 @@ export default function AccountsPage() {
                                         <Input
                                             value={newSlug}
                                             onChange={(_, d) => setNewSlug(d.value)}
-                                            placeholder="3-64 位小写字母/数字/连字符"
+                                            placeholder="3-64 位小写字母/数字/连字符/下划线"
                                             size="small"
                                         />
                                         <Button appearance="primary" size="small" type="submit" disabled={saving || !newSlug.trim()}>

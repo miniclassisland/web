@@ -2,7 +2,7 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import { useAccount } from "@/lib/account-context";
+import { useAccount, isUserCenterPath } from "@/lib/account-context";
 import UserMenu from "./UserMenu";
 import { ThemeModeToggle } from "@/lib/theme-context";
 import { Navigation24Regular } from "@fluentui/react-icons";
@@ -17,7 +17,7 @@ export default function TopBar({
     const pathname = usePathname();
     const { currentAccount } = useAccount();
 
-    const isUserCenter = pathname === "/" || pathname.startsWith("/security");
+    const isUserCenter = isUserCenterPath(pathname);
 
     const displayTitle =
         title ||

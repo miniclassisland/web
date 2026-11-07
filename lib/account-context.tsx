@@ -8,17 +8,27 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { accounts as accountsApi } from "./api";
 import type { AccountOut } from "./types";
 
 const STORAGE_KEY = "miniclassisland_current_account_id";
 
+export function isUserCenterPath(pathname: string | null): boolean {
+    if (!pathname) return false;
+    return (
+        pathname === "/" ||
+        pathname.startsWith("/security") ||
+        pathname.startsWith("/tickets")
+    );
+}
+
 interface AccountState {
     /** 所有可用账户 */
     accounts: AccountOut[];
-    /** 当前选中的账户 */
+    /** 当前选中的账户（在用户中心路由下始终为 null） */
     currentAccount: AccountOut | null;
-    /** 当前账户 ID 快捷访问 */
+    /** 当前账户 ID 快捷访问（在用户中心路由下始终为 ""） */
     accountId: string;
     /** 是否正在加载 */
     loading: boolean;
@@ -37,8 +47,9 @@ export function AccountProvider({
     children: ReactNode;
     isAuthenticated: boolean;
 }) {
+    const pathname = usePathname();
     const [accountList, setAccountList] = useState<AccountOut[]>([]);
-    const [currentAccount, setCurrentAccount] = useState<AccountOut | null>(null);
+    const [selectedAccount, setSelectedAccount] = useState<AccountOut | null>(null);
     const [loading, setLoading] = useState(false);
 
     const refreshAccounts = useCallback(async () => {
@@ -48,23 +59,25 @@ export function AccountProvider({
             const list = await accountsApi.list();
             setAccountList(list);
 
-            // 恢复上次选择或自动选中唯一账户
+            // 恢复上次选择或自动选中唯一账户（仅作为进入账户中心时的默认目标）
             const savedId = typeof window !== "undefined"
                 ? localStorage.getItem(STORAGE_KEY)
                 : null;
             const saved = savedId ? list.find(a => a.id === savedId) : null;
             if (saved) {
-                setCurrentAccount(saved);
+                setSelectedAccount(saved);
             } else if (list.length === 1) {
-                setCurrentAccount(list[0]);
+                setSelectedAccount(list[0]);
                 if (typeof window !== "undefined") {
                     localStorage.setItem(STORAGE_KEY, list[0].id);
                 }
-            } else if (list.length > 0 && !currentAccount) {
-                setCurrentAccount(list[0]);
+            } else if (list.length > 0 && !selectedAccount) {
+                setSelectedAccount(list[0]);
                 if (typeof window !== "undefined") {
                     localStorage.setItem(STORAGE_KEY, list[0].id);
                 }
+            } else if (list.length === 0) {
+                setSelectedAccount(null);
             }
         } catch {
             /* 加载失败保持现状 */
@@ -78,25 +91,28 @@ export function AccountProvider({
             refreshAccounts();
         } else {
             setAccountList([]);
-            setCurrentAccount(null);
+            setSelectedAccount(null);
         }
     }, [isAuthenticated, refreshAccounts]);
 
     const switchAccount = useCallback((id: string) => {
         const target = accountList.find(a => a.id === id);
         if (target) {
-            setCurrentAccount(target);
+            setSelectedAccount(target);
             if (typeof window !== "undefined") {
                 localStorage.setItem(STORAGE_KEY, id);
             }
         }
     }, [accountList]);
 
+    const inUserCenter = isUserCenterPath(pathname);
+    const effectiveAccount = inUserCenter ? null : selectedAccount;
+
     return (
         <AccountContext.Provider value={{
             accounts: accountList,
-            currentAccount,
-            accountId: currentAccount?.id || "",
+            currentAccount: effectiveAccount,
+            accountId: effectiveAccount?.id || "",
             loading,
             switchAccount,
             refreshAccounts,

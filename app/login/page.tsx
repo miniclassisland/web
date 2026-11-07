@@ -21,6 +21,7 @@ export default function LoginPage() {
     const [step, setStep] = useState<AuthStep>("email");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [username, setUsername] = useState("");
     const [displayName, setDisplayName] = useState("");
 
     const [totpCode, setTotpCode] = useState("");
@@ -144,6 +145,7 @@ export default function LoginPage() {
         await register({
             email,
             password,
+            username: username.trim() || undefined,
             display_name: displayName || undefined,
             cf_turnstile_response: turnstileToken,
         });
@@ -358,6 +360,18 @@ export default function LoginPage() {
                                     />
                                 </div>
                                 <div className="form-group">
+                                    <Label htmlFor="reg-username">用户名（可选）</Label>
+                                    <Input
+                                        id="reg-username"
+                                        value={username}
+                                        onChange={(_, d) => setUsername(d.value)}
+                                        placeholder="留空则随机生成，如 user_1234abcd"
+                                        style={{ width: "100%" }}
+                                        autoFocus
+                                    />
+                                    <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>3-64 位小写字母、数字或下划线（默认格式如 user_1234abcd，集控账户 Slug 将独立随机生成为 account_1234abcd）</div>
+                                </div>
+                                <div className="form-group">
                                     <Label htmlFor="displayName">显示名称（可选）</Label>
                                     <Input
                                         id="displayName"
@@ -365,7 +379,6 @@ export default function LoginPage() {
                                         onChange={(_, d) => setDisplayName(d.value)}
                                         placeholder="显示名称"
                                         style={{ width: "100%" }}
-                                        autoFocus
                                     />
                                 </div>
                                 <div className="form-group">
@@ -380,7 +393,7 @@ export default function LoginPage() {
                                         style={{ width: "100%" }}
                                         autoComplete="new-password"
                                     />
-                                    <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>密码长度至少为 12 个字符，用户名将自动生成</div>
+                                    <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>密码长度至少为 12 个字符，包含大小写字母与数字</div>
                                 </div>
                                 <TurnstileWidget
                                     action="register"

@@ -50,6 +50,7 @@
   --bg-card: #ffffff;
   --bg-surface: #ffffff;
   --bg-subtle: #fafafa;
+  --bg-secondary: #fafafa;
   --bg-accent-subtle: #eff6fc;
   --bg-banner-gradient: linear-gradient(90deg, #eff6fc 0%, #ffffff 100%);
   --text-primary: #242424;
@@ -75,6 +76,7 @@
     --bg-card: #1e1e1e;
     --bg-surface: #1e1e1e;
     --bg-subtle: #252525;
+    --bg-secondary: #252525;
     --bg-accent-subtle: #15293e;
     --bg-banner-gradient: linear-gradient(90deg, #15293e 0%, #1e1e1e 100%);
     --text-primary: #f0f0f0;
@@ -99,6 +101,7 @@
   --bg-card: #1e1e1e;
   --bg-surface: #1e1e1e;
   --bg-subtle: #252525;
+  --bg-secondary: #252525;
   --bg-accent-subtle: #15293e;
   --bg-banner-gradient: linear-gradient(90deg, #15293e 0%, #1e1e1e 100%);
   --text-primary: #f0f0f0;
@@ -498,7 +501,8 @@ body {
 .fui-DialogActions {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
   width: 100% !important;
   grid-column: 1 / -1 !important;
 }
