@@ -890,6 +890,89 @@ export default function SettingsPage() {
                                                     onChange={(_, d) => update("IsMainWindowVisible", d.checked)}
                                                 />
                                             </div>
+
+                                            {/* 原位复刻上游 WindowSettingsPage 屏幕 6 停靠点可视化选择器 */}
+                                            <div style={{ marginTop: 14, marginBottom: 16, padding: 16, borderRadius: 10, border: "1px solid var(--border-color)", background: "rgba(0,0,0,0.18)" }}>
+                                                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+                                                    窗口停靠位置可视化预览 (WindowDockingLocation)
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        width: "100%",
+                                                        maxWidth: 460,
+                                                        height: 150,
+                                                        margin: "0 auto",
+                                                        borderRadius: 10,
+                                                        border: "2px solid var(--border-color)",
+                                                        background: "rgba(255,255,255,0.03)",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        justifyContent: "space-between",
+                                                        padding: 14,
+                                                    }}
+                                                >
+                                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                                                        {[
+                                                            { idx: 0, label: "左上角 (TopLeft)" },
+                                                            { idx: 1, label: "顶部居中 (TopCenter)" },
+                                                            { idx: 2, label: "右上角 (TopRight)" },
+                                                        ].map((pos) => {
+                                                            const active = (settings.WindowDockingLocation ?? 1) === pos.idx;
+                                                            return (
+                                                                <button
+                                                                    key={pos.idx}
+                                                                    type="button"
+                                                                    onClick={() => update("WindowDockingLocation", pos.idx)}
+                                                                    style={{
+                                                                        padding: "7px 8px",
+                                                                        borderRadius: 6,
+                                                                        border: active ? "1.5px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                                        background: active ? "var(--accent-color)" : "var(--bg-card)",
+                                                                        color: active ? "#fff" : "var(--text-primary)",
+                                                                        fontSize: 11.5,
+                                                                        fontWeight: active ? 700 : 500,
+                                                                        cursor: "pointer",
+                                                                    }}
+                                                                >
+                                                                    {pos.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-secondary)" }}>
+                                                        🖥️ 显示器 #{settings.WindowDockingMonitorIndex ?? 0} · 偏移 ({settings.WindowDockingOffsetX ?? 0}, {settings.WindowDockingOffsetY ?? 0})
+                                                    </div>
+                                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                                                        {[
+                                                            { idx: 3, label: "左下角 (BottomLeft)" },
+                                                            { idx: 4, label: "底部居中 (BottomCenter)" },
+                                                            { idx: 5, label: "右下角 (BottomRight)" },
+                                                        ].map((pos) => {
+                                                            const active = (settings.WindowDockingLocation ?? 1) === pos.idx;
+                                                            return (
+                                                                <button
+                                                                    key={pos.idx}
+                                                                    type="button"
+                                                                    onClick={() => update("WindowDockingLocation", pos.idx)}
+                                                                    style={{
+                                                                        padding: "7px 8px",
+                                                                        borderRadius: 6,
+                                                                        border: active ? "1.5px solid var(--accent-color)" : "1px solid var(--border-color)",
+                                                                        background: active ? "var(--accent-color)" : "var(--bg-card)",
+                                                                        color: active ? "#fff" : "var(--text-primary)",
+                                                                        fontSize: 11.5,
+                                                                        fontWeight: active ? 700 : 500,
+                                                                        cursor: "pointer",
+                                                                    }}
+                                                                >
+                                                                    {pos.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div className="grid-3 mt-16">
                                                 <div className="form-group">
                                                     <label className="form-label">窗口停靠位置 (WindowDockingLocation)</label>

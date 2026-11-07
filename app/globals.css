@@ -742,6 +742,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* 确保 input[type="time"] 在 12h (AM/PM) 与 24h 浏览器语言环境下均完整显示时间数字与时钟图标 */
+.fui-Input input[type="time"] {
+  min-width: 118px;
+  font-variant-numeric: tabular-nums;
+  padding-right: 4px;
+}
+
 .timeline-content {
   flex: 1;
 }

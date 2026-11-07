@@ -10,8 +10,15 @@ import type {
     TimeLayoutItem,
     Subject,
     TimeRule,
+    ClassPlanGroup,
 } from "@/lib/types";
-import { TIME_TYPE_LABELS, WEEKDAY_LABELS } from "@/lib/types";
+import {
+    TIME_TYPE_LABELS,
+    WEEKDAY_LABELS,
+    EMPTY_GUID,
+    isEmptyGuid,
+    toUpstreamGuidOrEmpty,
+} from "@/lib/types";
 import {
     Button, Input, Switch, Spinner,
     MessageBar, MessageBarBody,
@@ -25,6 +32,7 @@ import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButto
 import FileHistoryButton from "@/components/FileHistoryButton";
 
 type ClassPlansData = Record<string, ClassPlan>;
+type ClassPlanGroupsData = Record<string, ClassPlanGroup>;
 type TimeLayoutsData = Record<string, TimeLayout>;
 type SubjectsData = Record<string, Subject>;
 
@@ -40,14 +48,57 @@ function formatItemTime(item: TimeLayoutItem): string {
     return `${parsePart(startRaw)} - ${parsePart(endRaw)}`;
 }
 
+/** 标准化课表对象：将空的 TimeLayoutId / AssociatedGroup / Classes[].SubjectId 统一转为 00000000-0000-0000-0000-000000000000 */
+function normalizeClassPlansForSave(raw: ClassPlansData): ClassPlansData {
+    const out: ClassPlansData = {};
+    for (const [k, cp] of Object.entries(raw)) {
+        const classes = Array.isArray(cp.Classes)
+            ? cp.Classes.map((ci) => ({
+                  ...ci,
+                  SubjectId: toUpstreamGuidOrEmpty(ci.SubjectId),
+                  IsEnabled: ci.IsEnabled !== false,
+              }))
+            : [];
+        const tr = cp.TimeRule || { WeekDay: 1, WeekCountDiv: 0, WeekCountDivTotal: 2 };
+        out[k] = {
+            ...cp,
+            Name: cp.Name || "新课表",
+            TimeLayoutId: toUpstreamGuidOrEmpty(cp.TimeLayoutId),
+            AssociatedGroup: toUpstreamGuidOrEmpty(cp.AssociatedGroup),
+            Classes: classes,
+            TimeRule: {
+                WeekDay: typeof tr.WeekDay === "number" ? tr.WeekDay : 1,
+                WeekCountDiv: typeof tr.WeekCountDiv === "number" ? tr.WeekCountDiv : 0,
+                WeekCountDivTotal: typeof tr.WeekCountDivTotal === "number" && tr.WeekCountDivTotal >= 2 ? tr.WeekCountDivTotal : 2,
+            },
+            IsEnabled: cp.IsEnabled !== false,
+        };
+    }
+    return out;
+}
+
+const DEFAULT_GROUPS: ClassPlanGroupsData = {
+    [EMPTY_GUID]: { Name: "默认", IsGlobal: false },
+};
+
 export default function ClassPlanPage() {
     const { accountId } = useAccount();
     const [fileList, setFileList] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [plans, setPlans] = useState<ClassPlansData>({});
+    const [groups, setGroups] = useState<ClassPlanGroupsData>(DEFAULT_GROUPS);
+    const [groupFilterId, setGroupFilterId] = useState<string>("__ALL__");
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+    /** 当前在中间课程表网格中选中的课程槽索引（对应 classes[selectedLessonIdx]） */
+    const [selectedLessonIdx, setSelectedLessonIdx] = useState<number>(0);
+    /** 右侧面板模式：'subject' (快速选科目网格) 或 'info' (课表详细信息与触发规则) */
+    const [rightDrawerTab, setRightDrawerTab] = useState<"subject" | "info">("subject");
+    /** 选完科目自动移动到下一个课程 (对应上游 Settings.IsProfileEditorClassInfoSubjectAutoMoveNextEnabled) */
+    const [autoMoveNext, setAutoMoveNext] = useState<boolean>(true);
+    /** 是否显示课间休息行 */
+    const [showBreaks, setShowBreaks] = useState<boolean>(false);
 
-    // 可选的时间表文件与科目文件（解决此前硬编码 [0] 的问题）
+    // 可选的时间表文件与科目文件
     const [tlFileList, setTlFileList] = useState<string[]>([]);
     const [selectedTlFile, setSelectedTlFile] = useState<string>("");
     const [subFileList, setSubFileList] = useState<string[]>([]);
@@ -64,31 +115,71 @@ export default function ClassPlanPage() {
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const [showCreate, setShowCreate] = useState(false);
     const [newFileName, setNewFileName] = useState("");
+    const [newGroupName, setNewGroupName] = useState("");
 
     const selectFile = useCallback(async (name: string) => {
         if (!accountId) return;
         setSelectedFile(name);
         setSelectedPlanId(null);
+        setSelectedLessonIdx(0);
         setDataLoading(true);
         try {
             const content = await data.read(accountId, "ClassPlan", name);
-            let parsed: ClassPlansData = {};
+            let parsedPlans: ClassPlansData = {};
+            let parsedGroups: ClassPlanGroupsData = { ...DEFAULT_GROUPS };
             if (content && typeof content === "object") {
                 const obj = content as Record<string, unknown>;
                 if (obj.ClassPlans && typeof obj.ClassPlans === "object") {
-                    parsed = obj.ClassPlans as ClassPlansData;
+                    parsedPlans = obj.ClassPlans as ClassPlansData;
+                    if (obj.ClassPlanGroups && typeof obj.ClassPlanGroups === "object") {
+                        parsedGroups = {
+                            ...DEFAULT_GROUPS,
+                            ...(obj.ClassPlanGroups as ClassPlanGroupsData),
+                        };
+                    }
                 } else {
-                    parsed = obj as ClassPlansData;
+                    parsedPlans = obj as ClassPlansData;
                 }
             }
-            setPlans(parsed);
-            setJsonText(JSON.stringify(parsed, null, 2));
-            setSelectedPlanId(Object.keys(parsed)[0] || null);
+            const normalized = normalizeClassPlansForSave(parsedPlans);
+            setPlans(normalized);
+            setGroups(parsedGroups);
+            setJsonText(JSON.stringify(normalized, null, 2));
+            setSelectedPlanId(Object.keys(normalized)[0] || null);
         } catch {
             setPlans({});
+            setGroups(DEFAULT_GROUPS);
             setJsonText("{}");
         }
         setDataLoading(false);
+    }, [accountId]);
+
+    const loadReferenceTl = useCallback(async (fileName: string) => {
+        if (!accountId || !fileName) return;
+        setSelectedTlFile(fileName);
+        try {
+            const tlContent = await data.read(accountId, "TimeLayout", fileName);
+            if (tlContent && typeof tlContent === "object") {
+                const obj = tlContent as Record<string, unknown>;
+                setTimeLayouts((obj.TimeLayouts as TimeLayoutsData) || (obj as TimeLayoutsData));
+            }
+        } catch {
+            setTimeLayouts({});
+        }
+    }, [accountId]);
+
+    const loadReferenceSub = useCallback(async (fileName: string) => {
+        if (!accountId || !fileName) return;
+        setSelectedSubFile(fileName);
+        try {
+            const subContent = await data.read(accountId, "Subjects", fileName);
+            if (subContent && typeof subContent === "object") {
+                const obj = subContent as Record<string, unknown>;
+                setSubjects((obj.Subjects as SubjectsData) || (obj as SubjectsData));
+            }
+        } catch {
+            setSubjects({});
+        }
     }, [accountId]);
 
     const loadFiles = useCallback(async () => {
@@ -106,48 +197,25 @@ export default function ClassPlanPage() {
             setFileList(cpArr);
             setTlFileList(tlArr);
             setSubFileList(subArr);
-            if (cpArr.length > 0 && !selectedFile) {
-                selectFile(cpArr[0]);
-            }
+
             if (tlArr.length > 0 && !selectedTlFile) {
-                setSelectedTlFile(tlArr[0]);
+                loadReferenceTl(tlArr[0]);
             }
             if (subArr.length > 0 && !selectedSubFile) {
-                setSelectedSubFile(subArr[0]);
+                loadReferenceSub(subArr[0]);
+            }
+            if (cpArr.length > 0 && !selectedFile) {
+                selectFile(cpArr[0]);
             }
         } catch {
             setFileList([]);
         }
         setLoading(false);
-    }, [accountId, selectedFile, selectedTlFile, selectedSubFile, selectFile]);
+    }, [accountId, selectedFile, selectedTlFile, selectedSubFile, selectFile, loadReferenceTl, loadReferenceSub]);
 
     useEffect(() => {
         loadFiles();
     }, [loadFiles]);
-
-    useEffect(() => {
-        if (!accountId || !selectedTlFile) return;
-        data.read(accountId, "TimeLayout", selectedTlFile)
-            .then((res) => {
-                if (res && typeof res === "object") {
-                    const obj = res as Record<string, unknown>;
-                    setTimeLayouts((obj.TimeLayouts as TimeLayoutsData) || (obj as TimeLayoutsData) || {});
-                }
-            })
-            .catch(() => setTimeLayouts({}));
-    }, [accountId, selectedTlFile]);
-
-    useEffect(() => {
-        if (!accountId || !selectedSubFile) return;
-        data.read(accountId, "Subjects", selectedSubFile)
-            .then((res) => {
-                if (res && typeof res === "object") {
-                    const obj = res as Record<string, unknown>;
-                    setSubjects((obj.Subjects as SubjectsData) || (obj as SubjectsData) || {});
-                }
-            })
-            .catch(() => setSubjects({}));
-    }, [accountId, selectedSubFile]);
 
     async function handleSave() {
         if (!selectedFile) return;
@@ -156,552 +224,1102 @@ export default function ClassPlanPage() {
         try {
             let payloadToSave = plans;
             if (jsonMode) {
-                payloadToSave = JSON.parse(jsonText) as ClassPlansData;
+                const parsed = JSON.parse(jsonText) as ClassPlansData;
+                payloadToSave = normalizeClassPlansForSave(parsed);
                 setPlans(payloadToSave);
             } else {
-                setJsonText(JSON.stringify(plans, null, 2));
+                payloadToSave = normalizeClassPlansForSave(plans);
+                setPlans(payloadToSave);
+                setJsonText(JSON.stringify(payloadToSave, null, 2));
             }
             const wrapperPayload =
                 payloadToSave && typeof payloadToSave === "object" && "ClassPlans" in payloadToSave
                     ? payloadToSave
-                    : {
-                          ClassPlans: payloadToSave,
-                          ClassPlanGroups: {
-                              "00000000-0000-0000-0000-000000000000": {
-                                  Name: "默认课表群",
-                                  IsGlobal: false,
-                              },
-                          },
-                      };
+                    : { ClassPlans: payloadToSave, ClassPlanGroups: groups };
             await data.write(accountId, "ClassPlan", selectedFile, wrapperPayload);
-            setMsg({ type: "success", text: "课表数据已保存并递增版本号" });
+            setMsg({ type: "success", text: "课表已保存并递增版本号" });
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "保存失败，请检查 JSON 格式" });
         }
         setSaving(false);
     }
 
-    async function handleCreateFile(e: React.FormEvent) {
-        e.preventDefault();
+    async function handleCreate() {
         if (!newFileName.trim()) return;
-        const name = newFileName.trim();
         try {
-            await data.create(accountId, "ClassPlan", name);
+            await data.create(accountId, "ClassPlan", newFileName.trim());
             setShowCreate(false);
             setNewFileName("");
-            await loadFiles();
-            selectFile(name);
-            setMsg({ type: "success", text: "文件已创建" });
+            const cpFiles = await data.list(accountId, "ClassPlan");
+            setFileList(Array.isArray(cpFiles) ? cpFiles : []);
+            selectFile(newFileName.trim());
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "创建失败" });
         }
     }
 
-    async function handleDeleteFile(name: string) {
-        if (!confirm(`确定删除 "${name}"？`)) return;
+    async function handleDelete(name: string) {
+        if (!confirm(`确定删除课表文件 "${name}" 吗？`)) return;
         try {
             await data.deleteData(accountId, "ClassPlan", name);
             if (selectedFile === name) {
                 setSelectedFile(null);
                 setPlans({});
+                setSelectedPlanId(null);
             }
-            await loadFiles();
+            loadFiles();
         } catch (err: unknown) {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "删除失败" });
         }
     }
 
+    /** 根据选中时间表的上课时间点 (TimeType === 0) 自动生成/对齐 Classes 数组，使用 00000000-0000-0000-0000-000000000000 表示空科目 */
+    function buildClassesFromTimeLayout(tlId: string, existingClasses?: ClassInfo[]): ClassInfo[] {
+        if (isEmptyGuid(tlId)) return existingClasses || [];
+        const tl = timeLayouts[tlId];
+        if (!tl || !Array.isArray(tl.Layouts)) return existingClasses || [];
+        const classItems = tl.Layouts.filter((item) => item.TimeType === 0);
+        return classItems.map((item, idx) => {
+            const prev = existingClasses?.[idx];
+            if (prev && !isEmptyGuid(prev.SubjectId)) {
+                return { ...prev, SubjectId: toUpstreamGuidOrEmpty(prev.SubjectId) };
+            }
+            return {
+                SubjectId: toUpstreamGuidOrEmpty(item.DefaultClassId),
+                IsChangedClass: prev?.IsChangedClass ?? false,
+                IsEnabled: prev?.IsEnabled ?? true,
+            };
+        });
+    }
+
     function addPlan() {
         const id = crypto.randomUUID();
-        const firstTlId = Object.keys(timeLayouts)[0] || "";
-        const tl = firstTlId ? timeLayouts[firstTlId] : null;
-        const classSlots = tl ? (tl.Layouts || []).filter((i) => i.TimeType === 0) : [];
-        const next: ClassPlansData = {
-            ...plans,
-            [id]: {
-                Name: "新课表",
-                TimeLayoutId: firstTlId,
-                Classes: classSlots.map((slot) => ({
-                    SubjectId: slot.DefaultClassId || "",
-                    IsEnabled: true,
-                })),
-                TimeRule: { WeekDay: 1, WeekCountDiv: 0, WeekCountDivTotal: 2 },
-                IsEnabled: true,
-                IsOverlay: false,
-            },
+        const defaultTlId = Object.keys(timeLayouts)[0] || EMPTY_GUID;
+        const targetGroup = groupFilterId !== "__ALL__" ? groupFilterId : EMPTY_GUID;
+        const newPlan: ClassPlan = {
+            Name: "新课表",
+            TimeLayoutId: defaultTlId,
+            Classes: buildClassesFromTimeLayout(defaultTlId),
+            TimeRule: { WeekDay: 1, WeekCountDiv: 0, WeekCountDivTotal: 2 },
+            IsEnabled: true,
+            IsOverlay: false,
+            AssociatedGroup: targetGroup,
         };
-        setPlans(next);
-        setJsonText(JSON.stringify(next, null, 2));
+        setPlans((prev) => ({ ...prev, [id]: newPlan }));
         setSelectedPlanId(id);
+        setSelectedLessonIdx(0);
+        setRightDrawerTab("info");
     }
 
-    function deletePlan(id: string) {
-        const copy = { ...plans };
-        delete copy[id];
-        setPlans(copy);
-        setJsonText(JSON.stringify(copy, null, 2));
-        if (selectedPlanId === id) {
-            setSelectedPlanId(Object.keys(copy)[0] || null);
-        }
+    function duplicatePlan(sourceId: string) {
+        const src = plans[sourceId];
+        if (!src) return;
+        const id = crypto.randomUUID();
+        const cloned: ClassPlan = JSON.parse(JSON.stringify(src));
+        cloned.Name = `${src.Name || "课表"} - 副本`;
+        setPlans((prev) => ({ ...prev, [id]: cloned }));
+        setSelectedPlanId(id);
+        setSelectedLessonIdx(0);
     }
 
-    function updatePlan(id: string, field: string, value: unknown) {
-        const copy = { ...plans };
-        copy[id] = { ...copy[id], [field]: value };
-        if (field === "TimeLayoutId") {
-            const tl = timeLayouts[value as string];
-            if (tl) {
-                const classSlots = (tl.Layouts || []).filter((item) => item.TimeType === 0);
-                copy[id].Classes = classSlots.map((slot, idx) => ({
-                    SubjectId: copy[id].Classes[idx]?.SubjectId || slot.DefaultClassId || "",
-                    IsEnabled: copy[id].Classes[idx]?.IsEnabled ?? true,
-                }));
+    function createTempOverlayPlan(sourceId: string) {
+        const src = plans[sourceId];
+        if (!src) return;
+        const id = crypto.randomUUID();
+        const overlay: ClassPlan = JSON.parse(JSON.stringify(src));
+        overlay.Name = `${src.Name || "课表"} (临时层)`;
+        overlay.IsOverlay = true;
+        overlay.OverlaySourceId = sourceId;
+        overlay.OverlaySetupTime = new Date().toISOString();
+        setPlans((prev) => ({ ...prev, [id]: overlay }));
+        setSelectedPlanId(id);
+        setSelectedLessonIdx(0);
+    }
+
+    function removePlan(id: string) {
+        setPlans((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            const keys = Object.keys(next);
+            if (selectedPlanId === id) {
+                setSelectedPlanId(keys[0] || null);
             }
+            return next;
+        });
+    }
+
+    const currentPlan = selectedPlanId ? plans[selectedPlanId] : undefined;
+    const currentTlId = currentPlan ? toUpstreamGuidOrEmpty(currentPlan.TimeLayoutId) : EMPTY_GUID;
+    const currentTl = !isEmptyGuid(currentTlId) ? timeLayouts[currentTlId] : undefined;
+    const currentTlClassTimePoints = (currentTl?.Layouts || []).filter((item) => item.TimeType === 0);
+
+    function updatePlan(patch: Partial<ClassPlan>) {
+        if (!selectedPlanId || !currentPlan) return;
+        setPlans((prev) => ({
+            ...prev,
+            [selectedPlanId]: { ...prev[selectedPlanId], ...patch },
+        }));
+    }
+
+    function handleTimeLayoutChange(newTlIdRaw: string) {
+        if (!currentPlan) return;
+        const newTlId = toUpstreamGuidOrEmpty(newTlIdRaw);
+        const syncedClasses = buildClassesFromTimeLayout(newTlId, currentPlan.Classes);
+        updatePlan({ TimeLayoutId: newTlId, Classes: syncedClasses });
+    }
+
+    function updateRule(patch: Partial<TimeRule>) {
+        if (!currentPlan) return;
+        const nextRule: TimeRule = {
+            ...(currentPlan.TimeRule || { WeekDay: 1, WeekCountDiv: 0, WeekCountDivTotal: 2 }),
+            ...patch,
+        };
+        if (nextRule.WeekCountDiv > nextRule.WeekCountDivTotal) {
+            nextRule.WeekCountDiv = 0;
         }
-        setPlans(copy);
-        setJsonText(JSON.stringify(copy, null, 2));
+        updatePlan({ TimeRule: nextRule });
     }
 
-    function updateTimeRule(id: string, field: keyof TimeRule, value: number) {
-        const copy = { ...plans };
-        copy[id] = { ...copy[id], TimeRule: { ...copy[id].TimeRule, [field]: value } };
-        setPlans(copy);
-        setJsonText(JSON.stringify(copy, null, 2));
-    }
+    function selectSubjectForCurrentLesson(subjectIdRaw: string) {
+        if (!currentPlan) return;
+        const totalSlots = Math.max(currentTlClassTimePoints.length, (currentPlan.Classes || []).length);
+        if (totalSlots === 0) return;
+        const targetIdx = Math.min(Math.max(0, selectedLessonIdx), totalSlots - 1);
+        const normalizedSubId = toUpstreamGuidOrEmpty(subjectIdRaw);
 
-    function updateClass(planId: string, idx: number, field: keyof ClassInfo, value: unknown) {
-        const copy = { ...plans };
-        const classes = [...(copy[planId].Classes || [])];
-        while (classes.length <= idx) {
-            classes.push({ SubjectId: "", IsEnabled: true });
+        const baseClasses =
+            currentPlan.Classes && currentPlan.Classes.length === totalSlots
+                ? [...currentPlan.Classes]
+                : buildClassesFromTimeLayout(currentTlId, currentPlan.Classes);
+
+        baseClasses[targetIdx] = {
+            ...(baseClasses[targetIdx] || { IsEnabled: true }),
+            SubjectId: normalizedSubId,
+            IsChangedClass: currentPlan.IsOverlay ? true : baseClasses[targetIdx]?.IsChangedClass,
+        };
+        updatePlan({ Classes: baseClasses });
+
+        if (autoMoveNext && targetIdx + 1 < totalSlots) {
+            setSelectedLessonIdx(targetIdx + 1);
         }
-        classes[idx] = { ...classes[idx], [field]: value };
-        copy[planId] = { ...copy[planId], Classes: classes };
-        setPlans(copy);
-        setJsonText(JSON.stringify(copy, null, 2));
     }
 
-    const currentPlan = selectedPlanId ? plans[selectedPlanId] : null;
-    const currentTimeLayout = currentPlan ? timeLayouts[currentPlan.TimeLayoutId] : null;
+    function updateLessonAt(idx: number, patch: Partial<ClassInfo>) {
+        if (!currentPlan) return;
+        const totalSlots = Math.max(currentTlClassTimePoints.length, (currentPlan.Classes || []).length);
+        const baseClasses =
+            currentPlan.Classes && currentPlan.Classes.length === totalSlots
+                ? [...currentPlan.Classes]
+                : buildClassesFromTimeLayout(currentTlId, currentPlan.Classes);
+        if (!baseClasses[idx]) return;
+        baseClasses[idx] = { ...baseClasses[idx], ...patch };
+        updatePlan({ Classes: baseClasses });
+    }
+
+    function addClassSlot() {
+        if (!currentPlan) return;
+        const next = [
+            ...(currentPlan.Classes || []),
+            { SubjectId: EMPTY_GUID, IsEnabled: true, IsChangedClass: false },
+        ];
+        updatePlan({ Classes: next });
+        setSelectedLessonIdx(next.length - 1);
+    }
+
+    function removeClassSlot(idx: number) {
+        if (!currentPlan) return;
+        const next = (currentPlan.Classes || []).filter((_, i) => i !== idx);
+        updatePlan({ Classes: next });
+        setSelectedLessonIdx((prev) => Math.max(0, Math.min(prev, next.length - 1)));
+    }
+
+    function addClassPlanGroup() {
+        if (!newGroupName.trim()) return;
+        const gid = crypto.randomUUID();
+        setGroups((prev) => ({
+            ...prev,
+            [gid]: { Name: newGroupName.trim(), IsGlobal: false },
+        }));
+        setNewGroupName("");
+    }
+
+    // 过滤出非 00000000-0000-0000-0000-000000000000 的真实科目供右侧选课盘渲染
+    const validSubjectEntries = Object.entries(subjects).filter(([sid]) => !isEmptyGuid(sid));
+
+    // 按课表群过滤课表列表
+    const filteredPlanEntries = Object.entries(plans).filter(([, cp]) => {
+        if (groupFilterId === "__ALL__") return true;
+        const cpGroup = toUpstreamGuidOrEmpty(cp.AssociatedGroup);
+        return cpGroup === groupFilterId;
+    });
+
+    if (loading) {
+        return <div className="loading-center"><Spinner size="medium" label="加载课表配置中..." /></div>;
+    }
+
+    const totalClassSlots = currentPlan
+        ? Math.max(currentTlClassTimePoints.length, (currentPlan.Classes || []).length)
+        : 0;
 
     return (
-        <div className="fade-in">
-            <div className="page-header">
+        <div>
+            <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                    <h1 className="page-title">课表管理</h1>
-                    <p className="page-subtitle">管理 ClassIsland 课表档案 (ClassPlan)</p>
+                    <h1>课表编辑器 (ClassPlan)</h1>
+                    <p>原位对照 ClassIsland【档案编辑 → 课表】三栏布局：课表与触发规则列表、时间轴课程表、右侧快速选课盘与多周轮换规则</p>
                 </div>
-                <div className="flex gap-8">
-                    <Button appearance="primary" icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建文件</Button>
-                    <Button appearance="secondary" icon={<ArrowSync24Regular />} onClick={loadFiles}>刷新</Button>
+                <div className="toolbar">
+                    <Button icon={<Add24Regular />} onClick={() => setShowCreate(true)}>新建课表文件</Button>
+                    {selectedFile && (
+                        <>
+                            <FileHistoryButton
+                                accountId={accountId}
+                                resourceType="ClassPlan"
+                                fileName={selectedFile}
+                                onLoadVersion={(content, version, isCurrent) => {
+                                    let parsedPlans: ClassPlansData = {};
+                                    if (content && typeof content === "object") {
+                                        const obj = content as Record<string, unknown>;
+                                        if (obj.ClassPlans && typeof obj.ClassPlans === "object") {
+                                            parsedPlans = obj.ClassPlans as ClassPlansData;
+                                        } else {
+                                            parsedPlans = obj as ClassPlansData;
+                                        }
+                                    }
+                                    const normalized = normalizeClassPlansForSave(parsedPlans);
+                                    setPlans(normalized);
+                                    setJsonText(JSON.stringify(normalized, null, 2));
+                                    setSelectedPlanId(Object.keys(normalized)[0] || null);
+                                    setMsg({
+                                        type: "success",
+                                        text: isCurrent
+                                            ? `已加载当前最新版本 v${version}`
+                                            : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本）`,
+                                    });
+                                }}
+                                onError={(text) => setMsg({ type: "error", text })}
+                            />
+                            <DownloadPresetPopoverButton
+                                buttonText="导出 JSON"
+                                appearance="secondary"
+                                defaultFileName={`ClassPlan-${selectedFile}.json`}
+                                suggestedNames={[
+                                    { label: "具名区分文件 (推荐)", fileName: `ClassPlan-${selectedFile}.json` },
+                                    { label: "档案原名", fileName: `${selectedFile}.json` },
+                                    { label: "客户端标准资源名", fileName: "ClassPlan.json" },
+                                ]}
+                                onFetchData={async () => (jsonMode ? JSON.parse(jsonText) : { ClassPlans: plans, ClassPlanGroups: groups })}
+                                onError={(text) => setMsg({ type: "error", text })}
+                            />
+                            <Button
+                                icon={<Code24Regular />}
+                                appearance={jsonMode ? "primary" : "secondary"}
+                                onClick={() => {
+                                    if (!jsonMode) setJsonText(JSON.stringify(plans, null, 2));
+                                    setJsonMode(!jsonMode);
+                                }}
+                            >
+                                {jsonMode ? "可视化模式" : "JSON 模式"}
+                            </Button>
+                            <Button icon={<ArrowSync24Regular />} onClick={() => selectFile(selectedFile)}>刷新</Button>
+                            <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
+                                {saving ? "保存中..." : "保存"}
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
             {msg && (
-                <MessageBar intent={msg.type} style={{ marginBottom: 16 }}>
+                <MessageBar intent={msg.type === "success" ? "success" : "error"} style={{ marginBottom: 16 }}>
                     <MessageBarBody>{msg.text}</MessageBarBody>
                 </MessageBar>
             )}
 
-            {/* 关联的时间表与科目库选择器 */}
-            <div className="card" style={{ padding: "12px 20px" }}>
-                <div className="flex items-center gap-24" style={{ flexWrap: "wrap" }}>
-                    <div className="flex items-center gap-8">
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>引用时间表文件：</span>
-                        <Select value={selectedTlFile} onChange={(_, d) => setSelectedTlFile(d.value)} style={{ minWidth: 180 }}>
-                            {tlFileList.map((f) => (
-                                <option key={f} value={f}>{f}</option>
-                            ))}
-                        </Select>
-                    </div>
-                    <div className="flex items-center gap-8">
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>引用科目库文件：</span>
-                        <Select value={selectedSubFile} onChange={(_, d) => setSelectedSubFile(d.value)} style={{ minWidth: 180 }}>
-                            {subFileList.map((f) => (
-                                <option key={f} value={f}>{f}</option>
-                            ))}
-                        </Select>
-                    </div>
-                </div>
-            </div>
-
-            <div className="profile-split-layout">
-                <div className="profile-split-sidebar">
-                    <div className="card mb-16">
-                        <div className="card-title">课表文件</div>
-                        {loading ? (
-                            <Spinner size="small" />
-                        ) : (
-                            fileList.map((f) => (
+            <div className="split-panel">
+                {/* 左侧文件选择与参考库 */}
+                <div className="split-left">
+                    <div className="section-title">课表文件</div>
+                    {fileList.length === 0 ? (
+                        <div className="empty-state"><p>暂无课表文件</p></div>
+                    ) : (
+                        <div className="file-list">
+                            {fileList.map((f) => (
                                 <div
                                     key={f}
-                                    className={`sidebar-link ${selectedFile === f ? "active" : ""}`}
+                                    className={`file-item ${selectedFile === f ? "selected" : ""}`}
                                     onClick={() => selectFile(f)}
+                                    style={{ justifyContent: "space-between" }}
                                 >
-                                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{f}</span>
+                                    <span>📅 {f}</span>
                                     <Button
-                                        appearance="subtle"
                                         size="small"
+                                        appearance="subtle"
                                         icon={<Delete24Regular />}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteFile(f);
-                                        }}
-                                        style={{ color: "var(--danger-color)", minWidth: 24, padding: 2 }}
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
                                     />
-                                </div>
-                            ))
-                        )}
-                    </div>
-                    {selectedFile && !dataLoading && (
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="card-title" style={{ margin: 0 }}>课表列表</div>
-                                <Button appearance="subtle" size="small" icon={<Add24Regular />} onClick={addPlan} title="添加课表" />
-                            </div>
-                            {Object.entries(plans).map(([id, cp]) => (
-                                <div
-                                    key={id}
-                                    className={`sidebar-link ${selectedPlanId === id ? "active" : ""}`}
-                                    onClick={() => setSelectedPlanId(id)}
-                                >
-                                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{cp.Name}</span>
-                                    <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
-                                        {WEEKDAY_LABELS[cp.TimeRule?.WeekDay ?? 1]}
-                                    </span>
-                                    {!cp.IsEnabled && (
-                                        <span className="badge badge-danger" style={{ fontSize: 10 }}>禁用</span>
-                                    )}
                                 </div>
                             ))}
                         </div>
                     )}
+
+                    <div style={{ marginTop: 18, borderTop: "1px solid var(--stroke-divider)", paddingTop: 14 }}>
+                        <div className="section-title">关联参考档案库</div>
+                        <div className="form-group" style={{ marginBottom: 10 }}>
+                            <label className="form-label" style={{ fontSize: 12 }}>参考时间表文件 (TimeLayout)</label>
+                            <Select value={selectedTlFile} onChange={(_, d) => loadReferenceTl(d.value)}>
+                                {tlFileList.length === 0 && <option value="">(无时间表文件)</option>}
+                                {tlFileList.map((f) => (
+                                    <option key={f} value={f}>{f}</option>
+                                ))}
+                            </Select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" style={{ fontSize: 12 }}>参考科目库文件 (Subjects)</label>
+                            <Select value={selectedSubFile} onChange={(_, d) => loadReferenceSub(d.value)}>
+                                {subFileList.length === 0 && <option value="">(无科目文件)</option>}
+                                {subFileList.map((f) => (
+                                    <option key={f} value={f}>{f}</option>
+                                ))}
+                            </Select>
+                        </div>
+                    </div>
                 </div>
 
-                <div style={{ flex: 1 }}>
+                {/* 右侧原位三栏课表编辑器 (对应上游 ProfileSettingsWindow ClassPlans Tab) */}
+                <div className="split-right">
                     {!selectedFile ? (
-                        <div className="card"><div className="empty-state"><div className="empty-state-text">请选择课表文件</div></div></div>
+                        <div className="empty-state"><p>请从左侧选择一个课表文件</p></div>
                     ) : dataLoading ? (
-                        <div className="card"><div className="empty-state"><Spinner size="medium" /></div></div>
+                        <div className="loading-center"><Spinner size="medium" /></div>
                     ) : jsonMode ? (
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-16">
-                                <div className="card-title" style={{ margin: 0 }}>JSON 源码编辑: {selectedFile}</div>
-                                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
-                                    <FileHistoryButton
-                                        accountId={accountId}
-                                        resourceType="ClassPlan"
-                                        fileName={selectedFile}
-                                        onLoadVersion={(content, version, isCurrent) => {
-                                            let parsed: ClassPlansData = {};
-                                            if (content && typeof content === "object") {
-                                                const obj = content as Record<string, unknown>;
-                                                if (obj.ClassPlans && typeof obj.ClassPlans === "object") {
-                                                    parsed = obj.ClassPlans as ClassPlansData;
-                                                } else {
-                                                    parsed = obj as ClassPlansData;
-                                                }
-                                            }
-                                            setPlans(parsed);
-                                            setJsonText(JSON.stringify(parsed, null, 2));
-                                            setSelectedPlanId(Object.keys(parsed)[0] || null);
-                                            setMsg({
-                                                type: "success",
-                                                text: isCurrent
-                                                    ? `已加载当前最新版本 v${version}`
-                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
-                                            });
-                                        }}
-                                        onError={(text) => setMsg({ type: "error", text })}
-                                    />
-                                    <DownloadPresetPopoverButton
-                                        buttonText="导出 JSON"
-                                        appearance="secondary"
-                                        defaultFileName={`ClassPlan-${selectedFile}.json`}
-                                        suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `ClassPlan-${selectedFile}.json` },
-                                            { label: "档案原名", fileName: `${selectedFile}.json` },
-                                            { label: "客户端标准资源名", fileName: "ClassPlans.json" },
-                                        ]}
-                                        onFetchData={async () => JSON.parse(jsonText)}
-                                        onError={(text) => setMsg({ type: "error", text })}
-                                    />
-                                    <Button
-                                        appearance="subtle"
-                                        icon={<Code24Regular />}
-                                        onClick={() => {
-                                            try { setPlans(JSON.parse(jsonText)); } catch { /* ignore */ }
-                                            setJsonMode(false);
-                                        }}
-                                    >
-                                        切换可视化编辑
-                                    </Button>
-                                    <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
-                                        {saving ? <Spinner size="tiny" /> : "保存"}
-                                    </Button>
-                                </div>
-                            </div>
-                            <div className="json-editor">
-                                <textarea value={jsonText} onChange={(e) => setJsonText(e.target.value)} style={{ minHeight: 440 }} />
-                            </div>
+                        <div>
+                            <div className="section-title">JSON 编辑器 — {selectedFile}</div>
+                            <textarea
+                                className="json-editor"
+                                value={jsonText}
+                                onChange={(e) => setJsonText(e.target.value)}
+                                style={{ minHeight: 520 }}
+                            />
                         </div>
-                    ) : !currentPlan ? (
-                        <div className="card"><div className="empty-state"><div className="empty-state-text">请选择或添加课表</div></div></div>
                     ) : (
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-16">
-                                <Input
-                                    value={currentPlan.Name}
-                                    onChange={(_, d) => updatePlan(selectedPlanId!, "Name", d.value)}
-                                    style={{ fontWeight: 600, fontSize: 16 }}
-                                />
-                                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
-                                    <FileHistoryButton
-                                        accountId={accountId}
-                                        resourceType="ClassPlan"
-                                        fileName={selectedFile}
-                                        onLoadVersion={(content, version, isCurrent) => {
-                                            let parsed: ClassPlansData = {};
-                                            if (content && typeof content === "object") {
-                                                const obj = content as Record<string, unknown>;
-                                                if (obj.ClassPlans && typeof obj.ClassPlans === "object") {
-                                                    parsed = obj.ClassPlans as ClassPlansData;
-                                                } else {
-                                                    parsed = obj as ClassPlansData;
-                                                }
-                                            }
-                                            setPlans(parsed);
-                                            setJsonText(JSON.stringify(parsed, null, 2));
-                                            setSelectedPlanId(Object.keys(parsed)[0] || null);
-                                            setMsg({
-                                                type: "success",
-                                                text: isCurrent
-                                                    ? `已加载当前最新版本 v${version}`
-                                                    : `已加载历史版本 v${version} 到编辑器（点击「保存」将创建一个新版本，不会覆盖历史版本）`,
-                                            });
-                                        }}
-                                        onError={(text) => setMsg({ type: "error", text })}
-                                    />
-                                    <DownloadPresetPopoverButton
-                                        buttonText="导出 JSON"
-                                        appearance="secondary"
-                                        defaultFileName={`ClassPlan-${selectedFile}.json`}
-                                        suggestedNames={[
-                                            { label: "具名区分文件 (推荐)", fileName: `ClassPlan-${selectedFile}.json` },
-                                            { label: "档案原名", fileName: `${selectedFile}.json` },
-                                            { label: "客户端标准资源名", fileName: "ClassPlans.json" },
-                                        ]}
-                                        onFetchData={async () => plans}
-                                        onError={(text) => setMsg({ type: "error", text })}
-                                    />
-                                    <Button
-                                        appearance="subtle"
-                                        icon={<Code24Regular />}
-                                        onClick={() => {
-                                            setJsonText(JSON.stringify(plans, null, 2));
-                                            setJsonMode(true);
-                                        }}
-                                    >
-                                        JSON 源码
-                                    </Button>
-                                    <Button appearance="primary" icon={<Save24Regular />} onClick={handleSave} disabled={saving}>
-                                        {saving ? <Spinner size="tiny" /> : "保存"}
-                                    </Button>
-                                    <Button
-                                        appearance="subtle"
-                                        icon={<Delete24Regular />}
-                                        onClick={() => deletePlan(selectedPlanId!)}
-                                        style={{ color: "var(--danger-color)" }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid-3 mb-16">
-                                <div className="form-group">
-                                    <label className="form-label">关联时间表 (TimeLayoutId)</label>
+                        <div style={{ display: "grid", gridTemplateColumns: "255px 1fr 295px", gap: 14, alignItems: "start" }}>
+                            {/* ── 第一栏：课表群筛选 + 课表列表（含上游触发规则与时间表徽标） ── */}
+                            <div className="fluent-card" style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                                     <Select
-                                        value={currentPlan.TimeLayoutId}
-                                        onChange={(_, d) => updatePlan(selectedPlanId!, "TimeLayoutId", d.value)}
-                                        style={{ width: "100%" }}
+                                        size="small"
+                                        value={groupFilterId}
+                                        onChange={(_, d) => setGroupFilterId(d.value)}
+                                        style={{ flex: 1 }}
                                     >
-                                        <option value="">-- 选择时间表 --</option>
-                                        {Object.entries(timeLayouts).map(([id, tl]) => (
-                                            <option key={id} value={id}>{tl.Name}</option>
+                                        <option value="__ALL__">全部课表群 ({Object.keys(plans).length})</option>
+                                        {Object.entries(groups).map(([gid, g]) => (
+                                            <option key={gid} value={gid}>
+                                                课表群: {g.Name || (isEmptyGuid(gid) ? "默认" : gid.slice(0, 6))}
+                                            </option>
                                         ))}
                                     </Select>
                                 </div>
-                                <div className="form-group">
-                                    <label className="form-label">启用状态</label>
-                                    <Switch
-                                        checked={currentPlan.IsEnabled}
-                                        onChange={(_, d) => updatePlan(selectedPlanId!, "IsEnabled", d.checked)}
-                                        label={currentPlan.IsEnabled ? "已启用" : "已禁用"}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">临时层属性</label>
-                                    <Switch
-                                        checked={!!currentPlan.IsOverlay}
-                                        onChange={(_, d) => updatePlan(selectedPlanId!, "IsOverlay", d.checked)}
-                                        label={currentPlan.IsOverlay ? "临时层课表" : "常规课表"}
-                                    />
-                                </div>
-                            </div>
 
-                            <div className="settings-section">
-                                <div className="settings-section-title">触发规则 (TimeRule)</div>
-                                <div className="grid-3">
-                                    <div className="form-group">
-                                        <label className="form-label">适用星期 (WeekDay)</label>
-                                        <Select
-                                            value={String(currentPlan.TimeRule?.WeekDay ?? 1)}
-                                            onChange={(_, d) => updateTimeRule(selectedPlanId!, "WeekDay", parseInt(d.value, 10))}
-                                            style={{ width: "100%" }}
-                                        >
-                                            {WEEKDAY_LABELS.map((label, idx) => (
-                                                <option key={idx} value={idx}>{label}</option>
-                                            ))}
-                                        </Select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">多周轮换周次 (WeekCountDiv)</label>
-                                        <Select
-                                            value={String(currentPlan.TimeRule?.WeekCountDiv ?? 0)}
-                                            onChange={(_, d) => updateTimeRule(selectedPlanId!, "WeekCountDiv", parseInt(d.value, 10))}
-                                            style={{ width: "100%" }}
-                                        >
-                                            <option value={0}>不轮换（每周生效）</option>
-                                            <option value={1}>第 1 周（单周）</option>
-                                            <option value={2}>第 2 周（双周）</option>
-                                            <option value={3}>第 3 周</option>
-                                            <option value={4}>第 4 周</option>
-                                        </Select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">轮换总周期 (WeekCountDivTotal)</label>
-                                        <Select
-                                            value={String(currentPlan.TimeRule?.WeekCountDivTotal ?? 2)}
-                                            onChange={(_, d) => updateTimeRule(selectedPlanId!, "WeekCountDivTotal", parseInt(d.value, 10))}
-                                            style={{ width: "100%" }}
-                                        >
-                                            <option value={2}>双周轮换 (2周)</option>
-                                            <option value={3}>三周轮换 (3周)</option>
-                                            <option value={4}>四周轮换 (4周)</option>
-                                        </Select>
-                                    </div>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                    <Button size="small" appearance="primary" icon={<Add24Regular />} onClick={addPlan} style={{ flex: 1 }}>
+                                        添加课表
+                                    </Button>
+                                    {selectedPlanId && (
+                                        <Button size="small" onClick={() => duplicatePlan(selectedPlanId)} title="复制当前选中课表">
+                                            复制
+                                        </Button>
+                                    )}
                                 </div>
-                            </div>
 
-                            <div className="settings-section">
-                                <div className="settings-section-title">课程安排 (Classes)</div>
-                                {!currentTimeLayout ? (
-                                    <div className="empty-state"><div className="empty-state-text">请先选择关联的时间表</div></div>
-                                ) : (
-                                    <div className="classplan-grid">
-                                        {(currentTimeLayout.Layouts || []).map((timeItem, idx) => {
-                                            const isClassSlot = timeItem.TimeType === 0;
-                                            const classIdx = isClassSlot
-                                                ? currentTimeLayout.Layouts.slice(0, idx).filter((i) => i.TimeType === 0).length
-                                                : -1;
-                                            const classInfo =
-                                                isClassSlot && classIdx < (currentPlan.Classes || []).length
-                                                    ? currentPlan.Classes[classIdx]
-                                                    : { SubjectId: timeItem.DefaultClassId || "", IsEnabled: true };
+                                <div className="file-list" style={{ maxHeight: 520, overflowY: "auto" }}>
+                                    {filteredPlanEntries.length === 0 ? (
+                                        <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: 12, textAlign: "center" }}>
+                                            当前筛选下暂无课表
+                                        </div>
+                                    ) : (
+                                        filteredPlanEntries.map(([id, cp]) => {
+                                            const isSelected = selectedPlanId === id;
+                                            const tlId = toUpstreamGuidOrEmpty(cp.TimeLayoutId);
+                                            const tlObj = !isEmptyGuid(tlId) ? timeLayouts[tlId] : undefined;
+                                            const div = cp.TimeRule?.WeekCountDiv ?? 0;
+                                            const total = cp.TimeRule?.WeekCountDivTotal ?? 2;
+                                            const weekDayLabel = WEEKDAY_LABELS[cp.TimeRule?.WeekDay ?? 1] || "周一";
 
                                             return (
                                                 <div
-                                                    key={idx}
-                                                    className={`classplan-row ${timeItem.TimeType === 1 ? "is-break" : ""} ${
-                                                        timeItem.TimeType === 2 ? "is-divider" : ""
-                                                    }`}
+                                                    key={id}
+                                                    className={`file-item ${isSelected ? "selected" : ""}`}
+                                                    onClick={() => {
+                                                        setSelectedPlanId(id);
+                                                        setSelectedLessonIdx(0);
+                                                    }}
+                                                    style={{
+                                                        flexDirection: "column",
+                                                        alignItems: "stretch",
+                                                        gap: 6,
+                                                        padding: "9px 10px",
+                                                    }}
                                                 >
-                                                    <div className="classplan-row-time">{formatItemTime(timeItem)}</div>
-                                                    <span
-                                                        className={`timeline-type-badge type-${timeItem.TimeType}`}
-                                                    >
-                                                        {isClassSlot
-                                                            ? `第 ${classIdx + 1} 节`
-                                                            : TIME_TYPE_LABELS[timeItem.TimeType as keyof typeof TIME_TYPE_LABELS] || "未知"}
-                                                    </span>
-                                                    <div className="classplan-row-content">
-                                                        {isClassSlot ? (
-                                                            <div className="flex items-center gap-12">
-                                                                <Select
-                                                                    value={classInfo?.SubjectId || ""}
-                                                                    onChange={(_, d) =>
-                                                                        updateClass(selectedPlanId!, classIdx, "SubjectId", d.value)
-                                                                    }
-                                                                    style={{ minWidth: 200 }}
-                                                                >
-                                                                    <option value="">-- 未排课 / 空闲 --</option>
-                                                                    {Object.entries(subjects).map(([subId, sub]) => (
-                                                                        <option key={subId} value={subId}>
-                                                                            {sub.Name}
-                                                                            {sub.TeacherName ? ` (${sub.TeacherName})` : ""}
-                                                                        </option>
-                                                                    ))}
-                                                                </Select>
-                                                                <Switch
-                                                                    checked={classInfo?.IsEnabled !== false}
-                                                                    onChange={(_, d) =>
-                                                                        updateClass(selectedPlanId!, classIdx, "IsEnabled", d.checked)
-                                                                    }
-                                                                    label="启用本节"
-                                                                />
-                                                            </div>
-                                                        ) : timeItem.TimeType === 1 ? (
-                                                            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                                                                {timeItem.BreakName || "课间休息"}
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                                                        <span style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                            {cp.Name || "未命名课表"}
+                                                        </span>
+                                                        {cp.IsOverlay && (
+                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(96,205,255,0.2)", color: "var(--accent-primary)" }}>
+                                                                临时层
                                                             </span>
-                                                        ) : timeItem.TimeType === 2 ? (
-                                                            <hr
-                                                                style={{
-                                                                    border: "none",
-                                                                    borderTop: "1px dashed var(--border-color)",
-                                                                    width: "100%",
-                                                                }}
-                                                            />
-                                                        ) : null}
+                                                        )}
+                                                    </div>
+
+                                                    {/* 上游风格胶囊标签行：触发星期 + 多周轮换 + 时间表名称 */}
+                                                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                                                        {cp.IsEnabled === false ? (
+                                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(255,99,71,0.18)", color: "#ff7b72" }}>
+                                                                🚫 不自动启用
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(96,205,255,0.16)", color: "var(--accent-primary)" }}>
+                                                                    {weekDayLabel}
+                                                                </span>
+                                                                {div > 0 && (
+                                                                    <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(168,85,247,0.18)", color: "#c084fc" }}>
+                                                                        {div}/{total}周
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        <span
+                                                            style={{
+                                                                fontSize: 10,
+                                                                padding: "1px 6px",
+                                                                borderRadius: 4,
+                                                                background: isEmptyGuid(tlId) || !tlObj ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.08)",
+                                                                color: isEmptyGuid(tlId) || !tlObj ? "#fbbf24" : "var(--text-secondary)",
+                                                            }}
+                                                        >
+                                                            🕒 {isEmptyGuid(tlId) ? "未设置时间表" : (tlObj?.Name || "未知时间表")}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             );
-                                        })}
-                                    </div>
-                                )}
+                                        })
+                                    )}
+                                </div>
                             </div>
 
-                            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 12 }}>
-                                课表 GUID: {selectedPlanId}
+                            {/* ── 第二栏（中间）：课表工具栏 + 状态提示栏 + 课程时间轴表格 ── */}
+                            {!currentPlan ? (
+                                <div className="empty-state"><p>请从左侧选择或添加一个课表</p></div>
+                            ) : (
+                                <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                                    {/* 顶部 CommandBar (对应上游课表顶部工具栏) */}
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, borderBottom: "1px solid var(--stroke-divider)", paddingBottom: 10 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <span style={{ fontWeight: 700, fontSize: 15 }}>{currentPlan.Name || "未命名课表"}</span>
+                                            <Button
+                                                size="small"
+                                                appearance={rightDrawerTab === "info" ? "primary" : "secondary"}
+                                                onClick={() => setRightDrawerTab("info")}
+                                            >
+                                                ⚙️ 课表信息与触发规则
+                                            </Button>
+                                            {!currentPlan.IsOverlay && (
+                                                <Button
+                                                    size="small"
+                                                    onClick={() => selectedPlanId && createTempOverlayPlan(selectedPlanId)}
+                                                    title="基于此课表创建临时换课层"
+                                                >
+                                                    📑 创建临时层
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                                <Switch checked={showBreaks} onChange={(_, d) => setShowBreaks(d.checked)} />
+                                                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>显示课间/行动时间点</span>
+                                            </div>
+                                            <Button
+                                                size="small"
+                                                appearance="subtle"
+                                                icon={<Delete24Regular />}
+                                                onClick={() => selectedPlanId && removePlan(selectedPlanId)}
+                                                style={{ color: "#ff7b72" }}
+                                            >
+                                                删除课表
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* 00000000-0000-0000-0000-000000000000 时间表未设置提醒条 (对应上游 InfoBar) */}
+                                    {isEmptyGuid(currentTlId) && (
+                                        <MessageBar intent="warning">
+                                            <MessageBarBody>
+                                                此课表尚未关联时间表（当前为 <code>{EMPTY_GUID}</code> 空引用）。请在右侧「课表信息」中选择一个有效的时间表，以便对齐每日上课时间点。
+                                            </MessageBarBody>
+                                        </MessageBar>
+                                    )}
+                                    {!isEmptyGuid(currentTlId) && !currentTl && (
+                                        <MessageBar intent="warning">
+                                            <MessageBarBody>
+                                                此课表关联的时间表 GUID (<code>{currentTlId.slice(0, 8)}...</code>) 在当前参考时间表文件「{selectedTlFile}」中不存在，请切换左侧参考时间表文件或重新绑定时间表。
+                                            </MessageBarBody>
+                                        </MessageBar>
+                                    )}
+                                    {currentPlan.IsOverlay && (
+                                        <MessageBar intent="info">
+                                            <MessageBarBody>
+                                                当前课表为<strong>临时层课表 (IsOverlay)</strong>，将在预定日期覆盖原课表并在过期后自动清除。
+                                            </MessageBarBody>
+                                        </MessageBar>
+                                    )}
+
+                                    {/* 课程表主网格 (对应上游 DataGrid: 启用 | 时间 | 科目) */}
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                        {totalClassSlots === 0 && (!showBreaks || (currentTl?.Layouts || []).length === 0) ? (
+                                            <div className="empty-state" style={{ padding: 28 }}>
+                                                <p>当前课表暂无课程节次，请先绑定时间表或点击下方「+ 手动添加节次」</p>
+                                            </div>
+                                        ) : showBreaks && currentTl ? (
+                                            // 混排展示时间表所有时间点（上课 + 课间 + 分割线 + 行动）
+                                            (() => {
+                                                let lessonCounter = -1;
+                                                return (currentTl.Layouts || []).map((tlItem, rawIdx) => {
+                                                    if (tlItem.TimeType !== 0) {
+                                                        return (
+                                                            <div
+                                                                key={`nonclass-${rawIdx}`}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "space-between",
+                                                                    padding: "6px 12px",
+                                                                    borderRadius: 6,
+                                                                    background: "rgba(255,255,255,0.03)",
+                                                                    borderLeft: tlItem.TimeType === 3 ? "3px solid #fbbf24" : "3px solid #34d399",
+                                                                    fontSize: 12,
+                                                                    color: "var(--text-secondary)",
+                                                                }}
+                                                            >
+                                                                <span>
+                                                                    {tlItem.TimeType === 2
+                                                                        ? "── 分割线 ──"
+                                                                        : `${formatItemTime(tlItem)} · ${tlItem.TimeType === 1 ? (tlItem.BreakName || "课间休息") : `⚡ 行动 (${tlItem.ActionSet?.Name || "行动时间点"})`}`}
+                                                                </span>
+                                                                <span>{TIME_TYPE_LABELS[tlItem.TimeType]}</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    lessonCounter++;
+                                                    const cIdx = lessonCounter;
+                                                    const ci: ClassInfo = currentPlan.Classes?.[cIdx] || {
+                                                        SubjectId: toUpstreamGuidOrEmpty(tlItem.DefaultClassId),
+                                                        IsEnabled: true,
+                                                    };
+                                                    const isRowSelected = selectedLessonIdx === cIdx;
+                                                    const subId = toUpstreamGuidOrEmpty(ci.SubjectId);
+                                                    const isEmptySub = isEmptyGuid(subId);
+                                                    const subObj = !isEmptySub ? subjects[subId] : undefined;
+
+                                                    return (
+                                                        <div
+                                                            key={`lesson-${cIdx}`}
+                                                            onClick={() => {
+                                                                setSelectedLessonIdx(cIdx);
+                                                                setRightDrawerTab("subject");
+                                                            }}
+                                                            style={{
+                                                                display: "grid",
+                                                                gridTemplateColumns: "52px 150px 1fr auto",
+                                                                alignItems: "center",
+                                                                gap: 10,
+                                                                padding: "8px 12px",
+                                                                borderRadius: 8,
+                                                                border: isRowSelected ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
+                                                                background: isRowSelected ? "rgba(96,205,255,0.09)" : "var(--bg-layer-alt)",
+                                                                cursor: "pointer",
+                                                            }}
+                                                        >
+                                                            <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                                                <Switch
+                                                                    checked={ci.IsEnabled !== false}
+                                                                    onChange={(_, d) => updateLessonAt(cIdx, { IsEnabled: d.checked })}
+                                                                />
+                                                            </div>
+                                                            <div style={{ fontSize: 12.5, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
+                                                                第 {cIdx + 1} 节 · {formatItemTime(tlItem)}
+                                                            </div>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                                <span
+                                                                    style={{
+                                                                        display: "inline-flex",
+                                                                        alignItems: "center",
+                                                                        justifyContent: "center",
+                                                                        width: 26,
+                                                                        height: 26,
+                                                                        borderRadius: 6,
+                                                                        background: isEmptySub ? "rgba(255,255,255,0.08)" : "var(--accent-primary)",
+                                                                        color: isEmptySub ? "var(--text-tertiary)" : "#000",
+                                                                        fontWeight: 700,
+                                                                        fontSize: 12,
+                                                                    }}
+                                                                >
+                                                                    {isEmptySub ? "空" : (subObj?.Initial || subObj?.Name?.[0] || "?")}
+                                                                </span>
+                                                                <span style={{ fontWeight: isEmptySub ? 400 : 600, color: isEmptySub ? "var(--text-tertiary)" : "var(--text-primary)" }}>
+                                                                    {isEmptySub ? "（未设置科目）" : (subObj?.Name || `未知科目 (${subId.slice(0, 6)})`)}
+                                                                </span>
+                                                                {subObj?.TeacherName && (
+                                                                    <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                                                        ({subObj.TeacherName})
+                                                                    </span>
+                                                                )}
+                                                                {ci.IsChangedClass && (
+                                                                    <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: "rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+                                                                        换课
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div onClick={(e) => e.stopPropagation()}>
+                                                                {!isEmptySub && (
+                                                                    <Button
+                                                                        size="small"
+                                                                        appearance="subtle"
+                                                                        onClick={() => updateLessonAt(cIdx, { SubjectId: EMPTY_GUID })}
+                                                                        title={`置空为 ${EMPTY_GUID}`}
+                                                                    >
+                                                                        置空
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()
+                                        ) : (
+                                            // 标准仅展示上课节次模式 (与上游默认视图一致)
+                                            Array.from({ length: totalClassSlots }).map((_, cIdx) => {
+                                                const tlItem = currentTlClassTimePoints[cIdx];
+                                                const ci: ClassInfo = currentPlan.Classes?.[cIdx] || {
+                                                    SubjectId: toUpstreamGuidOrEmpty(tlItem?.DefaultClassId),
+                                                    IsEnabled: true,
+                                                };
+                                                const isRowSelected = selectedLessonIdx === cIdx;
+                                                const subId = toUpstreamGuidOrEmpty(ci.SubjectId);
+                                                const isEmptySub = isEmptyGuid(subId);
+                                                const subObj = !isEmptySub ? subjects[subId] : undefined;
+
+                                                return (
+                                                    <div
+                                                        key={cIdx}
+                                                        onClick={() => {
+                                                            setSelectedLessonIdx(cIdx);
+                                                            setRightDrawerTab("subject");
+                                                        }}
+                                                        style={{
+                                                            display: "grid",
+                                                            gridTemplateColumns: "52px 156px 1fr auto",
+                                                            alignItems: "center",
+                                                            gap: 10,
+                                                            padding: "8px 12px",
+                                                            borderRadius: 8,
+                                                            border: isRowSelected ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
+                                                            background: isRowSelected ? "rgba(96,205,255,0.09)" : "var(--bg-layer-alt)",
+                                                            cursor: "pointer",
+                                                            opacity: ci.IsEnabled === false ? 0.55 : 1,
+                                                        }}
+                                                    >
+                                                        <div onClick={(e) => e.stopPropagation()} title="是否启用本节课">
+                                                            <Switch
+                                                                checked={ci.IsEnabled !== false}
+                                                                onChange={(_, d) => updateLessonAt(cIdx, { IsEnabled: d.checked })}
+                                                            />
+                                                        </div>
+                                                        <div style={{ fontSize: 12.5, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
+                                                            第 {cIdx + 1} 节 {tlItem ? `· ${formatItemTime(tlItem)}` : ""}
+                                                        </div>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                            <span
+                                                                style={{
+                                                                    display: "inline-flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    width: 26,
+                                                                    height: 26,
+                                                                    borderRadius: 6,
+                                                                    background: isEmptySub ? "rgba(255,255,255,0.08)" : "var(--accent-primary)",
+                                                                    color: isEmptySub ? "var(--text-tertiary)" : "#000",
+                                                                    fontWeight: 700,
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {isEmptySub ? "空" : (subObj?.Initial || subObj?.Name?.[0] || "?")}
+                                                            </span>
+                                                            <span style={{ fontWeight: isEmptySub ? 400 : 600, color: isEmptySub ? "var(--text-tertiary)" : "var(--text-primary)" }}>
+                                                                {isEmptySub ? "（未设置科目）" : (subObj?.Name || `未知科目 (${subId.slice(0, 6)})`)}
+                                                            </span>
+                                                            {subObj?.TeacherName && (
+                                                                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                                                    ({subObj.TeacherName})
+                                                                </span>
+                                                            )}
+                                                            {ci.IsChangedClass && (
+                                                                <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: "rgba(245,158,11,0.2)", color: "#fbbf24" }}>
+                                                                    换课
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                                                            {!isEmptySub && (
+                                                                <Button
+                                                                    size="small"
+                                                                    appearance="subtle"
+                                                                    onClick={() => updateLessonAt(cIdx, { SubjectId: EMPTY_GUID })}
+                                                                    title={`将此节设为空科目 (${EMPTY_GUID})`}
+                                                                >
+                                                                    置空
+                                                                </Button>
+                                                            )}
+                                                            {currentTlClassTimePoints.length === 0 && (
+                                                                <Button
+                                                                    size="small"
+                                                                    appearance="subtle"
+                                                                    icon={<Delete24Regular />}
+                                                                    onClick={() => removeClassSlot(cIdx)}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+
+                                    {/* 底部辅助操作栏 */}
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                                        <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                                            提示：点击任意节次后，在右侧「编辑科目」面板点击科目简称即可填入
+                                        </span>
+                                        <div style={{ display: "flex", gap: 8 }}>
+                                            {!isEmptyGuid(currentTlId) && currentTl && (
+                                                <Button
+                                                    size="small"
+                                                    onClick={() =>
+                                                        updatePlan({
+                                                            Classes: buildClassesFromTimeLayout(currentTlId, currentPlan.Classes),
+                                                        })
+                                                    }
+                                                >
+                                                    按时间表同步节数 ({currentTlClassTimePoints.length} 节)
+                                                </Button>
+                                            )}
+                                            <Button size="small" icon={<Add24Regular />} onClick={addClassSlot}>
+                                                手动添加节次
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── 第三栏（右侧）：原位对照上游 TabControl（编辑科目选课盘 / 课表详细信息与 TimeRuleEditControl） ── */}
+                            <div className="fluent-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                                <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--stroke-divider)", paddingBottom: 8 }}>
+                                    <Button
+                                        size="small"
+                                        appearance={rightDrawerTab === "subject" ? "primary" : "subtle"}
+                                        onClick={() => setRightDrawerTab("subject")}
+                                        style={{ flex: 1 }}
+                                    >
+                                        🎯 编辑科目
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        appearance={rightDrawerTab === "info" ? "primary" : "subtle"}
+                                        onClick={() => setRightDrawerTab("info")}
+                                        style={{ flex: 1 }}
+                                    >
+                                        📋 课表信息
+                                    </Button>
+                                </div>
+
+                                {!currentPlan ? (
+                                    <div style={{ fontSize: 12, color: "var(--text-tertiary)", textAlign: "center", padding: 20 }}>
+                                        未选择课表
+                                    </div>
+                                ) : rightDrawerTab === "subject" ? (
+                                    /* 右侧面板 1：原位复刻上游科目简称网格选课盘 + 选完自动下一节 */
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <span style={{ fontSize: 13, fontWeight: 600 }}>
+                                                正在编辑：第 {selectedLessonIdx + 1} 节课
+                                            </span>
+                                            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                                                共 {totalClassSlots} 节
+                                            </span>
+                                        </div>
+
+                                        {/* 特殊 00000000-0000-0000-0000-000000000000 空科目快捷砖块 */}
+                                        <div
+                                            onClick={() => selectSubjectForCurrentLesson(EMPTY_GUID)}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                padding: "8px 12px",
+                                                borderRadius: 8,
+                                                border: isEmptyGuid(currentPlan.Classes?.[selectedLessonIdx]?.SubjectId)
+                                                    ? "1.5px solid var(--accent-primary)"
+                                                    : "1px dashed var(--stroke-card)",
+                                                background: "rgba(255,255,255,0.03)",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                <span
+                                                    style={{
+                                                        width: 28,
+                                                        height: 28,
+                                                        borderRadius: 6,
+                                                        background: "rgba(255,255,255,0.08)",
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        fontWeight: 700,
+                                                        fontSize: 12,
+                                                    }}
+                                                >
+                                                    空
+                                                </span>
+                                                <div>
+                                                    <div style={{ fontSize: 12.5, fontWeight: 600 }}>（空 / 未设置科目）</div>
+                                                    <div style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}>
+                                                        {EMPTY_GUID}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 上游科目简称宫格 (ListBoxSubjects WrapPanel) */}
+                                        <div
+                                            style={{
+                                                display: "grid",
+                                                gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))",
+                                                gap: 8,
+                                                maxHeight: 380,
+                                                overflowY: "auto",
+                                                padding: 2,
+                                            }}
+                                        >
+                                            {validSubjectEntries.map(([sid, sub]) => {
+                                                const activeSubId = toUpstreamGuidOrEmpty(currentPlan.Classes?.[selectedLessonIdx]?.SubjectId);
+                                                const isCurrentSub = activeSubId === sid;
+                                                return (
+                                                    <div
+                                                        key={sid}
+                                                        onClick={() => selectSubjectForCurrentLesson(sid)}
+                                                        style={{
+                                                            display: "flex",
+                                                            flexDirection: "column",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            padding: "10px 6px",
+                                                            borderRadius: 8,
+                                                            border: isCurrentSub ? "1.5px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
+                                                            background: isCurrentSub ? "rgba(96,205,255,0.18)" : "var(--bg-layer-alt)",
+                                                            cursor: "pointer",
+                                                            textAlign: "center",
+                                                            gap: 2,
+                                                        }}
+                                                        title={`${sub.Name}${sub.TeacherName ? ` (${sub.TeacherName})` : ""}`}
+                                                    >
+                                                        <span style={{ fontSize: 18, fontWeight: 700, color: isCurrentSub ? "var(--accent-primary)" : "var(--text-primary)" }}>
+                                                            {sub.Initial || sub.Name?.[0] || "?"}
+                                                        </span>
+                                                        <span style={{ fontSize: 11, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                                                            {sub.Name}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* 底部：选完科目自动移动到下一个课程 (对应上游 CheckBox) */}
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                                            <span style={{ fontSize: 12.5 }}>选完科目自动移动到下一个课程</span>
+                                            <Switch checked={autoMoveNext} onChange={(_, d) => setAutoMoveNext(d.checked)} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* 右侧面板 2：原位复刻上游 ClassPlansInfoEditor + TimeRuleEditControl */
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label className="form-label">课表名称 (Name)</label>
+                                            <Input
+                                                value={currentPlan.Name || ""}
+                                                onChange={(_, d) => updatePlan({ Name: d.value })}
+                                            />
+                                        </div>
+
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label className="form-label">使用的时间表 (TimeLayoutId)</label>
+                                            <Select
+                                                value={currentTlId}
+                                                onChange={(_, d) => handleTimeLayoutChange(d.value)}
+                                            >
+                                                <option value={EMPTY_GUID}>（未设置时间表 / 000...000）</option>
+                                                {Object.entries(timeLayouts).map(([tlId, tl]) => (
+                                                    <option key={tlId} value={tlId}>
+                                                        {tl.Name || tlId.slice(0, 8)}
+                                                    </option>
+                                                ))}
+                                                {!isEmptyGuid(currentTlId) && !timeLayouts[currentTlId] && (
+                                                    <option value={currentTlId}>未知时间表 ({currentTlId.slice(0, 8)}...)</option>
+                                                )}
+                                            </Select>
+                                        </div>
+
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label className="form-label">所属课表群 (AssociatedGroup)</label>
+                                            <Select
+                                                value={toUpstreamGuidOrEmpty(currentPlan.AssociatedGroup)}
+                                                onChange={(_, d) => updatePlan({ AssociatedGroup: toUpstreamGuidOrEmpty(d.value) })}
+                                            >
+                                                <option value={EMPTY_GUID}>默认课表群 (000...000)</option>
+                                                {Object.entries(groups)
+                                                    .filter(([gid]) => !isEmptyGuid(gid))
+                                                    .map(([gid, g]) => (
+                                                        <option key={gid} value={gid}>{g.Name}</option>
+                                                    ))}
+                                            </Select>
+                                            <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                                                <Input
+                                                    size="small"
+                                                    value={newGroupName}
+                                                    onChange={(_, d) => setNewGroupName(d.value)}
+                                                    placeholder="新建课表群名称..."
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <Button size="small" onClick={addClassPlanGroup} disabled={!newGroupName.trim()}>
+                                                    + 新建群
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {!currentPlan.IsOverlay && (
+                                            <>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--stroke-divider)", paddingTop: 10 }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: 600, fontSize: 13 }}>自动启用此课表 (IsEnabled)</div>
+                                                        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>按下方时间规则自动加载该课表</div>
+                                                    </div>
+                                                    <Switch
+                                                        checked={currentPlan.IsEnabled !== false}
+                                                        onChange={(_, d) => updatePlan({ IsEnabled: d.checked })}
+                                                    />
+                                                </div>
+
+                                                {/* 原位复刻上游 TimeRuleEditControl: 星期 7 列胶囊 + 每 N 周的第 k 周 */}
+                                                {currentPlan.IsEnabled !== false && (
+                                                    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 10, borderRadius: 8, background: "rgba(0,0,0,0.2)", border: "1px solid var(--stroke-divider)" }}>
+                                                        <div style={{ fontSize: 12, fontWeight: 600 }}>触发规则 (TimeRule)</div>
+
+                                                        <div>
+                                                            <label className="form-label" style={{ fontSize: 11 }}>每周启用星期 (WeekDay)</label>
+                                                            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                                                                {WEEKDAY_LABELS.map((label, dayIdx) => {
+                                                                    const isDaySelected = (currentPlan.TimeRule?.WeekDay ?? 1) === dayIdx;
+                                                                    return (
+                                                                        <button
+                                                                            key={dayIdx}
+                                                                            type="button"
+                                                                            onClick={() => updateRule({ WeekDay: dayIdx })}
+                                                                            style={{
+                                                                                padding: "6px 0",
+                                                                                borderRadius: 6,
+                                                                                border: isDaySelected ? "1px solid var(--accent-primary)" : "1px solid var(--stroke-card)",
+                                                                                background: isDaySelected ? "var(--accent-primary)" : "transparent",
+                                                                                color: isDaySelected ? "#000" : "var(--text-primary)",
+                                                                                fontWeight: isDaySelected ? 700 : 500,
+                                                                                fontSize: 11.5,
+                                                                                cursor: "pointer",
+                                                                            }}
+                                                                        >
+                                                                            {label.replace("周", "")}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                                            <div>
+                                                                <label className="form-label" style={{ fontSize: 11 }}>轮换周期总周数</label>
+                                                                <Select
+                                                                    size="small"
+                                                                    value={String(currentPlan.TimeRule?.WeekCountDivTotal ?? 2)}
+                                                                    onChange={(_, d) => updateRule({ WeekCountDivTotal: parseInt(d.value, 10) })}
+                                                                >
+                                                                    <option value="2">每 2 周 (单双周)</option>
+                                                                    <option value="3">每 3 周</option>
+                                                                    <option value="4">每 4 周</option>
+                                                                    <option value="5">每 5 周</option>
+                                                                </Select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="form-label" style={{ fontSize: 11 }}>第几周生效</label>
+                                                                <Select
+                                                                    size="small"
+                                                                    value={String(currentPlan.TimeRule?.WeekCountDiv ?? 0)}
+                                                                    onChange={(_, d) => updateRule({ WeekCountDiv: parseInt(d.value, 10) })}
+                                                                >
+                                                                    <option value="0">每周均启用 (不轮换)</option>
+                                                                    {Array.from({ length: currentPlan.TimeRule?.WeekCountDivTotal ?? 2 }).map((_, idx) => (
+                                                                        <option key={idx + 1} value={String(idx + 1)}>
+                                                                            第 {idx + 1} 周 {(currentPlan.TimeRule?.WeekCountDivTotal ?? 2) === 2 ? (idx === 0 ? "(单周)" : "(双周)") : ""}
+                                                                        </option>
+                                                                    ))}
+                                                                </Select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>
+                                            课表 GUID: {selectedPlanId}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {showCreate && (
-                <Dialog open onOpenChange={() => setShowCreate(false)}>
-                    <DialogSurface>
-                        <DialogBody>
-                            <DialogTitle>新建课表文件</DialogTitle>
-                            <DialogContent>
-                                <div className="form-group">
-                                    <label className="form-label">文件名</label>
-                                    <Input
-                                        value={newFileName}
-                                        onChange={(_, d) => setNewFileName(d.value)}
-                                        placeholder="如 default"
-                                        style={{ width: "100%" }}
-                                    />
-                                </div>
-                            </DialogContent>
-                            <DialogActions>
-                                <Button appearance="secondary" onClick={() => setShowCreate(false)}>取消</Button>
-                                <Button appearance="primary" onClick={handleCreateFile} disabled={!newFileName.trim()}>创建</Button>
-                            </DialogActions>
-                        </DialogBody>
-                    </DialogSurface>
-                </Dialog>
-            )}
+            <Dialog open={showCreate} onOpenChange={(_, d) => setShowCreate(d.open)}>
+                <DialogSurface>
+                    <DialogBody>
+                        <DialogTitle>新建课表配置文件</DialogTitle>
+                        <DialogContent>
+                            <div className="form-group" style={{ marginTop: 8 }}>
+                                <label className="form-label">文件名称 (无需 .json 后缀)</label>
+                                <Input
+                                    value={newFileName}
+                                    onChange={(_, d) => setNewFileName(d.value)}
+                                    placeholder="例如: default"
+                                />
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button appearance="secondary" onClick={() => setShowCreate(false)}>取消</Button>
+                            <Button appearance="primary" onClick={handleCreate}>创建</Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
         </div>
     );
 }

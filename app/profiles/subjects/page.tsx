@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { data } from "@/lib/api";
 import { useAccount } from "@/lib/account-context";
 import type { Subject } from "@/lib/types";
+import { EMPTY_GUID, isEmptyGuid } from "@/lib/types";
 import {
     Button, Input, Switch, Spinner,
     MessageBar, MessageBarBody,
@@ -323,19 +324,44 @@ export default function SubjectsPage() {
                                 </div>
                             ) : (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                                    {Object.entries(subjects).map(([id, sub], idx, arr) => (
+                                    {Object.entries(subjects).map(([id, sub], idx, arr) => {
+                                        const isSpecialEmpty = isEmptyGuid(id);
+                                        return (
                                         <div
                                             key={id}
                                             className="card"
-                                            style={{ padding: 16, margin: 0, border: "1px solid var(--border-color)" }}
+                                            style={{
+                                                padding: 16,
+                                                margin: 0,
+                                                border: isSpecialEmpty ? "1px dashed var(--accent-primary)" : "1px solid var(--border-color)",
+                                                background: isSpecialEmpty ? "rgba(96,205,255,0.04)" : undefined,
+                                            }}
                                         >
+                                            {isSpecialEmpty && (
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                                                    <span style={{ fontSize: 12, color: "var(--accent-primary)", fontWeight: 600 }}>
+                                                        ⭕ 特殊“空 / 未设置”占位科目 ({EMPTY_GUID}) — 课表与时间表中未分配科目的课程格默认指向此项
+                                                    </span>
+                                                    <Button
+                                                        size="small"
+                                                        appearance="subtle"
+                                                        onClick={() => deleteSubject(id)}
+                                                    >
+                                                        从科目表移除此冗余项
+                                                    </Button>
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-12" style={{ flexWrap: "wrap" }}>
                                                 <div
                                                     style={{
                                                         width: 44,
                                                         height: 44,
                                                         borderRadius: 8,
-                                                        background: sub.IsOutDoor ? "var(--success-color)" : "var(--accent-color)",
+                                                        background: isSpecialEmpty
+                                                            ? "rgba(255,255,255,0.12)"
+                                                            : sub.IsOutDoor
+                                                                ? "var(--success-color)"
+                                                                : "var(--accent-color)",
                                                         color: "white",
                                                         display: "flex",
                                                         alignItems: "center",
@@ -345,12 +371,13 @@ export default function SubjectsPage() {
                                                         flexShrink: 0,
                                                     }}
                                                 >
-                                                    {sub.Initial || sub.Name?.[0] || "?"}
+                                                    {isSpecialEmpty ? "空" : (sub.Initial || sub.Name?.[0] || "?")}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 150 }}>
                                                     <label className="form-label">科目名称 (Name)</label>
                                                     <Input
                                                         value={sub.Name || ""}
+                                                        placeholder={isSpecialEmpty ? "（空 / 未设置）" : ""}
                                                         onChange={(_, d) => updateSubject(id, "Name", d.value)}
                                                         style={{ width: "100%" }}
                                                     />
@@ -359,6 +386,7 @@ export default function SubjectsPage() {
                                                     <label className="form-label">简称 (Initial)</label>
                                                     <Input
                                                         value={sub.Initial || ""}
+                                                        placeholder={isSpecialEmpty ? "空" : ""}
                                                         onChange={(_, d) => updateSubject(id, "Initial", d.value)}
                                                         style={{ width: "100%" }}
                                                     />
@@ -407,10 +435,11 @@ export default function SubjectsPage() {
                                                 </div>
                                             </div>
                                             <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>
-                                                科目 GUID: {id}
+                                                科目 GUID: {id} {isSpecialEmpty ? "（系统 Guid.Empty 空引用标识）" : ""}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
