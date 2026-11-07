@@ -18,6 +18,9 @@ import type {
     ConfigUploadItem, AuditLogItem, ManagementSettings,
     TicketDetail, TicketListResponse, TicketMessage,
     TicketCreateRequest, TicketStatus,
+    CertificateIssueRequest, CertificateIssueResponse,
+    LoginCertificateItem, CertificateRedeemResponse,
+    CertificateSessionResponse, CertificateRotateResponse,
 } from "./types";
 
 // ============================================================
@@ -40,7 +43,7 @@ const TOKEN_REFRESH_EXEMPT_PATHS = new Set([
     "/user/auth",
     "/user/apply",
 ]);
-const TOKEN_REFRESH_EXEMPT_PREFIXES = ["/user/2fa/", "/user/availability/"];
+const TOKEN_REFRESH_EXEMPT_PREFIXES = ["/user/2fa/", "/user/availability/", "/token/certificate/"];
 
 /** Management API 地址（认证、账户内操作） */
 export function getServerUrl(): string {
@@ -476,6 +479,24 @@ export const token = {
 
     redeem: (code: string) =>
         post<TokenResponse>("/token/redeem", { code }),
+
+    redeemCertificate: (code: string) =>
+        post<CertificateRedeemResponse>("/token/certificate/redeem", { code }),
+
+    sessionFromCertificate: (data: { cert_id: string; cert_secret: string; ttl?: number }) =>
+        post<CertificateSessionResponse>("/token/certificate/session", data),
+
+    rotateCertificate: (data: { cert_id: string; cert_secret: string }) =>
+        post<CertificateRotateResponse>("/token/certificate/rotate", data),
+
+    createQrLogin: () =>
+        post<import("./types").QrLoginCreateResponse>("/token/qr-login/create"),
+
+    pollQrLogin: (code: string) =>
+        get<import("./types").QrLoginPollResponse>(`/token/qr-login/poll?code=${encodeURIComponent(code)}`),
+
+    authorizeQrLogin: (data: { code: string; cert_id?: string; cert_secret?: string }) =>
+        post<{ authorized: boolean; user_id: string }>("/token/qr-login/authorize", data),
 };
 
 // ============================================================
@@ -569,6 +590,18 @@ export const userInfo = {
 
     changePassword: (data: PasswordChange) =>
         post<unknown>("/user/info/password/change", data),
+
+    issueCertificate: (data: CertificateIssueRequest) =>
+        post<CertificateIssueResponse>("/user/certificate/issue", data),
+
+    listCertificates: () =>
+        get<{ items: LoginCertificateItem[] }>("/user/certificate/list"),
+
+    revokeCertificate: (certId?: string, revokeAll = false) =>
+        post<{ status: string; message: string }>("/user/certificate/revoke", {
+            cert_id: certId,
+            revoke_all: revokeAll,
+        }),
 };
 
 // ============================================================

@@ -224,6 +224,76 @@ export interface TotpRecoverRequest {
 }
 
 // ============================================================
+// 登录安全证书 (Login Security Certificate)
+// ============================================================
+
+export interface CertificateIssueRequest {
+    password: string;
+    totp_code?: string;
+    recovery_code?: string;
+    device_name?: string;
+}
+
+export interface CertificateIssueResponse {
+    code: string;
+    deeplink: string;
+    expires_in: number;
+    cert_id: string;
+    family_id: string;
+    generation: number;
+    max_generation: number;
+    issued_at: number;
+    expires_at: number;
+}
+
+export interface LoginCertificateItem {
+    cert_id: string;
+    family_id: string;
+    generation: number;
+    max_generation: number;
+    issued_at: number;
+    expires_at: number;
+    last_used_at: number;
+    redeemed: boolean;
+    device_name: string;
+    can_rotate: boolean;
+}
+
+export interface LoginCertificateFull {
+    cert_id: string;
+    family_id: string;
+    user_id: string;
+    cert_secret: string;
+    generation: number;
+    max_generation: number;
+    issued_at: number;
+    expires_at: number;
+    device_name: string;
+}
+
+export interface CertificateRedeemResponse {
+    certificate: LoginCertificateFull;
+    token: string;
+    expires_in: number;
+}
+
+export interface CertificateSessionResponse {
+    token: string;
+    expires_in: number;
+    cert_id: string;
+    generation: number;
+    max_generation: number;
+    cert_expires_at: number;
+    can_rotate: boolean;
+}
+
+export interface CertificateRotateResponse {
+    certificate: LoginCertificateFull;
+    token: string;
+    expires_in: number;
+}
+
+// ============================================================
 // 客户端档案分配配置 (7 大资源)
 // ============================================================
 
@@ -1335,3 +1405,22 @@ export const TICKET_CATEGORY_LABELS: Record<TicketCategory, string> = {
     feature: "功能建议",
     other: "其他",
 };
+
+// ============================================================
+// 反向移动端扫码登录网页 (Mobile -> Web QR Login)
+// ============================================================
+
+export interface QrLoginCreateResponse {
+    code: string;
+    deeplink: string;
+    expires_in: number;
+    expires_at: number;
+}
+
+export interface QrLoginPollResponse {
+    status: "pending" | "authorized" | "expired";
+    token?: string;
+    user_id?: string;
+    expires_at?: number;
+}
+

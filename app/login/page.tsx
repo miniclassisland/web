@@ -3,16 +3,18 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { auth as authApi, twoFA, ApiError } from "@/lib/api";
+import { auth as authApi, twoFA, token as tokenApi, ApiError } from "@/lib/api";
 import {
     Button, Input, Label, Spinner,
     MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { QrCodeRegular, ArrowSyncRegular } from "@fluentui/react-icons";
+import QRCode from "qrcode";
 import Link from "next/link";
 import SponsorBanner from "@/components/SponsorBanner";
 import TurnstileWidget from "@/components/TurnstileWidget";
 
-type AuthStep = "email" | "login" | "register" | "2fa";
+type AuthStep = "email" | "login" | "register" | "2fa" | "qr";
 
 export default function LoginPage() {
     const { login, register, isAuthenticated, pending2FA, complete2FA, cancel2FA, loading: contextLoading, error: contextError, clearError, registerSuccess } = useAuth();
@@ -37,6 +39,61 @@ export default function LoginPage() {
     const [forceResetTotp, setForceResetTotp] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState("");
     const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+
+    const [qrCodeStr, setQrCodeStr] = useState("");
+    const [qrDeeplink, setQrDeeplink] = useState("");
+    const [qrDataUrl, setQrDataUrl] = useState("");
+    const [qrExpiresAt, setQrExpiresAt] = useState(0);
+    const [qrRemainingSec, setQrRemainingSec] = useState(0);
+    const [qrLoading, setQrLoading] = useState(false);
+
+    async function startQrLoginSession() {
+        setLocalError(null);
+        clearError();
+        setQrLoading(true);
+        try {
+            const res = await tokenApi.createQrLogin();
+            setQrCodeStr(res.code);
+            setQrDeeplink(res.deeplink);
+            setQrExpiresAt(res.expires_at);
+            setQrRemainingSec(res.expires_in);
+            const dataUrl = await QRCode.toDataURL(res.deeplink, {
+                width: 220,
+                margin: 1,
+            });
+            setQrDataUrl(dataUrl);
+            setStep("qr");
+        } catch (err: unknown) {
+            setLocalError(err instanceof Error ? err.message : "创建扫码登录会话失败");
+        } finally {
+            setQrLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        if (step !== "qr" || !qrCodeStr) return;
+        const timer = setInterval(async () => {
+            const rem = Math.max(0, qrExpiresAt - Math.floor(Date.now() / 1000));
+            setQrRemainingSec(rem);
+            if (rem <= 0) {
+                clearInterval(timer);
+                return;
+            }
+            try {
+                const p = await tokenApi.pollQrLogin(qrCodeStr);
+                if (p.status === "authorized" && p.token) {
+                    clearInterval(timer);
+                    complete2FA(p.token);
+                } else if (p.status === "expired") {
+                    setQrRemainingSec(0);
+                    clearInterval(timer);
+                }
+            } catch {
+                // ignore transient network errors during poll
+            }
+        }, 2000);
+        return () => clearInterval(timer);
+    }, [step, qrCodeStr, qrExpiresAt, complete2FA]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -227,6 +284,7 @@ export default function LoginPage() {
                     {step === "login" && "欢迎回来，请登录"}
                     {step === "register" && "创建一个新账户"}
                     {step === "2fa" && "安全验证"}
+                    {step === "qr" && "使用移动端 App 扫码登录"}
                 </div>
 
                 {sessionExpired && (
@@ -293,7 +351,63 @@ export default function LoginPage() {
                                 >
                                     {loading ? <Spinner size="tiny" /> : "继续"}
                                 </Button>
+                                <Button
+                                    appearance="secondary"
+                                    type="button"
+                                    icon={<QrCodeRegular />}
+                                    disabled={loading || qrLoading}
+                                    style={{ width: "100%", marginTop: 10 }}
+                                    onClick={startQrLoginSession}
+                                >
+                                    {qrLoading ? "正在生成二维码..." : "移动端扫码登录"}
+                                </Button>
                             </form>
+                        )}
+
+                        {step === "qr" && (
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                                {qrDataUrl && qrRemainingSec > 0 ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={qrDataUrl}
+                                        alt="扫码登录二维码"
+                                        style={{ width: 200, height: 200, borderRadius: 8, border: "1px solid var(--border-color)", padding: 8, background: "#fff" }}
+                                    />
+                                ) : (
+                                    <div style={{ width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "1px dashed var(--border-color)", color: "var(--text-secondary)", fontSize: 13 }}>
+                                        二维码已过期
+                                    </div>
+                                )}
+                                <div style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center" }}>
+                                    {qrRemainingSec > 0
+                                        ? `请使用已登录或已绑定安全证书的 Android / HarmonyOS 客户端扫描二维码确认登录（有效期剩余 ${qrRemainingSec} 秒）`
+                                        : "当前登录二维码已过期，请点击下方按钮刷新"}
+                                </div>
+                                {qrDeeplink && qrRemainingSec > 0 && (
+                                    <Input
+                                        readOnly
+                                        value={qrDeeplink}
+                                        style={{ width: "100%", fontFamily: "monospace", fontSize: 11 }}
+                                    />
+                                )}
+                                <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 4 }}>
+                                    <Button
+                                        appearance="secondary"
+                                        icon={<ArrowSyncRegular />}
+                                        style={{ flex: 1 }}
+                                        onClick={startQrLoginSession}
+                                    >
+                                        刷新二维码
+                                    </Button>
+                                    <Button
+                                        appearance="subtle"
+                                        style={{ flex: 1 }}
+                                        onClick={resetFlow}
+                                    >
+                                        返回邮箱登录
+                                    </Button>
+                                </div>
+                            </div>
                         )}
 
                         {step === "login" && (
