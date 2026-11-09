@@ -21,6 +21,7 @@ import type {
     CertificateIssueRequest, CertificateIssueResponse,
     LoginCertificateItem, CertificateRedeemResponse,
     CertificateSessionResponse, CertificateRotateResponse,
+    ExtendCommandDispatchResult, ExtendCommandBroadcastResult,
 } from "./types";
 
 // ============================================================
@@ -905,6 +906,35 @@ export const clients = {
 
     getConfigUploadDetail: (accountId: string, requestGuid: string) =>
         get<ConfigUploadItem>(`${acctPath(accountId)}/config-upload/${encodeURIComponent(requestGuid)}`),
+
+    sendExtendCommand: (
+        accountId: string,
+        clientId: string,
+        action: string,
+        payload?: Record<string, unknown> | null,
+        ttlSeconds = 120,
+    ) =>
+        post<ExtendCommandDispatchResult>(
+            `${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/extend`,
+            { action, payload: payload || null, ttl_seconds: ttlSeconds },
+        ),
+
+    broadcastExtendCommand: (
+        accountId: string,
+        action: string,
+        payload?: Record<string, unknown> | null,
+        clientUids?: string[],
+        ttlSeconds = 120,
+    ) =>
+        post<ExtendCommandBroadcastResult>(
+            `${acctPath(accountId)}/client/broadcast/extend`,
+            {
+                action,
+                payload: payload || null,
+                client_uids: clientUids || null,
+                ttl_seconds: ttlSeconds,
+            },
+        ),
 };
 
 // ============================================================

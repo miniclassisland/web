@@ -31,7 +31,7 @@ import {
 
 type DisableMode = "pwd_totp" | "pwd_recovery" | "totp_recovery" | "two_recovery";
 
-function QRCodeImage({ text }: { text: string }) {
+function QRCodeImage({ text, onCopy }: { text: string; onCopy?: () => void }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -55,15 +55,22 @@ function QRCodeImage({ text }: { text: string }) {
     }, [text]);
 
     return (
-        <div style={{ display: "flex", justifyContent: "center", margin: "16px 0" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "16px 0", gap: 6 }}>
             <canvas
                 ref={canvasRef}
+                title="点击复制二维码链接"
+                onClick={() => {
+                    navigator.clipboard.writeText(text);
+                    onCopy?.();
+                }}
                 style={{
                     borderRadius: 8,
                     border: "1px solid var(--border-color)",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                    cursor: "pointer",
                 }}
             />
+            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>点击二维码可复制对应链接</span>
         </div>
     );
 }
@@ -553,7 +560,10 @@ export default function SecurityPage() {
                     <div>
                         <div className="settings-section">
                             <div className="settings-section-title">1. 扫描二维码或手动输入密钥</div>
-                            <QRCodeImage text={setupData.uri} />
+                            <QRCodeImage
+                                text={setupData.uri}
+                                onCopy={() => setMsg({ type: "success", text: "验证链接已复制到剪贴板" })}
+                            />
                             <div className="form-group">
                                 <label className="form-label">验证链接</label>
                                 <Input
@@ -830,7 +840,10 @@ export default function SecurityPage() {
                                         剩余 {Math.floor(certCountdown / 60)}:{String(certCountdown % 60).padStart(2, "0")}
                                     </span>
                                 </div>
-                                <QRCodeImage text={issuedCert.deeplink} />
+                                <QRCodeImage
+                                    text={issuedCert.deeplink}
+                                    onCopy={() => setMsg({ type: "success", text: "唤醒链接已复制到剪贴板" })}
+                                />
                                 <div className="form-group" style={{ marginBottom: 10 }}>
                                     <label className="form-label">兑换唤醒链接</label>
                                     <div className="flex items-center gap-8">

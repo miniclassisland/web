@@ -41,19 +41,23 @@ export default function LoginPage() {
     const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
     const [qrCodeStr, setQrCodeStr] = useState("");
+    const [qrDeeplink, setQrDeeplink] = useState("");
     const [qrDataUrl, setQrDataUrl] = useState("");
     const [qrLocalExpiresAtMs, setQrLocalExpiresAtMs] = useState(0);
     const [qrRemainingSec, setQrRemainingSec] = useState(0);
     const [qrLoading, setQrLoading] = useState(false);
+    const [qrCopied, setQrCopied] = useState(false);
 
     async function startQrLoginSession() {
         setLocalError(null);
         clearError();
         setQrLoading(true);
+        setQrCopied(false);
         try {
             const res = await tokenApi.createQrLogin();
             const ttlSec = Math.max(1, Number(res.expires_in) || 300);
             setQrCodeStr(res.code);
+            setQrDeeplink(res.deeplink);
             setQrLocalExpiresAtMs(Date.now() + ttlSec * 1000);
             setQrRemainingSec(ttlSec);
             const dataUrl = await QRCode.toDataURL(res.deeplink, {
@@ -67,6 +71,12 @@ export default function LoginPage() {
         } finally {
             setQrLoading(false);
         }
+    }
+
+    function handleCopyQrDeeplink() {
+        if (!qrDeeplink || qrRemainingSec <= 0) return;
+        navigator.clipboard.writeText(qrDeeplink);
+        setQrCopied(true);
     }
 
     useEffect(() => {
@@ -376,12 +386,19 @@ export default function LoginPage() {
 
                         {step === "qr" && (
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                                {qrCopied && (
+                                    <MessageBar intent="success" style={{ width: "100%" }}>
+                                        <MessageBarBody>二维码登录链接已复制到剪贴板</MessageBarBody>
+                                    </MessageBar>
+                                )}
                                 {qrDataUrl && qrRemainingSec > 0 ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={qrDataUrl}
                                         alt="扫码登录二维码"
-                                        style={{ width: 200, height: 200, borderRadius: 8, border: "1px solid var(--border-color)", padding: 8, background: "#fff" }}
+                                        title="点击复制二维码登录链接"
+                                        onClick={handleCopyQrDeeplink}
+                                        style={{ width: 200, height: 200, borderRadius: 8, border: "1px solid var(--border-color)", padding: 8, background: "#fff", cursor: "pointer" }}
                                     />
                                 ) : (
                                     <div style={{ width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "1px dashed var(--border-color)", color: "var(--text-secondary)", fontSize: 13 }}>
@@ -390,7 +407,7 @@ export default function LoginPage() {
                                 )}
                                 <div style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center" }}>
                                     {qrRemainingSec > 0
-                                        ? `二维码将在 ${qrRemainingSec >= 60 ? `${Math.ceil(qrRemainingSec / 60)} 分钟` : `${qrRemainingSec} 秒`}后过期。`
+                                        ? `点击二维码可复制登录链接，二维码将在 ${qrRemainingSec >= 60 ? `${Math.ceil(qrRemainingSec / 60)} 分钟` : `${qrRemainingSec} 秒`}后过期。`
                                         : "二维码已过期。"}
                                 </div>
                                 <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 4 }}>
