@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Dismiss16Regular } from "@fluentui/react-icons";
 
 const DISMISS_STORAGE_KEY = "miniclassisland_sponsor_banner_dismissed_until";
-/** 横幅关闭后的静默有效期：24 小时（过期后自动重新出现） */
 const DISMISS_TTL_MS = 24 * 60 * 60 * 1000;
 
 export default function SponsorBanner({
@@ -39,7 +38,7 @@ export default function SponsorBanner({
             return undefined;
         };
         return checkVisibility();
-    }, [dismissible]);
+    }, [variant, dismissible]);
 
     function handleDismiss() {
         setVisible(false);
@@ -52,17 +51,35 @@ export default function SponsorBanner({
 
     if (!visible) return null;
 
-    const className = variant === "card" ? "login-sponsor-banner" : "sponsor-banner";
+    if (variant === "card") {
+        return (
+            <div className="login-sponsor-banner">
+                <span>感谢智教联盟对本项目的赞助和支持</span>
+                {dismissible && (
+                    <button
+                        type="button"
+                        className="sponsor-banner-close"
+                        onClick={handleDismiss}
+                        aria-label="关闭赞助横幅"
+                        title="关闭"
+                    >
+                        <Dismiss16Regular />
+                    </button>
+                )}
+            </div>
+        );
+    }
 
     return (
-        <div className={className} role="region" aria-label="赞助致谢">
+        <div className="sponsor-banner">
             <span className="sponsor-banner-text">感谢智教联盟对本项目的赞助和支持</span>
             {dismissible && (
                 <button
                     type="button"
                     className="sponsor-banner-close"
                     onClick={handleDismiss}
-                    aria-label="关闭赞助横幅（24小时内不再提示）"
+                    aria-label="关闭赞助横幅"
+                    title="关闭"
                 >
                     <Dismiss16Regular />
                 </button>

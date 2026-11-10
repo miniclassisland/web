@@ -14,10 +14,9 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    MessageBar,
-    MessageBarBody,
     Badge,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { Select } from "./CustomSelect";
 import {
     PersonAccounts24Regular,
@@ -553,7 +552,7 @@ export default function OnboardingWizard({
                                     <Input
                                         value={acctName}
                                         onChange={(_, d) => setAcctName(d.value)}
-                                        placeholder="例如：第一中学电教中心"
+                                        placeholder="输入组织或学校名称"
                                         style={{ width: "100%" }}
                                     />
                                 </div>
@@ -584,7 +583,7 @@ export default function OnboardingWizard({
                                         <Input
                                             value={profileGroupName}
                                             onChange={(_, d) => setProfileGroupName(d.value)}
-                                            placeholder="default"
+                                            placeholder="输入配置组名称"
                                             style={{ width: "100%" }}
                                         />
                                         <div className="form-hint">默认为 default（所有接入终端默认拉取的配置组）</div>
@@ -742,7 +741,7 @@ export default function OnboardingWizard({
                                             type="password"
                                             value={userPassword}
                                             onChange={(_, d) => setUserPassword(d.value)}
-                                            placeholder="用于值日生/教师日常换课或调整设置（留空不设密码）"
+                                            placeholder="留空则不设日常管理密码"
                                             style={{ width: "100%" }}
                                         />
                                     </div>
@@ -752,7 +751,7 @@ export default function OnboardingWizard({
                                             type="password"
                                             value={adminPassword}
                                             onChange={(_, d) => setAdminPassword(d.value)}
-                                            placeholder="用于退出集控或修改核心策略（留空不设密码）"
+                                            placeholder="留空则不设核心策略管理密码"
                                             style={{ width: "100%" }}
                                         />
                                     </div>

@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { auth as authApi, twoFA, token as tokenApi, ApiError } from "@/lib/api";
 import {
     Button, Input, Label, Spinner,
-    MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { QrCodeRegular, ArrowSyncRegular } from "@fluentui/react-icons";
 import QRCode from "qrcode";
 import Link from "next/link";
@@ -343,7 +343,7 @@ export default function LoginPage() {
                                         type="email"
                                         value={email}
                                         onChange={(_, d) => setEmail(d.value)}
-                                        placeholder="user@example.com"
+                                        placeholder="输入邮箱地址"
                                         style={{ width: "100%" }}
                                         autoComplete="username email"
                                         autoFocus
@@ -499,7 +499,7 @@ export default function LoginPage() {
                                         id="reg-username"
                                         value={username}
                                         onChange={(_, d) => setUsername(d.value)}
-                                        placeholder="留空则随机生成，如 user_1234abcd"
+                                        placeholder="留空自动生成随机用户名"
                                         style={{ width: "100%" }}
                                         autoFocus
                                     />
@@ -617,11 +617,6 @@ export default function LoginPage() {
                         )}
                     </div>
                 )}
-
-                <div style={{ marginTop: 32, paddingTop: 16, borderTop: "1px solid var(--border-color)", textAlign: "center", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                    <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
-                    <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
-                </div>
             </div>
             <SponsorBanner variant="card" dismissible={false} />
         </div>

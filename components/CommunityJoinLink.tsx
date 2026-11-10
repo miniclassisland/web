@@ -8,10 +8,9 @@ import {
     DialogBody,
     DialogTitle,
     DialogContent,
-    MessageBar,
-    MessageBarBody,
     Spinner,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { Checkmark16Regular, Copy16Regular } from "@fluentui/react-icons";
 import TurnstileWidget from "./TurnstileWidget";
 import { community } from "@/lib/api";
@@ -117,16 +116,9 @@ export default function CommunityJoinLink() {
             <button
                 type="button"
                 onClick={openDialog}
-                style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    color: "var(--accent-color)",
-                    fontSize: 11,
-                    cursor: "pointer",
-                }}
+                className="sidebar-footer-link"
             >
-                加入交流群
+                加入社区
             </button>
 
             <Dialog

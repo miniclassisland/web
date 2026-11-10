@@ -16,10 +16,15 @@ const STORAGE_KEY = "miniclassisland_current_account_id";
 
 export function isUserCenterPath(pathname: string | null): boolean {
     if (!pathname) return false;
+    const clean = pathname.replace(/\/+$/, "") || "/";
     return (
-        pathname === "/" ||
-        pathname.startsWith("/security") ||
-        pathname.startsWith("/tickets")
+        clean === "/" ||
+        clean === "/profile" ||
+        clean.startsWith("/profile/") ||
+        clean === "/security" ||
+        clean.startsWith("/security/") ||
+        clean === "/tickets" ||
+        clean.startsWith("/tickets/")
     );
 }
 
@@ -50,7 +55,13 @@ export function AccountProvider({
     const pathname = usePathname();
     const [accountList, setAccountList] = useState<AccountOut[]>([]);
     const [selectedAccount, setSelectedAccount] = useState<AccountOut | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState<string>(() => {
+        if (typeof window !== "undefined") {
+            return localStorage.getItem(STORAGE_KEY) || "";
+        }
+        return "";
+    });
+    const [loading, setLoading] = useState(true);
 
     const refreshAccounts = useCallback(async () => {
         if (!isAuthenticated) return;
@@ -59,32 +70,29 @@ export function AccountProvider({
             const list = await accountsApi.list();
             setAccountList(list);
 
-            // 恢复上次选择或自动选中唯一账户（仅作为进入账户中心时的默认目标）
             const savedId = typeof window !== "undefined"
                 ? localStorage.getItem(STORAGE_KEY)
                 : null;
             const saved = savedId ? list.find(a => a.id === savedId) : null;
             if (saved) {
                 setSelectedAccount(saved);
-            } else if (list.length === 1) {
+                setSelectedAccountId(saved.id);
+            } else if (list.length > 0) {
                 setSelectedAccount(list[0]);
+                setSelectedAccountId(list[0].id);
                 if (typeof window !== "undefined") {
                     localStorage.setItem(STORAGE_KEY, list[0].id);
                 }
-            } else if (list.length > 0 && !selectedAccount) {
-                setSelectedAccount(list[0]);
-                if (typeof window !== "undefined") {
-                    localStorage.setItem(STORAGE_KEY, list[0].id);
-                }
-            } else if (list.length === 0) {
+            } else {
                 setSelectedAccount(null);
+                setSelectedAccountId("");
             }
         } catch {
             /* 加载失败保持现状 */
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -92,27 +100,33 @@ export function AccountProvider({
         } else {
             setAccountList([]);
             setSelectedAccount(null);
+            setSelectedAccountId("");
+            setLoading(false);
         }
     }, [isAuthenticated, refreshAccounts]);
 
     const switchAccount = useCallback((id: string) => {
+        if (!id) return;
+        setSelectedAccountId(id);
+        if (typeof window !== "undefined") {
+            localStorage.setItem(STORAGE_KEY, id);
+        }
         const target = accountList.find(a => a.id === id);
         if (target) {
             setSelectedAccount(target);
-            if (typeof window !== "undefined") {
-                localStorage.setItem(STORAGE_KEY, id);
-            }
         }
     }, [accountList]);
 
     const inUserCenter = isUserCenterPath(pathname);
-    const effectiveAccount = inUserCenter ? null : selectedAccount;
+    const resolvedAccount = selectedAccount || (selectedAccountId ? accountList.find(a => a.id === selectedAccountId) || null : null);
+    const effectiveAccount = inUserCenter ? null : resolvedAccount;
+    const effectiveAccountId = inUserCenter ? "" : (effectiveAccount?.id || selectedAccountId || "");
 
     return (
         <AccountContext.Provider value={{
             accounts: accountList,
             currentAccount: effectiveAccount,
-            accountId: effectiveAccount?.id || "",
+            accountId: effectiveAccountId,
             loading,
             switchAccount,
             refreshAccounts,

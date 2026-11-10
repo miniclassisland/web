@@ -7,9 +7,10 @@ import type { AccountOut, SlugUpdate, QuotaOut, RegistrationMode } from "@/lib/t
 import { REGISTRATION_MODE_LABELS, QUOTA_META } from "@/lib/types";
 import {
     Button, Input, Spinner,
-    MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { Select } from "@/components/CustomSelect";
+import { ConfirmPopover } from "@/components/ConfirmPopover";
 import {
     Edit24Regular, Delete24Regular, ArrowClockwise24Regular, Copy24Regular, ArrowUpload24Regular,
 } from "@fluentui/react-icons";
@@ -105,7 +106,6 @@ export default function AccountsPage() {
 
     async function handleRegenerateApiKey() {
         if (!accountId) return;
-        if (!confirm("确定要重置 API Key 吗？旧 API Key 将立即失效。")) return;
         setSaving(true);
         try {
             const updated = await accounts.regenerateApiKey(accountId);
@@ -224,9 +224,8 @@ export default function AccountsPage() {
                                     <Input
                                         value={accountInfo.id}
                                         readOnly
-                                        disabled
                                         size="small"
-                                        style={{ minWidth: 280, fontFamily: "var(--font-mono)" }}
+                                        style={{ minWidth: 320, fontFamily: "var(--font-mono)" }}
                                     />
                                     <Button
                                         appearance="subtle"
@@ -253,6 +252,7 @@ export default function AccountsPage() {
                                             onChange={(_, d) => setNewSlug(d.value)}
                                             placeholder="3-64 位小写字母/数字/连字符/下划线"
                                             size="small"
+                                            style={{ minWidth: 320, fontFamily: "var(--font-mono)" }}
                                         />
                                         <Button appearance="primary" size="small" type="submit" disabled={saving || !newSlug.trim()}>
                                             保存
@@ -262,8 +262,13 @@ export default function AccountsPage() {
                                         </Button>
                                     </form>
                                 ) : (
-                                    <span className="flex items-center gap-8">
-                                        <span className="account-card-slug">{accountInfo.slug}</span>
+                                    <span className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                                        <Input
+                                            value={accountInfo.slug}
+                                            readOnly
+                                            size="small"
+                                            style={{ minWidth: 320, fontFamily: "var(--font-mono)" }}
+                                        />
                                         <Button
                                             appearance="subtle"
                                             size="small"
@@ -273,7 +278,7 @@ export default function AccountsPage() {
                                                 setEditingSlug(true);
                                             }}
                                         >
-                                            修改 Slug
+                                            修改标识
                                         </Button>
                                     </span>
                                 )}
@@ -282,8 +287,13 @@ export default function AccountsPage() {
 
                         <div className="detail-row">
                             <div className="detail-label">API Key</div>
-                            <div className="detail-value flex items-center gap-8">
-                                <span className="api-key-cell">{accountInfo.api_key}</span>
+                            <div className="detail-value flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                                <Input
+                                    value={accountInfo.api_key}
+                                    readOnly
+                                    size="small"
+                                    style={{ minWidth: 320, fontFamily: "var(--font-mono)" }}
+                                />
                                 <Button
                                     appearance="subtle"
                                     size="small"
@@ -295,15 +305,21 @@ export default function AccountsPage() {
                                 >
                                     复制
                                 </Button>
-                                <Button
-                                    appearance="subtle"
-                                    size="small"
-                                    icon={<ArrowClockwise24Regular />}
-                                    onClick={handleRegenerateApiKey}
+                                <ConfirmPopover
+                                    message="确定要重置 API Key 吗？旧 API Key 将立即失效。"
+                                    onConfirm={handleRegenerateApiKey}
+                                    confirmText="重新生成"
                                     disabled={saving}
                                 >
-                                    重新生成
-                                </Button>
+                                    <Button
+                                        appearance="subtle"
+                                        size="small"
+                                        icon={<ArrowClockwise24Regular />}
+                                        disabled={saving}
+                                    >
+                                        重新生成
+                                    </Button>
+                                </ConfirmPopover>
                             </div>
                         </div>
 
@@ -397,7 +413,7 @@ export default function AccountsPage() {
                         <Input
                             value={deleteConfirm}
                             onChange={(_, d) => setDeleteConfirm(d.value)}
-                            placeholder={accountInfo.name}
+                            placeholder="输入当前账户名称以确认"
                         />
                         <Button
                             appearance="primary"

@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { twoFA, userInfo, invitations } from "@/lib/api";
+import { twoFA, userInfo } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useAccount } from "@/lib/account-context";
-import { useRouter } from "next/navigation";
 import type {
     TotpEnableResponse,
     TotpDisableRequest,
@@ -13,15 +11,13 @@ import type {
 } from "@/lib/types";
 import {
     Button, Input, Spinner,
-    MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { Select } from "@/components/CustomSelect";
 import QRCode from "qrcode";
 import {
     ShieldKeyhole24Regular,
-    Person24Regular,
     Key24Regular,
-    PeopleAdd24Regular,
     Copy24Regular,
     Certificate24Regular,
     QrCode24Regular,
@@ -76,9 +72,7 @@ function QRCodeImage({ text, onCopy }: { text: string; onCopy?: () => void }) {
 }
 
 export default function SecurityPage() {
-    const { user, isSuperAdmin, refreshUser } = useAuth();
-    const { refreshAccounts, switchAccount } = useAccount();
-    const router = useRouter();
+    const { user, refreshUser } = useAuth();
     const [step, setStep] = useState<"idle" | "setup" | "confirm" | "disable">("idle");
     const [setupData, setSetupData] = useState<TotpEnableResponse | null>(null);
     const [confirmCode, setConfirmCode] = useState("");
@@ -91,16 +85,9 @@ export default function SecurityPage() {
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
 
-    // 个人资料与密码修改
-    const [displayName, setDisplayName] = useState("");
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
+    // 密码修改
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
-
-    // 使用邀请码加入账户
-    const [inviteCode, setInviteCode] = useState("");
-    const [joining, setJoining] = useState(false);
 
     // 登录安全证书签发与管理
     const [certPassword, setCertPassword] = useState("");
@@ -197,32 +184,6 @@ export default function SecurityPage() {
         }
     }
 
-    async function handleJoinByCode(e: React.FormEvent) {
-        e.preventDefault();
-        if (!inviteCode.trim()) return;
-        setJoining(true);
-        setMsg(null);
-        try {
-            const res = await invitations.accept(inviteCode.trim());
-            await refreshAccounts();
-            setInviteCode("");
-            switchAccount(res.account_id);
-            router.push("/dashboard");
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "加入账户失败" });
-        } finally {
-            setJoining(false);
-        }
-    }
-
-    useEffect(() => {
-        if (user) {
-            setDisplayName(user.display_name || "");
-            setUsername(user.username || "");
-            setEmail(user.email || "");
-        }
-    }, [user]);
-
     useEffect(() => {
         if (typeof window === "undefined" || resetPromptTriggered) return;
         const params = new URLSearchParams(window.location.search);
@@ -254,28 +215,6 @@ export default function SecurityPage() {
             })();
         }
     }, [resetPromptTriggered]);
-
-    async function handleSaveProfile(e: React.FormEvent) {
-        e.preventDefault();
-        setLoading(true);
-        setMsg(null);
-        try {
-            if (displayName.trim() && displayName !== user?.display_name) {
-                await userInfo.changeDisplayName({ display_name: displayName.trim() });
-            }
-            if (username.trim() && username !== user?.username) {
-                await userInfo.changeUsername({ username: username.trim() });
-            }
-            if (isSuperAdmin && email.trim() && email !== user?.email) {
-                await userInfo.changeEmail({ email: email.trim() });
-            }
-            await refreshUser();
-            setMsg({ type: "success", text: "个人资料已更新" });
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "更新失败" });
-        }
-        setLoading(false);
-    }
 
     async function handleChangePassword(e: React.FormEvent) {
         e.preventDefault();
@@ -377,8 +316,8 @@ export default function SecurityPage() {
         <div className="fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">个人资料与安全设置</h1>
-                    <p className="page-subtitle">管理您的个人账号信息、登录密码与两步验证</p>
+                    <h1 className="page-title">安全设置</h1>
+                    <p className="page-subtitle">管理您的登录密码、两步验证与移动端登录安全证书</p>
                 </div>
             </div>
 
@@ -388,151 +327,48 @@ export default function SecurityPage() {
                 </MessageBar>
             )}
 
-            <div className="grid-2">
-                {/* 个人资料卡片 */}
-                <div className="card">
-                    <form onSubmit={handleSaveProfile}>
-                        <div className="card-title flex items-center justify-between gap-8">
-                            <span className="flex items-center gap-8">
-                                <Person24Regular />
-                                个人资料
-                            </span>
-                            {user?.role_code !== "pending" && (
-                                <Button appearance="primary" size="small" type="submit" disabled={loading}>
-                                    保存资料修改
-                                </Button>
-                            )}
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">用户唯一标识</label>
-                            <div className="flex items-center gap-8">
-                                <Input
-                                    value={user?.id || ""}
-                                    readOnly
-                                    disabled
-                                    style={{ flex: 1, fontFamily: "var(--font-mono)" }}
-                                />
-                                {user?.id && (
-                                    <Button
-                                        appearance="subtle"
-                                        size="small"
-                                        type="button"
-                                        icon={<Copy24Regular />}
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(user.id);
-                                            setMsg({ type: "success", text: "用户唯一标识已复制到剪贴板" });
-                                        }}
-                                    >
-                                        复制
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">显示名称</label>
-                            <Input
-                                value={displayName}
-                                onChange={(_, d) => setDisplayName(d.value)}
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">用户名</label>
-                            <Input
-                                value={username}
-                                onChange={(_, d) => setUsername(d.value)}
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">绑定邮箱</label>
-                            <Input
-                                type="email"
-                                value={email}
-                                readOnly={!isSuperAdmin}
-                                disabled={!isSuperAdmin}
-                                onChange={(_, d) => {
-                                    if (isSuperAdmin) setEmail(d.value);
-                                }}
-                                style={{ width: "100%" }}
-                            />
-                            {!isSuperAdmin && (
-                                <div className="form-hint">
-                                    绑定邮箱不支持自行修改，如需变更请联系超级管理员
-                                </div>
-                            )}
-                        </div>
-                    </form>
-                </div>
-
-                {/* 修改密码卡片 */}
-                <div className="card">
-                    <form onSubmit={handleChangePassword}>
-                        <div className="card-title flex items-center justify-between gap-8">
-                            <span className="flex items-center gap-8">
-                                <Key24Regular />
-                                修改登录密码
-                            </span>
-                            <Button
-                                appearance="primary"
-                                size="small"
-                                type="submit"
-                                disabled={loading || !oldPassword || newPassword.length < 12}
-                            >
-                                更新密码
-                            </Button>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">当前密码</label>
-                            <Input
-                                type="password"
-                                value={oldPassword}
-                                onChange={(_, d) => setOldPassword(d.value)}
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">新密码</label>
-                            <Input
-                                type="password"
-                                value={newPassword}
-                                onChange={(_, d) => setNewPassword(d.value)}
-                                placeholder="至少 12 个字符"
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {/* 使用邀请码加入账户卡片 */}
-            <div className="card">
-                <div className="card-title flex items-center gap-8">
-                    <PeopleAdd24Regular />
-                    使用邀请码加入集控账户
-                </div>
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 12 }}>
-                    如果您收到了其他组织或学校的集控账户邀请码，可在此输入邀请码加入该账户中心。
-                </p>
-                <form onSubmit={handleJoinByCode} className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
-                    <Input
-                        value={inviteCode}
-                        onChange={(_, d) => setInviteCode(d.value)}
-                        placeholder="请输入邀请码..."
-                        style={{ width: 320, maxWidth: "100%" }}
-                    />
-                    <Button
-                        appearance="primary"
-                        type="submit"
-                        disabled={joining || !inviteCode.trim()}
-                    >
-                        {joining ? <Spinner size="tiny" /> : "加入账户"}
-                    </Button>
+            {/* 修改密码卡片 */}
+            <div className="card" style={{ width: "100%" }}>
+                <form onSubmit={handleChangePassword}>
+                    <div className="card-title flex items-center justify-between gap-8">
+                        <span className="flex items-center gap-8">
+                            <Key24Regular />
+                            修改登录密码
+                        </span>
+                        <Button
+                            appearance="primary"
+                            size="small"
+                            type="submit"
+                            disabled={loading || !oldPassword || newPassword.length < 12}
+                        >
+                            更新密码
+                        </Button>
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">当前密码</label>
+                        <Input
+                            type="password"
+                            value={oldPassword}
+                            onChange={(_, d) => setOldPassword(d.value)}
+                            placeholder="请输入当前登录密码"
+                            style={{ width: "100%" }}
+                        />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">新密码</label>
+                        <Input
+                            type="password"
+                            value={newPassword}
+                            onChange={(_, d) => setNewPassword(d.value)}
+                            placeholder="至少 12 个字符"
+                            style={{ width: "100%" }}
+                        />
+                    </div>
                 </form>
             </div>
 
             {/* 2FA 卡片 */}
-            <div className="card">
+            <div className="card" style={{ width: "100%" }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
                     <div className="card-title flex items-center gap-8" style={{ margin: 0 }}>
                         <ShieldKeyhole24Regular />
@@ -636,11 +472,12 @@ export default function SecurityPage() {
                         <p style={{ marginBottom: 12, color: "var(--text-secondary)", fontSize: 13 }}>
                             禁用两步验证需要完成双重凭证校验，请选择以下任一组合：
                         </p>
-                        <div className="form-group" style={{ maxWidth: 420 }}>
+                        <div className="form-group">
                             <label className="form-label">验证方式</label>
                             <Select
                                 value={disableMode}
                                 onChange={(_, d) => setDisableMode(d.value as DisableMode)}
+                                style={{ width: "100%" }}
                             >
                                 <option value="pwd_totp">账户密码 + 1 个 TOTP 动态验证码</option>
                                 <option value="pwd_recovery">账户密码 + 1 个有效恢复码</option>
@@ -650,7 +487,7 @@ export default function SecurityPage() {
                         </div>
 
                         {(disableMode === "pwd_totp" || disableMode === "pwd_recovery") && (
-                            <div className="form-group" style={{ maxWidth: 420 }}>
+                            <div className="form-group">
                                 <label className="form-label">当前账户密码</label>
                                 <Input
                                     type="password"
@@ -663,7 +500,7 @@ export default function SecurityPage() {
                         )}
 
                         {(disableMode === "pwd_totp" || disableMode === "totp_recovery") && (
-                            <div className="form-group" style={{ maxWidth: 420 }}>
+                            <div className="form-group">
                                 <label className="form-label">动态验证码</label>
                                 <Input
                                     value={disableTotpCode}
@@ -675,7 +512,7 @@ export default function SecurityPage() {
                         )}
 
                         {(disableMode === "pwd_recovery" || disableMode === "totp_recovery" || disableMode === "two_recovery") && (
-                            <div className="form-group" style={{ maxWidth: 420 }}>
+                            <div className="form-group">
                                 <label className="form-label">
                                     {disableMode === "two_recovery" ? "第 1 个有效恢复码" : "有效恢复码"}
                                 </label>
@@ -689,7 +526,7 @@ export default function SecurityPage() {
                         )}
 
                         {disableMode === "two_recovery" && (
-                            <div className="form-group" style={{ maxWidth: 420 }}>
+                            <div className="form-group">
                                 <label className="form-label">第 2 个有效恢复码</label>
                                 <Input
                                     value={disableRecoveryCode2}
@@ -718,7 +555,7 @@ export default function SecurityPage() {
             </div>
 
             {/* 登录安全证书卡片 */}
-            <div className="card">
+            <div className="card" style={{ width: "100%", marginBottom: 0 }}>
                 <div className="flex items-center justify-between gap-8" style={{ marginBottom: 12, flexWrap: "wrap" }}>
                     <div className="card-title flex items-center gap-8" style={{ margin: 0 }}>
                         <Certificate24Regular />
@@ -754,7 +591,7 @@ export default function SecurityPage() {
                             <Input
                                 value={certDeviceName}
                                 onChange={(_, d) => setCertDeviceName(d.value)}
-                                placeholder="例如：我的手机 / 鸿蒙平板"
+                                placeholder="输入移动设备备注名称"
                                 style={{ width: "100%" }}
                             />
                         </div>

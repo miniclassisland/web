@@ -884,6 +884,21 @@ export const clients = {
     restart: (accountId: string, clientId: string) =>
         post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/restart`),
 
+    lock: (accountId: string, clientId: string) =>
+        post<{ status: string; delivered: boolean; is_app_locked: boolean; message: string }>(
+            `${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/lock`
+        ),
+
+    unlock: (accountId: string, clientId: string) =>
+        post<{ status: string; delivered: boolean; is_app_locked: boolean; message: string }>(
+            `${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/unlock`
+        ),
+
+    getPluginComponents: (accountId: string) =>
+        get<{ totalCount: number; components: import("./types").PluginComponentItem[] }>(
+            `${acctPath(accountId)}/client/plugin-components`
+        ),
+
     forceSync: (accountId: string, clientId: string) =>
         post<StatusResponse>(`${acctPath(accountId)}/client/${encodeURIComponent(clientId)}/command/update-data`),
 
@@ -1008,8 +1023,8 @@ export const adminApi = {
     listPendingUsers: (offset = 0, limit = 50) =>
         get<UserOut[]>(`/user/pending/list?offset=${offset}&limit=${limit}`, adminBase()),
 
-    approveUser: (userId: string) =>
-        post<unknown>(`/user/pending/approve/${encodeURIComponent(userId)}`, undefined, adminBase()),
+    approveUser: (userId: string, payload?: import("./types").ApproveUserRequest) =>
+        post<unknown>(`/user/pending/approve/${encodeURIComponent(userId)}`, payload, adminBase()),
 
     rejectUser: (userId: string) =>
         post<unknown>(`/user/pending/reject/${encodeURIComponent(userId)}`, undefined, adminBase()),

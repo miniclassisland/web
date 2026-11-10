@@ -1,4 +1,4 @@
-# MINI ClassIsland Web (`miniclassisland-web`)
+# MINI ClassIsland Web (`miniclassisland/web`)
 
 <p align="center">
   <a href="https://miniclassisland.com" target="_blank" rel="noopener noreferrer">

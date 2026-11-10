@@ -41,7 +41,7 @@ function StatCard({
 
 export default function DashboardPage() {
     const { isAuthenticated } = useAuth();
-    const { accountId, currentAccount } = useAccount();
+    const { accountId, currentAccount, loading: accountLoading } = useAccount();
     const router = useRouter();
     const [stats, setStats] = useState({
         clientCount: "-",
@@ -53,6 +53,7 @@ export default function DashboardPage() {
     const [wizardOpen, setWizardOpen] = useState(false);
 
     useEffect(() => {
+        if (accountLoading) return;
         if (!accountId) {
             router.push("/");
             return;
@@ -104,7 +105,7 @@ export default function DashboardPage() {
         }
 
         loadStats();
-    }, [isAuthenticated, accountId, router]);
+    }, [isAuthenticated, accountId, accountLoading, router]);
 
     if (!isAuthenticated || !accountId) return null;
 

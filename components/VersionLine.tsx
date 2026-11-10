@@ -23,7 +23,7 @@ export default function VersionLine() {
 
     return (
         <span>
-            当前网页版本 {WEB_VERSION} 核心版本 {coreVersion}
+            网页版本 {WEB_VERSION} | 核心版本 {coreVersion}
         </span>
     );
 }

@@ -1,6 +1,6 @@
 # MINI ClassIsland Web 贡献指南 (`CONTRIBUTING.md`)
 
-感谢你为 **MINI ClassIsland Web (`miniclassisland-web`)** 贡献代码！本文档说明了前端项目的技术规范、安全要求与提交流程。
+感谢你为 **MINI ClassIsland Web (`miniclassisland/web`)** 贡献代码！本文档说明了前端项目的技术规范、安全要求与提交流程。
 
 ---
 

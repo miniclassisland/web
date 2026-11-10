@@ -3,9 +3,10 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import { useAccount, isUserCenterPath } from "@/lib/account-context";
-import UserMenu from "./UserMenu";
+import { useAuth } from "@/lib/auth-context";
 import { ThemeModeToggle } from "@/lib/theme-context";
-import { Navigation24Regular } from "@fluentui/react-icons";
+import { Button } from "@fluentui/react-components";
+import { Navigation24Regular, SignOut24Regular } from "@fluentui/react-icons";
 
 export default function TopBar({
     title,
@@ -16,6 +17,7 @@ export default function TopBar({
 }) {
     const pathname = usePathname();
     const { currentAccount } = useAccount();
+    const { logout } = useAuth();
 
     const isUserCenter = isUserCenterPath(pathname);
 
@@ -45,7 +47,16 @@ export default function TopBar({
             </div>
             <div className="topbar-right">
                 <ThemeModeToggle />
-                <UserMenu />
+                <Button
+                    appearance="subtle"
+                    size="small"
+                    className="topbar-logout-btn"
+                    icon={<SignOut24Regular />}
+                    onClick={logout}
+                    aria-label="登出"
+                >
+                    <span className="topbar-btn-label">登出</span>
+                </Button>
             </div>
         </header>
     );

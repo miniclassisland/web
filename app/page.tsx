@@ -3,42 +3,53 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
-import { accounts as accountsApi, userInfo } from "@/lib/api";
+import { accounts as accountsApi, invitations, userInfo } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import {
     Button, Spinner, Input, Badge,
     Popover, PopoverTrigger, PopoverSurface,
-    MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
+import { Select } from "@/components/CustomSelect";
 import {
     PersonAccounts24Regular,
     Add24Regular,
-    ArrowRight16Regular,
     CheckmarkCircle16Regular,
     DismissCircle16Regular,
     Search24Regular,
-    ShieldTask24Regular,
-    Person24Regular,
-    Settings24Regular,
-    ArrowUpload24Regular,
+    PeopleAdd24Regular,
+    Filter16Regular,
+    ChevronLeft16Regular,
+    ChevronRight16Regular,
 } from "@fluentui/react-icons";
 import type { AccountOut, UserOut } from "@/lib/types";
-import { REGISTRATION_MODE_LABELS, ROLE_LABELS } from "@/lib/types";
+import { REGISTRATION_MODE_LABELS } from "@/lib/types";
+import { matchAdvancedQuery } from "@/lib/search-engine";
 import OnboardingWizard from "@/components/OnboardingWizard";
-import CommunityJoinLink from "@/components/CommunityJoinLink";
-import VersionLine from "@/components/VersionLine";
 
 export default function UserCenterHomePage() {
-    const { isAuthenticated, isSuperAdmin } = useAuth();
+    const { isAuthenticated } = useAuth();
     const { accounts, loading, switchAccount, refreshAccounts } = useAccount();
     const router = useRouter();
     const [profile, setProfile] = useState<UserOut | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
+
+    // 加入账户
+    const [joinOpen, setJoinOpen] = useState(false);
+    const [inviteCode, setInviteCode] = useState("");
+    const [joining, setJoining] = useState(false);
+    const [joinError, setJoinError] = useState<string | null>(null);
+
+    // 创建账户
     const [createOpen, setCreateOpen] = useState(false);
     const [newAccountName, setNewAccountName] = useState("");
     const [newAccountSlug, setNewAccountSlug] = useState("");
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
+
     const [wizardOpen, setWizardOpen] = useState(false);
     const [wizardTargetAccountId, setWizardTargetAccountId] = useState<string | undefined>(undefined);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -60,31 +71,61 @@ export default function UserCenterHomePage() {
         }
     }, [isAuthenticated, loading, accounts.length, profile]);
 
+    const activeCount = useMemo(() => accounts.filter((a) => a.is_active).length, [accounts]);
+    const inactiveCount = accounts.length - activeCount;
+
     const filteredAccounts = useMemo(() => {
-        if (!searchQuery.trim()) return accounts;
-        const q = searchQuery.trim().toLowerCase();
-        return accounts.filter(
-            (a) =>
-                a.name.toLowerCase().includes(q) ||
-                a.slug.toLowerCase().includes(q) ||
-                a.id.toLowerCase().includes(q)
-        );
-    }, [accounts, searchQuery]);
+        return accounts.filter((a) => {
+            if (statusFilter === "active" && !a.is_active) return false;
+            if (statusFilter === "inactive" && a.is_active) return false;
+            return matchAdvancedQuery(a, searchQuery, {
+                fields: {
+                    status: (item) => (item.is_active ? "active" : "inactive"),
+                    mode: (item) => item.registration_mode || "pairing",
+                    name: (item) => item.name,
+                    slug: (item) => item.slug,
+                    id: (item) => item.id,
+                },
+                freeText: (item) => [
+                    item.name,
+                    item.slug,
+                    item.id,
+                    REGISTRATION_MODE_LABELS[item.registration_mode || "pairing"],
+                ],
+            });
+        });
+    }, [accounts, searchQuery, statusFilter]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / pageSize));
+    const safePage = Math.min(currentPage, totalPages);
+    const pagedAccounts = useMemo(() => {
+        const start = (safePage - 1) * pageSize;
+        return filteredAccounts.slice(start, start + pageSize);
+    }, [filteredAccounts, safePage, pageSize]);
 
     function handleSelect(account: AccountOut) {
         switchAccount(account.id);
         router.push("/dashboard");
     }
 
-    function handleOpenAccountSettings(account: AccountOut) {
-        switchAccount(account.id);
-        router.push("/accounts");
-    }
-
-    function handleImportLocalConfig(account: AccountOut) {
-        switchAccount(account.id);
-        setWizardTargetAccountId(account.id);
-        setWizardOpen(true);
+    async function handleJoinByCode(e: React.FormEvent) {
+        e.preventDefault();
+        if (!inviteCode.trim()) return;
+        setJoining(true);
+        setJoinError(null);
+        setMsg(null);
+        try {
+            const res = await invitations.accept(inviteCode.trim());
+            await refreshAccounts();
+            setInviteCode("");
+            setJoinOpen(false);
+            switchAccount(res.account_id);
+            router.push("/dashboard");
+        } catch (err: unknown) {
+            setJoinError(err instanceof Error ? err.message : "加入账户失败");
+        } finally {
+            setJoining(false);
+        }
     }
 
     async function handleCreateAccount() {
@@ -114,21 +155,69 @@ export default function UserCenterHomePage() {
 
     const isPendingUser = profile?.role_code === "pending";
     const displayName = profile?.display_name || profile?.username || "管理员";
-    const roleLabel = profile?.role_code
-        ? (ROLE_LABELS[profile.role_code] || profile.role_code)
-        : (isSuperAdmin ? "超级管理员" : "普通用户");
 
     return (
         <div className="fade-in">
-            <div className="page-header">
+            <div className="page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <h1 className="page-title">欢迎回来，{displayName}</h1>
-                    <p className="page-subtitle">
-                        用户中心主页 · 从左侧导航栏或下方列表选择任一账户，即可进入对应的集控账户中心
-                    </p>
                 </div>
-                {!isPendingUser && (
-                    <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                    <Popover
+                        withArrow
+                        positioning="below-end"
+                        open={joinOpen}
+                        onOpenChange={(_, d) => {
+                            setJoinOpen(d.open);
+                            if (!d.open) setJoinError(null);
+                        }}
+                    >
+                        <PopoverTrigger disableButtonEnhancement>
+                            <Button
+                                appearance="secondary"
+                                icon={<PeopleAdd24Regular />}
+                            >
+                                加入账户
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverSurface style={{ width: 320, padding: 18 }}>
+                            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: "var(--text-primary)" }}>
+                                使用邀请码加入账户
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                                输入管理员分发的邀请码以加入对应集控账户中心
+                            </div>
+                            {joinError && (
+                                <MessageBar intent="error" style={{ marginBottom: 10 }}>
+                                    <MessageBarBody>{joinError}</MessageBarBody>
+                                </MessageBar>
+                            )}
+                            <form onSubmit={(e) => { void handleJoinByCode(e); }}>
+                                <div className="form-group" style={{ marginBottom: 14 }}>
+                                    <label className="form-label">邀请码 *</label>
+                                    <Input
+                                        value={inviteCode}
+                                        onChange={(_, d) => setInviteCode(d.value)}
+                                        placeholder="输入账户邀请码"
+                                        style={{ width: "100%" }}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="flex gap-8" style={{ justifyContent: "flex-end" }}>
+                                    <Button
+                                        size="small"
+                                        appearance="primary"
+                                        type="submit"
+                                        disabled={joining || !inviteCode.trim()}
+                                    >
+                                        {joining ? <Spinner size="tiny" /> : "立即加入"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </PopoverSurface>
+                    </Popover>
+
+                    {!isPendingUser && (
                         <Popover
                             withArrow
                             positioning="below-end"
@@ -169,7 +258,7 @@ export default function UserCenterHomePage() {
                                         <Input
                                             value={newAccountName}
                                             onChange={(_, d) => setNewAccountName(d.value)}
-                                            placeholder="例如：第一中学电教中心"
+                                            placeholder="输入组织或学校名称"
                                             style={{ width: "100%" }}
                                             autoFocus
                                         />
@@ -179,7 +268,7 @@ export default function UserCenterHomePage() {
                                         <Input
                                             value={newAccountSlug}
                                             onChange={(_, d) => setNewAccountSlug(d.value)}
-                                            placeholder="留空随机生成如 account_1234abcd"
+                                            placeholder="留空自动生成随机标识"
                                             style={{ width: "100%" }}
                                         />
                                         <div className="form-hint">3-64 位小写字母、数字、连字符或下划线</div>
@@ -197,14 +286,14 @@ export default function UserCenterHomePage() {
                                 </form>
                             </PopoverSurface>
                         </Popover>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {isPendingUser && (
                 <MessageBar intent="warning" style={{ marginBottom: 16 }}>
                     <MessageBarBody>
-                        您的账号当前处于待审核状态：暂不会创建默认租户，仅支持在页脚获取交流群入群码或通过邀请码加入组织（批准前在组织内强制设定为观察员权限）。
+                        您的账号当前处于待审核状态，仅支持获取交流群入群码或通过邀请码加入组织。
                     </MessageBarBody>
                 </MessageBar>
             )}
@@ -215,134 +304,154 @@ export default function UserCenterHomePage() {
                 </MessageBar>
             )}
 
-            {/* 用户概览统计栏 */}
-            <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-label">可访问账户中心</span>
-                        <span className="stat-card-icon"><PersonAccounts24Regular /></span>
-                    </div>
-                    <div className="stat-card-value">{accounts.length}</div>
-                    <div className="stat-card-footer">可在左侧菜单直接点击切换进入</div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-label">当前登录账号</span>
-                        <span className="stat-card-icon"><Person24Regular /></span>
-                    </div>
-                    <div className="stat-card-value" style={{ fontSize: 18 }}>
-                        {profile?.email || profile?.username || displayName}
-                    </div>
-                    <div className="stat-card-footer">系统角色：{roleLabel}</div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-label">两步验证</span>
-                        <span className="stat-card-icon"><ShieldTask24Regular /></span>
-                    </div>
-                    <div className="stat-card-value" style={{ fontSize: 18 }}>
-                        <span className={`badge ${profile?.totp_enabled ? "badge-success" : "badge-warning"}`}>
-                            {profile?.totp_enabled ? "已开启 TOTP 保护" : "未开启两步验证"}
-                        </span>
-                    </div>
-                    <div className="stat-card-footer">
-                        <a
-                            href="/security"
-                            style={{ color: "var(--accent-color)", textDecoration: "none", fontWeight: 500 }}
-                        >
-                            前往个人资料与安全设置 →
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            {/* 账户中心列表卡片 (Cloudflare 风格表格视图) */}
-            <div className="card">
-                <div className="card-title">
-                    <span>您的集控账户中心 ({filteredAccounts.length})</span>
-                    <div className="flex items-center gap-8" style={{ maxWidth: "100%" }}>
+            <div className="clients-main-pane">
+                {/* 筛选栏与统计摘要 */}
+                <div className="card" style={{ padding: "12px 16px", marginBottom: 0 }}>
+                    <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
                         <Input
-                            size="small"
-                            placeholder="搜索账户名称、Slug 或账户 ID..."
+                            placeholder="搜索账户名称、子域标识或高级过滤表达式"
                             value={searchQuery}
-                            onChange={(_, d) => setSearchQuery(d.value)}
+                            onChange={(_, d) => {
+                                setSearchQuery(d.value);
+                                setCurrentPage(1);
+                            }}
                             contentBefore={<Search24Regular />}
-                            style={{ width: 280, maxWidth: "100%" }}
+                            style={{ flex: 1, minWidth: 240, fontFamily: "var(--font-mono)" }}
                         />
+
+                        <Popover withArrow positioning="below-end">
+                            <PopoverTrigger disableButtonEnhancement>
+                                <Button appearance="outline" icon={<Filter16Regular />}>
+                                    筛选
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverSurface style={{ padding: 12, width: 280 }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 600 }}>状态快速过滤</div>
+                                    <Select
+                                        size="small"
+                                        value={statusFilter}
+                                        onChange={(_, d) => {
+                                            setStatusFilter(d.value as typeof statusFilter);
+                                            setCurrentPage(1);
+                                        }}
+                                    >
+                                        <option value="all">全部账户 {accounts.length}</option>
+                                        <option value="active">活跃 {activeCount}</option>
+                                        <option value="inactive">已停用 {inactiveCount}</option>
+                                    </Select>
+                                    <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>快捷表达式</div>
+                                    <div className="flex gap-4" style={{ flexWrap: "wrap" }}>
+                                        {[
+                                            "status:active",
+                                            "status:inactive",
+                                            "mode:pairing",
+                                            "mode:open",
+                                            "mode:pre_reg",
+                                        ].map((expr) => (
+                                            <Button
+                                                key={expr}
+                                                size="small"
+                                                appearance="secondary"
+                                                onClick={() => {
+                                                    setSearchQuery((prev) => `${prev} ${expr}`.trim());
+                                                    setCurrentPage(1);
+                                                }}
+                                            >
+                                                {expr}
+                                            </Button>
+                                        ))}
+                                        <Button
+                                            size="small"
+                                            appearance="subtle"
+                                            onClick={() => {
+                                                setSearchQuery("");
+                                                setStatusFilter("all");
+                                                setCurrentPage(1);
+                                            }}
+                                        >
+                                            重置
+                                        </Button>
+                                    </div>
+                                </div>
+                            </PopoverSurface>
+                        </Popover>
+                    </div>
+
+                    <div
+                        style={{
+                            marginTop: 8,
+                            fontSize: 12.5,
+                            color: "var(--text-secondary)",
+                            display: "flex",
+                            gap: 14,
+                        }}
+                    >
+                        <span>{accounts.length}个账户</span>
+                        <span>{filteredAccounts.length}已筛选</span>
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="accounts-list-loading">
-                        <Spinner size="large" />
-                        <p>正在加载账户列表…</p>
-                    </div>
-                ) : accounts.length === 0 ? (
-                    <div className="accounts-list-empty">
-                        <PersonAccounts24Regular style={{ fontSize: 48, color: "var(--text-tertiary)" }} />
-                        <p className="accounts-list-empty-text">暂无可用账户</p>
-                        <p className="accounts-list-empty-hint">
-                            {isPendingUser
-                                ? "您的账号正在等待管理员批准，目前可使用邀请码加入现有组织（将以观察员身份加入）。"
-                                : "您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。"}
-                        </p>
-                        <div className="flex gap-8" style={{ flexWrap: "wrap", justifyContent: "center" }}>
-                            {!isPendingUser && (
-                                <Button
-                                    appearance="primary"
-                                    icon={<Add24Regular />}
-                                    onClick={() => setCreateOpen(true)}
-                                >
-                                    创建新账户
-                                </Button>
-                            )}
-                            <Button
-                                appearance="secondary"
-                                onClick={() => router.push("/security")}
-                            >
-                                前往安全设置使用邀请码
-                            </Button>
+                {/* 账户数据表 */}
+                <div className="card" style={{ marginBottom: 0, padding: 0, overflow: "hidden" }}>
+                    {loading ? (
+                        <div className="empty-state">
+                            <Spinner size="medium" />
                         </div>
-                    </div>
-                ) : filteredAccounts.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-state-text">未找到匹配的账户</div>
-                    </div>
-                ) : (
-                    <div className="table-container">
+                    ) : accounts.length === 0 ? (
+                        <div className="accounts-list-empty">
+                            <PersonAccounts24Regular style={{ fontSize: 48, color: "var(--text-tertiary)" }} />
+                            <p className="accounts-list-empty-text">暂无可用账户</p>
+                            <p className="accounts-list-empty-hint">
+                                {isPendingUser
+                                    ? "您的账号正在等待管理员批准，目前可使用邀请码加入现有组织。"
+                                    : "您还没有加入任何集控账户，可以创建新账户或使用邀请码加入现有账户。"}
+                            </p>
+                            <div className="flex gap-8" style={{ flexWrap: "wrap", justifyContent: "center" }}>
+                                <Button
+                                    appearance="secondary"
+                                    icon={<PeopleAdd24Regular />}
+                                    onClick={() => setJoinOpen(true)}
+                                >
+                                    加入账户
+                                </Button>
+                                {!isPendingUser && (
+                                    <Button
+                                        appearance="primary"
+                                        icon={<Add24Regular />}
+                                        onClick={() => setCreateOpen(true)}
+                                    >
+                                        创建新账户
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    ) : pagedAccounts.length === 0 ? (
+                        <div className="empty-state">
+                            <div className="empty-state-text">暂无符合筛选条件的账户</div>
+                        </div>
+                    ) : (
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    <th>账户名称</th>
+                                    <th>名称</th>
                                     <th>子域名标识</th>
                                     <th>账户 ID</th>
                                     <th>终端接入策略</th>
                                     <th>状态</th>
-                                    <th style={{ textAlign: "right" }}>操作</th>
+                                    <th style={{ width: 44 }} aria-label="进入" />
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAccounts.map((account) => (
+                                {pagedAccounts.map((account) => (
                                     <tr
                                         key={account.id}
                                         style={{ cursor: "pointer" }}
                                         onClick={() => handleSelect(account)}
                                     >
                                         <td>
-                                            <div className="flex items-center gap-8">
-                                                <div className="account-card-icon" style={{ width: 32, height: 32, fontSize: 16 }}>
-                                                    <PersonAccounts24Regular />
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                                        {account.name}
-                                                    </div>
-                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                                                        创建于 {new Date(account.created_at).toLocaleDateString("zh-CN")}
-                                                    </div>
-                                                </div>
+                                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                                {account.name}
                                             </div>
                                         </td>
                                         <td>
@@ -369,68 +478,59 @@ export default function UserCenterHomePage() {
                                                 )}
                                             </span>
                                         </td>
-                                        <td
-                                            style={{ textAlign: "right" }}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <div className="flex items-center justify-between gap-8" style={{ justifyContent: "flex-end" }}>
-                                                {!isPendingUser && (
-                                                    <>
-                                                        <Button
-                                                            size="small"
-                                                            appearance="subtle"
-                                                            icon={<ArrowUpload24Regular />}
-                                                            onClick={() => handleImportLocalConfig(account)}
-                                                        >
-                                                            导入本地配置
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            appearance="subtle"
-                                                            icon={<Settings24Regular />}
-                                                            onClick={() => handleOpenAccountSettings(account)}
-                                                        >
-                                                            基础信息
-                                                        </Button>
-                                                    </>
-                                                )}
-                                                <Button
-                                                    size="small"
-                                                    appearance="primary"
-                                                    icon={<ArrowRight16Regular />}
-                                                    iconPosition="after"
-                                                    onClick={() => handleSelect(account)}
-                                                >
-                                                    进入账户中心
-                                                </Button>
-                                            </div>
+                                        <td style={{ textAlign: "right", color: "var(--text-tertiary)" }}>
+                                            <ChevronRight16Regular style={{ verticalAlign: "middle" }} />
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                )}
-            </div>
-
-            <div
-                style={{
-                    marginTop: 24,
-                    paddingTop: 16,
-                    borderTop: "1px solid var(--border-color)",
-                    textAlign: "center",
-                    fontSize: 12,
-                    color: "var(--text-secondary)",
-                    lineHeight: 1.6,
-                }}
-            >
-                <div>本项目与 ClassIsland 官方无关，ClassIsland 是由 ClassIsland 社区开发和维护的开源软件</div>
-                <div>本项目由 MINIOpenSource 开发和维护，并开源在 GitHub</div>
-                <div style={{ marginTop: 4 }}>
-                    <VersionLine />
+                    )}
                 </div>
-                <div style={{ marginTop: 6 }}>
-                    <CommunityJoinLink />
+
+                {/* 底部分页栏 */}
+                <div className="clients-pagination-bar">
+                    <div className="flex items-center gap-8">
+                        <Button
+                            size="small"
+                            appearance="subtle"
+                            icon={<ChevronLeft16Regular />}
+                            disabled={safePage <= 1}
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        />
+                        <span className="mono-code" style={{ fontWeight: 600 }}>
+                            {safePage} / {totalPages}
+                        </span>
+                        <Button
+                            size="small"
+                            appearance="subtle"
+                            icon={<ChevronRight16Regular />}
+                            disabled={safePage >= totalPages}
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        />
+                        <span style={{ marginLeft: 6 }}>
+                            {loading ? "正在加载" : "加载完毕"}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <span>每页</span>
+                        <Select
+                            size="small"
+                            value={String(pageSize)}
+                            onChange={(_, d) => {
+                                setPageSize(Number(d.value) || 20);
+                                setCurrentPage(1);
+                            }}
+                            style={{ width: 72 }}
+                        >
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </Select>
+                        <span>条</span>
+                    </div>
                 </div>
             </div>
 

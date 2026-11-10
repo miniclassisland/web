@@ -18,8 +18,8 @@ import {
     DialogContent,
     DialogActions,
     Button, Input, Label, Spinner,
-    MessageBar, MessageBarBody,
 } from "@fluentui/react-components";
+import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 
 export default function LoginDialog() {
     const { requireReAuth, handleReAuth, dismissReAuth, pending2FA, complete2FA, loading, error, clearError } = useAuth();
@@ -96,7 +96,7 @@ export default function LoginDialog() {
                                         type="email"
                                         value={email}
                                         onChange={(_, d) => setEmail(d.value)}
-                                        placeholder="user@example.com"
+                                        placeholder="输入邮箱地址"
                                         style={{ width: "100%" }}
                                         autoFocus
                                     />
