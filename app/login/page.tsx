@@ -324,8 +324,8 @@ export default function LoginPage() {
                         <MessageBar intent="success" style={{ marginBottom: 16 }}>
                             <MessageBarBody>{registerSuccess}</MessageBarBody>
                         </MessageBar>
-                        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
-                            您的注册申请已提交，请等待管理员审核后再登录。
+                        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, textAlign: "center" }}>
+                            用户已创建，请重新登录
                         </p>
                         <Button appearance="primary" style={{ width: "100%" }} onClick={resetFlow}>
                             返回

@@ -43,7 +43,12 @@ export default function SiteAnnouncementBanner() {
 
     return (
         <>
-            <MessageBar intent="info" autoHideMs={0} onDismiss={() => setDismissed(true)}>
+            <MessageBar
+                inline
+                intent="info"
+                className="site-announcement-banner"
+                onDismiss={() => setDismissed(true)}
+            >
                 <MessageBarBody>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                         <span style={{ fontWeight: 600 }}>{displayTitle}</span>

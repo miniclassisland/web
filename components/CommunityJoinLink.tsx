@@ -171,7 +171,7 @@ export default function CommunityJoinLink() {
                                             当前已绑定 QQ：<strong style={{ fontFamily: "var(--font-mono)" }}>{maskedQq}</strong>
                                         </div>
                                     )}
-                                    <MessageBar intent="warning" style={{ marginBottom: 8 }}>
+                                    <MessageBar inline intent="warning" style={{ marginBottom: 8 }}>
                                         <MessageBarBody>
                                             您已经绑定过一个 QQ 了，如果需要换绑，请直接退出群聊；如果需要继续加入群聊，您可以考虑新注册一个用户或者联系管理员
                                         </MessageBarBody>
