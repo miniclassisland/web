@@ -10,7 +10,15 @@ import type {
     LoginCertificateItem,
 } from "@/lib/types";
 import {
-    Button, Input, Spinner,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogBody,
+    DialogContent,
+    DialogSurface,
+    DialogTitle,
+    Input,
+    Spinner,
 } from "@fluentui/react-components";
 import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { Select } from "@/components/CustomSelect";
@@ -90,6 +98,7 @@ export default function SecurityPage() {
     const [newPassword, setNewPassword] = useState("");
 
     // 登录安全证书签发与管理
+    const [certDialogOpen, setCertDialogOpen] = useState(false);
     const [certPassword, setCertPassword] = useState("");
     const [cert2faMode, setCert2faMode] = useState<"totp" | "recovery">("totp");
     const [certTotpCode, setCertTotpCode] = useState("");
@@ -556,13 +565,24 @@ export default function SecurityPage() {
 
             {/* 登录安全证书卡片 */}
             <div className="card" style={{ width: "100%", marginBottom: 0 }}>
-                <div className="flex items-center justify-between gap-8" style={{ marginBottom: 12, flexWrap: "wrap" }}>
+                <div className="flex items-center justify-between gap-8" style={{ marginBottom: 8, flexWrap: "wrap" }}>
                     <div className="card-title flex items-center gap-8" style={{ margin: 0 }}>
                         <Certificate24Regular />
                         移动端登录安全证书
                     </div>
                     <div className="flex items-center gap-8">
-                        <span className="badge badge-info">有效期 7 天 · 最多轮换 12 代</span>
+                        <Button
+                            appearance="primary"
+                            size="small"
+                            icon={<QrCode24Regular />}
+                            onClick={() => {
+                                setIssuedCert(null);
+                                setCertCountdown(0);
+                                setCertDialogOpen(true);
+                            }}
+                        >
+                            签发安全证书
+                        </Button>
                         {activeCerts.length > 0 && (
                             <Button
                                 appearance="subtle"
@@ -571,234 +591,224 @@ export default function SecurityPage() {
                                 onClick={() => void handleRevokeCertificate(undefined, true)}
                                 disabled={certsLoading}
                             >
-                                吊销全部证书
+                                吊销全部
                             </Button>
                         )}
                     </div>
                 </div>
 
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
-                    验证当前账户密码{user?.totp_enabled ? "与两步验证凭证" : ""}后，可签发一张有效期为 7 天的移动端登录安全证书，并生成有效期 5 分钟的单次兑换码。移动端通过扫码或唤醒链接下载安全证书后，可使用安全证书自动申请不超过 1 小时的短期会话令牌，且在剩余有效期低于 24 小时时支持自动轮换下一代证书，单条证书链最多轮换 12 代。
+                <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 14 }}>
+                    签发有效期 7 天的移动端登录证书，支持扫码或唤醒链接快速登录移动客户端。
                 </p>
 
-                <div className="grid-2" style={{ alignItems: "start" }}>
-                    <form onSubmit={handleIssueCertificate}>
-                        <div className="settings-section-title" style={{ marginBottom: 12 }}>
-                            签发新安全证书
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">设备备注名称</label>
-                            <Input
-                                value={certDeviceName}
-                                onChange={(_, d) => setCertDeviceName(d.value)}
-                                placeholder="输入移动设备备注名称"
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">当前账户密码</label>
-                            <Input
-                                type="password"
-                                value={certPassword}
-                                onChange={(_, d) => setCertPassword(d.value)}
-                                placeholder="请输入当前登录密码"
-                                style={{ width: "100%" }}
-                            />
-                        </div>
-
-                        {user?.totp_enabled && (
-                            <>
-                                <div className="form-group">
-                                    <label className="form-label">两步验证方式</label>
-                                    <Select
-                                        value={cert2faMode}
-                                        onChange={(_, d) => setCert2faMode(d.value as "totp" | "recovery")}
-                                    >
-                                        <option value="totp">6 位动态验证码</option>
-                                        <option value="recovery">一次性恢复码</option>
-                                    </Select>
-                                </div>
-                                {cert2faMode === "totp" ? (
-                                    <div className="form-group">
-                                        <label className="form-label">动态验证码</label>
-                                        <Input
-                                            value={certTotpCode}
-                                            onChange={(_, d) => setCertTotpCode(d.value)}
-                                            placeholder="请输入 6 位动态验证码"
-                                            style={{ width: "100%" }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="form-group">
-                                        <label className="form-label">一次性恢复码</label>
-                                        <Input
-                                            value={certRecoveryCode}
-                                            onChange={(_, d) => setCertRecoveryCode(d.value)}
-                                            placeholder="请输入未使用的恢复码"
-                                            style={{ width: "100%" }}
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        <Button
-                            appearance="primary"
-                            type="submit"
-                            icon={<QrCode24Regular />}
-                            disabled={
-                                certIssuing ||
-                                !certPassword ||
-                                (Boolean(user?.totp_enabled) &&
-                                    ((cert2faMode === "totp" && certTotpCode.trim().length < 6) ||
-                                        (cert2faMode === "recovery" && !certRecoveryCode.trim())))
-                            }
-                        >
-                            {certIssuing ? <Spinner size="tiny" /> : "验证并签发安全证书"}
-                        </Button>
-                    </form>
-
-                    <div>
-                        <div className="settings-section-title" style={{ marginBottom: 12 }}>
-                            扫码或唤醒链接兑换
-                        </div>
-                        {issuedCert && certCountdown > 0 ? (
+                {activeCerts.length === 0 ? (
+                    <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                        暂无有效安全证书
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {activeCerts.map((item) => (
                             <div
+                                key={item.cert_id}
+                                className="flex items-center justify-between gap-12"
                                 style={{
-                                    padding: 16,
+                                    padding: "10px 14px",
                                     borderRadius: "var(--radius-md)",
                                     border: "1px solid var(--border-color)",
                                     background: "var(--bg-secondary)",
+                                    flexWrap: "wrap",
                                 }}
                             >
-                                <div className="flex items-center justify-between gap-8" style={{ marginBottom: 8 }}>
-                                    <span className="badge badge-success">兑换码有效</span>
-                                    <span style={{ fontSize: 12, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
-                                        剩余 {Math.floor(certCountdown / 60)}:{String(certCountdown % 60).padStart(2, "0")}
-                                    </span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                    <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+                                        <span style={{ fontWeight: 600, fontSize: 13 }}>
+                                            {item.device_name || "移动端安全证书"}
+                                        </span>
+                                        <span className={`badge ${item.redeemed ? "badge-success" : "badge-warning"}`}>
+                                            {item.redeemed ? "已激活" : "待兑换"}
+                                        </span>
+                                        <span className="badge badge-info">
+                                            第 {item.generation}/{item.max_generation} 代
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                                        到期于 {new Date(item.expires_at * 1000).toLocaleString("zh-CN")}
+                                    </div>
                                 </div>
-                                <QRCodeImage
-                                    text={issuedCert.deeplink}
-                                    onCopy={() => setMsg({ type: "success", text: "唤醒链接已复制到剪贴板" })}
-                                />
-                                <div className="form-group" style={{ marginBottom: 10 }}>
-                                    <label className="form-label">兑换唤醒链接</label>
-                                    <div className="flex items-center gap-8">
-                                        <Input
-                                            value={issuedCert.deeplink}
-                                            readOnly
-                                            style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: 12 }}
-                                        />
+                                <Button
+                                    appearance="subtle"
+                                    size="small"
+                                    icon={<Delete24Regular />}
+                                    onClick={() => void handleRevokeCertificate(item.cert_id)}
+                                    disabled={certsLoading}
+                                >
+                                    吊销
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <Dialog
+                open={certDialogOpen}
+                onOpenChange={(_, data) => {
+                    if (!certIssuing) {
+                        setCertDialogOpen(data.open);
+                        if (!data.open) {
+                            setCertPassword("");
+                            setCertTotpCode("");
+                            setCertRecoveryCode("");
+                        }
+                    }
+                }}
+            >
+                <DialogSurface style={{ maxWidth: 460 }}>
+                    <DialogBody>
+                        <DialogTitle>
+                            {issuedCert && certCountdown > 0 ? "扫码或唤醒客户端兑换" : "签发移动端登录安全证书"}
+                        </DialogTitle>
+                        <DialogContent style={{ paddingTop: 8 }}>
+                            {issuedCert && certCountdown > 0 ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+                                    <div className="flex items-center justify-between gap-8" style={{ width: "100%" }}>
+                                        <span className="badge badge-success">兑换码有效</span>
+                                        <span style={{ fontSize: 12, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                                            剩余 {Math.floor(certCountdown / 60)}:{String(certCountdown % 60).padStart(2, "0")}
+                                        </span>
+                                    </div>
+                                    <QRCodeImage
+                                        text={issuedCert.deeplink}
+                                        onCopy={() => setMsg({ type: "success", text: "唤醒链接已复制到剪贴板" })}
+                                    />
+                                    <div className="flex items-center justify-center gap-8" style={{ flexWrap: "wrap", width: "100%" }}>
                                         <Button
-                                            appearance="subtle"
+                                            appearance="primary"
                                             size="small"
-                                            type="button"
+                                            icon={<Open24Regular />}
+                                            onClick={() => {
+                                                window.location.href = issuedCert.deeplink;
+                                            }}
+                                        >
+                                            唤醒客户端
+                                        </Button>
+                                        <Button
+                                            appearance="secondary"
+                                            size="small"
                                             icon={<Copy24Regular />}
                                             onClick={() => {
                                                 navigator.clipboard.writeText(issuedCert.deeplink);
                                                 setMsg({ type: "success", text: "唤醒链接已复制到剪贴板" });
                                             }}
                                         >
-                                            复制
+                                            复制链接
+                                        </Button>
+                                        <Button
+                                            appearance="subtle"
+                                            size="small"
+                                            icon={<Copy24Regular />}
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(issuedCert.code);
+                                                setMsg({ type: "success", text: "单次兑换码已复制到剪贴板" });
+                                            }}
+                                        >
+                                            复制兑换码
                                         </Button>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
-                                    <Button
-                                        appearance="primary"
-                                        size="small"
-                                        icon={<Open24Regular />}
-                                        onClick={() => {
-                                            window.location.href = issuedCert.deeplink;
-                                        }}
-                                    >
-                                        在当前设备唤醒客户端兑换
-                                    </Button>
+                            ) : (
+                                <form id="issue-cert-form" onSubmit={handleIssueCertificate}>
+                                    <div className="form-group">
+                                        <label className="form-label">设备备注（可选）</label>
+                                        <Input
+                                            value={certDeviceName}
+                                            onChange={(_, d) => setCertDeviceName(d.value)}
+                                            placeholder="例如：我的手机"
+                                            style={{ width: "100%" }}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">当前账户密码</label>
+                                        <Input
+                                            type="password"
+                                            value={certPassword}
+                                            onChange={(_, d) => setCertPassword(d.value)}
+                                            placeholder="请输入当前登录密码"
+                                            style={{ width: "100%" }}
+                                        />
+                                    </div>
+                                    {user?.totp_enabled && (
+                                        <>
+                                            <div className="form-group">
+                                                <label className="form-label">两步验证方式</label>
+                                                <Select
+                                                    value={cert2faMode}
+                                                    onChange={(_, d) => setCert2faMode(d.value as "totp" | "recovery")}
+                                                >
+                                                    <option value="totp">6 位动态验证码</option>
+                                                    <option value="recovery">一次性恢复码</option>
+                                                </Select>
+                                            </div>
+                                            {cert2faMode === "totp" ? (
+                                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                                    <label className="form-label">动态验证码</label>
+                                                    <Input
+                                                        value={certTotpCode}
+                                                        onChange={(_, d) => setCertTotpCode(d.value)}
+                                                        placeholder="请输入 6 位动态验证码"
+                                                        style={{ width: "100%" }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                                    <label className="form-label">一次性恢复码</label>
+                                                    <Input
+                                                        value={certRecoveryCode}
+                                                        onChange={(_, d) => setCertRecoveryCode(d.value)}
+                                                        placeholder="请输入未使用的恢复码"
+                                                        style={{ width: "100%" }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </form>
+                            )}
+                        </DialogContent>
+                        <DialogActions style={{ marginTop: 12 }}>
+                            {issuedCert && certCountdown > 0 ? (
+                                <Button appearance="primary" onClick={() => setCertDialogOpen(false)}>
+                                    完成
+                                </Button>
+                            ) : (
+                                <>
                                     <Button
                                         appearance="secondary"
-                                        size="small"
-                                        icon={<Copy24Regular />}
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(issuedCert.code);
-                                            setMsg({ type: "success", text: "单次兑换码已复制到剪贴板" });
-                                        }}
+                                        onClick={() => setCertDialogOpen(false)}
+                                        disabled={certIssuing}
                                     >
-                                        仅复制兑换码
+                                        取消
                                     </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div
-                                style={{
-                                    padding: 24,
-                                    borderRadius: "var(--radius-md)",
-                                    border: "1px dashed var(--border-color)",
-                                    color: "var(--text-secondary)",
-                                    fontSize: 13,
-                                    textAlign: "center",
-                                }}
-                            >
-                                左侧完成密码校验并签发后，此处将生成有效期 5 分钟的二维码与唤醒链接
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* 已签发安全证书列表 */}
-                <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-color)" }}>
-                    <div className="settings-section-title" style={{ marginBottom: 12 }}>
-                        当前有效安全证书 ({activeCerts.length})
-                    </div>
-                    {activeCerts.length === 0 ? (
-                        <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                            暂无处于有效期内的登录安全证书
-                        </div>
-                    ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {activeCerts.map((item) => (
-                                <div
-                                    key={item.cert_id}
-                                    className="flex items-center justify-between gap-12"
-                                    style={{
-                                        padding: "10px 14px",
-                                        borderRadius: "var(--radius-md)",
-                                        border: "1px solid var(--border-color)",
-                                        background: "var(--bg-secondary)",
-                                        flexWrap: "wrap",
-                                    }}
-                                >
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                                        <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
-                                            <span style={{ fontWeight: 600, fontSize: 13 }}>
-                                                {item.device_name || "移动端安全证书"}
-                                            </span>
-                                            <span className="badge badge-info">
-                                                第 {item.generation} / {item.max_generation} 代
-                                            </span>
-                                            <span className={`badge ${item.redeemed ? "badge-success" : "badge-warning"}`}>
-                                                {item.redeemed ? "已兑换激活" : "待兑换"}
-                                            </span>
-                                        </div>
-                                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                                            签发于 {new Date(item.issued_at * 1000).toLocaleString()} · 到期于{" "}
-                                            {new Date(item.expires_at * 1000).toLocaleString()}
-                                        </div>
-                                    </div>
                                     <Button
-                                        appearance="subtle"
-                                        size="small"
-                                        icon={<Delete24Regular />}
-                                        onClick={() => void handleRevokeCertificate(item.cert_id)}
-                                        disabled={certsLoading}
+                                        appearance="primary"
+                                        type="submit"
+                                        form="issue-cert-form"
+                                        disabled={
+                                            certIssuing ||
+                                            !certPassword ||
+                                            (Boolean(user?.totp_enabled) &&
+                                                ((cert2faMode === "totp" && certTotpCode.trim().length < 6) ||
+                                                    (cert2faMode === "recovery" && !certRecoveryCode.trim())))
+                                        }
                                     >
-                                        吊销
+                                        {certIssuing ? <Spinner size="tiny" /> : "验证并签发"}
                                     </Button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+                                </>
+                            )}
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
         </div>
     );
 }

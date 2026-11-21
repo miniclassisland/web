@@ -14,13 +14,12 @@ import {
 } from "@fluentui/react-icons";
 
 export default function ProfilePage() {
-    const { user, isSuperAdmin, refreshUser } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [displayName, setDisplayName] = useState("");
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [savingDisplayName, setSavingDisplayName] = useState(false);
     const [savingUsername, setSavingUsername] = useState(false);
-    const [savingEmail, setSavingEmail] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     useEffect(() => {
@@ -62,22 +61,6 @@ export default function ProfilePage() {
             setMsg({ type: "error", text: err instanceof Error ? err.message : "更新失败" });
         } finally {
             setSavingUsername(false);
-        }
-    }
-
-    async function handleSaveEmail(e: React.FormEvent) {
-        e.preventDefault();
-        if (!isSuperAdmin || !email.trim() || email.trim() === (user?.email || "")) return;
-        setSavingEmail(true);
-        setMsg(null);
-        try {
-            await userInfo.changeEmail({ email: email.trim() });
-            await refreshUser();
-            setMsg({ type: "success", text: "绑定邮箱已更新" });
-        } catch (err: unknown) {
-            setMsg({ type: "error", text: err instanceof Error ? err.message : "更新失败" });
-        } finally {
-            setSavingEmail(false);
         }
     }
 
@@ -200,46 +183,25 @@ export default function ProfilePage() {
 
             {/* 条目 4：绑定邮箱 */}
             <div className="card" style={{ width: "100%", marginBottom: 0 }}>
-                <form onSubmit={handleSaveEmail}>
+                <div>
                     <div className="card-title flex items-center justify-between gap-8">
                         <span className="flex items-center gap-8">
                             <Mail24Regular />
                             绑定邮箱
                         </span>
-                        {isSuperAdmin && !isPending && (
-                            <Button
-                                appearance="primary"
-                                size="small"
-                                type="submit"
-                                disabled={
-                                    savingEmail ||
-                                    !email.trim() ||
-                                    email.trim() === (user?.email || "")
-                                }
-                            >
-                                {savingEmail ? <Spinner size="tiny" /> : "保存绑定邮箱"}
-                            </Button>
-                        )}
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                         <Input
                             type="email"
                             value={email}
-                            readOnly={!isSuperAdmin}
-                            disabled={!isSuperAdmin}
-                            onChange={(_, d) => {
-                                if (isSuperAdmin) setEmail(d.value);
-                            }}
-                            placeholder="输入绑定邮箱"
+                            readOnly
+                            disabled
+                            placeholder="未绑定邮箱"
                             style={{ width: "100%" }}
                         />
-                        <div className="form-hint">
-                            {isSuperAdmin
-                                ? "用于接收系统通知与找回密码的电子邮箱地址"
-                                : "绑定邮箱不支持自行修改，如需变更请联系超级管理员"}
-                        </div>
+                        <div className="form-hint">绑定邮箱不支持自行修改</div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

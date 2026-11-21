@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-context";
 import { useRouter } from "next/navigation";
-import { clients, data, pairing, audit, accounts } from "@/lib/api";
+import { clients, data, pairing, audit, accounts, realtime } from "@/lib/api";
 import type { ResourceType } from "@/lib/types";
 import DownloadPresetPopoverButton from "@/components/DownloadPresetPopoverButton";
 import OnboardingWizard from "@/components/OnboardingWizard";
@@ -52,60 +52,90 @@ export default function DashboardPage() {
     });
     const [wizardOpen, setWizardOpen] = useState(false);
 
+    const loadStats = useCallback(async () => {
+        if (!accountId) return;
+        try {
+            const [cl, pr, au] = await Promise.allSettled([
+                clients.list(accountId),
+                pairing.listCodes(accountId),
+                audit.list(accountId, { limit: 100 }),
+            ]);
+            const resourceTypes: ResourceType[] = [
+                "ClassPlan",
+                "TimeLayout",
+                "Subjects",
+                "Policy",
+                "DefaultSettings",
+                "Components",
+                "Credentials",
+            ];
+            const resourceResults = await Promise.allSettled(
+                resourceTypes.map((t) => data.list(accountId, t))
+            );
+            let totalRes = 0;
+            resourceResults.forEach((r) => {
+                if (r.status === "fulfilled" && Array.isArray(r.value)) {
+                    totalRes += r.value.length;
+                }
+            });
+
+            const clientArr = cl.status === "fulfilled" && Array.isArray(cl.value) ? cl.value : [];
+            const online = clientArr.filter((c) => c.status === "online").length;
+            const pairArr = pr.status === "fulfilled" && Array.isArray(pr.value) ? pr.value : [];
+            const pendingPairs = pairArr.filter((p) => !p.approved && !p.used && p.status !== "rejected").length;
+            const auditArr = au.status === "fulfilled" && Array.isArray(au.value) ? au.value : [];
+
+            setStats({
+                clientCount: String(clientArr.length),
+                onlineCount: String(online),
+                pairingCount: String(pendingPairs),
+                resourceCount: String(totalRes),
+                auditCount: String(auditArr.length),
+            });
+        } catch {
+            /* keep defaults */
+        }
+    }, [accountId]);
+
     useEffect(() => {
         if (accountLoading) return;
         if (!accountId) {
             router.push("/");
             return;
         }
+        void loadStats();
+    }, [isAuthenticated, accountId, accountLoading, router, loadStats]);
 
-        async function loadStats() {
-            if (!accountId) return;
-            try {
-                const [cl, pr, au] = await Promise.allSettled([
-                    clients.list(accountId),
-                    pairing.listCodes(accountId),
-                    audit.list(accountId, { limit: 100 }),
-                ]);
-                const resourceTypes: ResourceType[] = [
-                    "ClassPlan",
-                    "TimeLayout",
-                    "Subjects",
-                    "Policy",
-                    "DefaultSettings",
-                    "Components",
-                    "Credentials",
-                ];
-                const resourceResults = await Promise.allSettled(
-                    resourceTypes.map((t) => data.list(accountId, t))
-                );
-                let totalRes = 0;
-                resourceResults.forEach((r) => {
-                    if (r.status === "fulfilled" && Array.isArray(r.value)) {
-                        totalRes += r.value.length;
-                    }
-                });
-
-                const clientArr = cl.status === "fulfilled" && Array.isArray(cl.value) ? cl.value : [];
-                const online = clientArr.filter((c) => c.status === "online").length;
-                const pairArr = pr.status === "fulfilled" && Array.isArray(pr.value) ? pr.value : [];
-                const pendingPairs = pairArr.filter((p) => !p.approved && !p.used && p.status !== "rejected").length;
-                const auditArr = au.status === "fulfilled" && Array.isArray(au.value) ? au.value : [];
-
-                setStats({
-                    clientCount: String(clientArr.length),
-                    onlineCount: String(online),
-                    pairingCount: String(pendingPairs),
-                    resourceCount: String(totalRes),
-                    auditCount: String(auditArr.length),
-                });
-            } catch {
-                /* keep defaults */
+    useEffect(() => {
+        if (!isAuthenticated || !accountId) return;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const scheduleRefresh = () => {
+            if (timer) return;
+            timer = setTimeout(() => {
+                timer = null;
+                void loadStats();
+            }, 300);
+        };
+        const unsubscribe = realtime.subscribe(accountId, {
+            onEvent: (evt) => {
+                if (
+                    evt.event === "client.status" ||
+                    evt.event === "pairing.updated" ||
+                    evt.event === "audit.created" ||
+                    evt.event === "resource.updated"
+                ) {
+                    scheduleRefresh();
+                }
+            },
+        });
+        return () => {
+            unsubscribe();
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
             }
-        }
-
-        loadStats();
-    }, [isAuthenticated, accountId, accountLoading, router]);
+        };
+    }, [isAuthenticated, accountId, loadStats]);
 
     if (!isAuthenticated || !accountId) return null;
 

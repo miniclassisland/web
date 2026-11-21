@@ -712,6 +712,19 @@ export default function TicketsPage() {
                     <DialogBody>
                         <DialogTitle>提交工单</DialogTitle>
                         <DialogContent>
+                            <div
+                                style={{
+                                    padding: "8px 12px",
+                                    borderRadius: "var(--radius-md)",
+                                    background: "var(--bg-secondary)",
+                                    border: "1px solid var(--border-color)",
+                                    fontSize: 12.5,
+                                    color: "var(--text-secondary)",
+                                    marginBottom: 12,
+                                }}
+                            >
+                                如需增开设备配额或申请功能权限，请前往「租户设置 → 账户基础信息」使用专用审批通道提交。
+                            </div>
                             <div className="form-group">
                                 <label className="form-label">标题</label>
                                 <Input

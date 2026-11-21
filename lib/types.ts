@@ -13,12 +13,14 @@ export interface UserRegisterRequest {
     role_code?: string;
     can_create_account?: boolean;
     cf_turnstile_response?: string;
+    turnstile_stage_token?: string;
 }
 
 export interface UserLoginRequest {
     email: string;
     password: string;
     cf_turnstile_response?: string;
+    turnstile_stage_token?: string;
 }
 
 export interface EmailAvailabilityRequest {
@@ -185,15 +187,15 @@ export interface QuotaSetRequest {
 export const QUOTA_META: Record<string, { label: string; hint: string; type: "number" | "boolean"; defaultMax: number }> = {
     max_clients: {
         label: "允许注册的设备数",
-        hint: "该账户允许登记注册的最大终端设备数量，默认 6 台，-1 表示不限制",
+        hint: "该账户允许登记注册的最大终端设备数量，默认 2 台，-1 表示不限制",
         type: "number",
-        defaultMax: 6,
+        defaultMax: 2,
     },
     max_grpc_connections: {
         label: "允许实时长连接的设备数量",
-        hint: "该账户允许同时建立实时双向长连接会话的最大在线终端数量，默认 4 个，-1 表示不限制",
+        hint: "该账户允许同时建立实时双向长连接会话的最大在线终端数量，默认 1 个，-1 表示不限制",
         type: "number",
-        defaultMax: 4,
+        defaultMax: 1,
     },
     max_bandwidth_mb: {
         label: "月度流量配额",
@@ -211,13 +213,25 @@ export const QUOTA_META: Record<string, { label: string; hint: string; type: "nu
         label: "终端安全审计日志",
         hint: "允许该账户收集并检索客户端事件审计日志",
         type: "boolean",
-        defaultMax: 1,
+        defaultMax: 0,
     },
     "feature.risk": {
         label: "风险功能",
         hint: "允许该账户使用远程代码执行、屏幕截图和模拟点击",
         type: "boolean",
-        defaultMax: 1,
+        defaultMax: 0,
+    },
+    "feature.remote_edit": {
+        label: "在客户端编辑档案",
+        hint: "允许该账户从控制台发起在客户端编辑服务器档案 (RemoteEdit)",
+        type: "boolean",
+        defaultMax: 0,
+    },
+    "feature.assist_another": {
+        label: "远程协助编辑档案",
+        hint: "允许该账户使用一台客户端端到端远程为另一台客户端编辑档案 (AssistAnother)",
+        type: "boolean",
+        defaultMax: 0,
     },
 };
 
@@ -230,6 +244,8 @@ export interface ApproveUserRequest {
     feature_ota?: number;
     feature_audit?: number;
     feature_risk?: number;
+    feature_remote_edit?: number;
+    feature_assist_another?: number;
 }
 
 // ============================================================
@@ -1608,5 +1624,141 @@ export interface QrLoginPollResponse {
     token?: string;
     user_id?: string;
     expires_at?: number;
+}
+
+// ============================================================
+// 资源保存与远程编辑/协助会话 (RemoteEdit / AssistAnother)
+// ============================================================
+
+export interface ResourceWriteResponse {
+    status: string;
+    version: number;
+    name?: string;
+    message?: string;
+    sync?: {
+        matched_clients: number;
+        notified_clients: number;
+    };
+}
+
+export type EditSessionMode = "RemoteEdit" | "AssistAnother";
+export type EditSessionInitialView =
+    | "profile"
+    | "classplan"
+    | "timelayout"
+    | "subjects"
+    | "settings"
+    | "components"
+    | "policy"
+    | "credentials";
+
+export interface EditSessionCreateRequest {
+    mode: EditSessionMode;
+    editor_client_uid: string;
+    target_client_uid?: string | null;
+    initial_view?: EditSessionInitialView;
+    resource_targets?: Record<string, string> | null;
+}
+
+export interface EditSessionSummary {
+    session_id: string;
+    mode: EditSessionMode;
+    account_id: string;
+    role: string;
+    editor_client_uid: string;
+    editor_display_name: string;
+    target_client_uid?: string | null;
+    target_display_name: string;
+    initial_view: EditSessionInitialView;
+    allowed_scopes: string[];
+    resource_targets: Record<string, string>;
+    base_versions: Record<string, number>;
+    created_at: string;
+    expires_at: string;
+    last_sequence: number;
+}
+
+// ============================================================
+// 实时 SSE 事件流 (Web Realtime Events)
+// ============================================================
+
+export type AccountRealtimeEventType =
+    | "connected"
+    | "client.status"
+    | "command.completed"
+    | "audit.created"
+    | "pairing.updated"
+    | "resource.updated"
+    | "edit_session.updated"
+    | "registration.created"
+    | "registration.updated"
+    | "approval_request.created"
+    | "approval_request.updated"
+    | "user.updated"
+    | "qr.updated";
+
+export interface AccountRealtimeEvent<T = Record<string, unknown>> {
+    event: AccountRealtimeEventType | string;
+    account_id: string;
+    timestamp: string;
+    data: T;
+}
+
+export interface RealtimeSubscribeHandlers {
+    onEvent: (evt: AccountRealtimeEvent) => void;
+    onOpen?: () => void;
+    onError?: (err: unknown) => void;
+}
+
+// ============================================================
+// 配额与权限审批通道 (Quota & Permission Approval Requests)
+// ============================================================
+
+export type ApprovalRequestType = "quota" | "permission";
+export type ApprovalRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export const APPROVAL_REQUEST_TYPE_LABELS: Record<ApprovalRequestType, string> = {
+    quota: "增开配额",
+    permission: "申请权限",
+};
+
+export const APPROVAL_REQUEST_STATUS_LABELS: Record<ApprovalRequestStatus, string> = {
+    pending: "待审批",
+    approved: "已通过",
+    rejected: "已拒绝",
+    cancelled: "已撤回",
+};
+
+export interface ApprovalRequestCreate {
+    request_type: ApprovalRequestType;
+    target_key: string;
+    requested_value: number;
+    reason: string;
+}
+
+export interface ApprovalRequestItem {
+    id: string;
+    account_id: string;
+    account_name: string;
+    account_slug: string;
+    user_id: string;
+    request_type: ApprovalRequestType;
+    target_key: string;
+    current_value: number;
+    requested_value: number;
+    approved_value?: number | null;
+    reason: string;
+    status: ApprovalRequestStatus;
+    review_note: string;
+    reviewed_by?: string | null;
+    reviewed_at?: string | null;
+    created_at: string;
+    updated_at: string;
+    user?: TicketUserSummary | null;
+}
+
+export interface ApprovalRequestListResponse {
+    total: number;
+    items: ApprovalRequestItem[];
 }
 

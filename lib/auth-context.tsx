@@ -169,6 +169,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRequireReAuth(false);
     }, []);
 
+    useEffect(() => {
+        if (!token) return;
+        const unsubscribe = userInfo.subscribeEvents({
+            onEvent: (evt) => {
+                if (evt.event !== "user.updated") return;
+                const payload = evt.data as
+                    | { action?: string; is_active?: boolean; role_code?: string }
+                    | undefined;
+                if (
+                    payload?.action === "rejected" ||
+                    payload?.action === "deleted" ||
+                    payload?.is_active === false ||
+                    payload?.role_code === "banned"
+                ) {
+                    void logout();
+                    return;
+                }
+                void refreshUser();
+                if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("miniclassisland:user-updated", { detail: payload }));
+                }
+            },
+        });
+        return () => unsubscribe();
+    }, [token, refreshUser, logout]);
+
     const complete2FA = useCallback((t: string) => {
         setToken(t);
         setTokenState(t);

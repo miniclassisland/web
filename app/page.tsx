@@ -56,7 +56,14 @@ export default function UserCenterHomePage() {
 
     useEffect(() => {
         if (!isAuthenticated) return;
-        userInfo.get().then(setProfile).catch(() => {});
+        const loadProfile = () => {
+            userInfo.get().then(setProfile).catch(() => {});
+        };
+        loadProfile();
+        window.addEventListener("miniclassisland:user-updated", loadProfile);
+        return () => {
+            window.removeEventListener("miniclassisland:user-updated", loadProfile);
+        };
     }, [isAuthenticated]);
 
     useEffect(() => {

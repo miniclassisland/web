@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { auth as authApi, twoFA, token as tokenApi, ApiError } from "@/lib/api";
 import {
     Button, Input, Label, Spinner,
+    Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions,
 } from "@fluentui/react-components";
 import { MessageBar, MessageBarBody } from "@/components/ToastMessageBar";
 import { QrCodeRegular, ArrowSyncRegular } from "@fluentui/react-icons";
@@ -39,6 +40,9 @@ export default function LoginPage() {
     const [forceResetTotp, setForceResetTotp] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState("");
     const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+    const [stageToken, setStageToken] = useState("");
+    const [reverifyModalOpen, setReverifyModalOpen] = useState(false);
+    const [pendingAction, setPendingAction] = useState<"login" | "register" | null>(null);
 
     const [qrCodeStr, setQrCodeStr] = useState("");
     const [qrDeeplink, setQrDeeplink] = useState("");
@@ -91,28 +95,77 @@ export default function LoginPage() {
         return () => clearInterval(tick);
     }, [step, qrLocalExpiresAtMs]);
 
+    const consumingRef = useRef(false);
+
     useEffect(() => {
         if (step !== "qr" || !qrCodeStr || !qrLocalExpiresAtMs) return;
-        const pollTimer = setInterval(async () => {
+        let cancelled = false;
+        let finished = false;
+        let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+        consumingRef.current = false;
+
+        const stopTimers = () => {
+            finished = true;
+            if (fallbackTimer) {
+                clearInterval(fallbackTimer);
+                fallbackTimer = null;
+            }
+        };
+
+        const tryConsume = async () => {
+            if (cancelled || finished || consumingRef.current) return;
             if (Date.now() >= qrLocalExpiresAtMs) {
                 setQrRemainingSec(0);
-                clearInterval(pollTimer);
+                stopTimers();
                 return;
             }
+            consumingRef.current = true;
             try {
                 const p = await tokenApi.pollQrLogin(qrCodeStr);
+                if (cancelled) return;
                 if (p.status === "authorized" && p.token) {
-                    clearInterval(pollTimer);
+                    stopTimers();
                     complete2FA(p.token);
-                } else if (p.status === "expired") {
+                    return;
+                }
+                if (p.status === "expired") {
                     setQrRemainingSec(0);
-                    clearInterval(pollTimer);
+                    stopTimers();
+                    return;
                 }
             } catch {
                 // ignore transient network errors during poll
             }
-        }, 2000);
-        return () => clearInterval(pollTimer);
+            consumingRef.current = false;
+        };
+
+        const unsubscribe = tokenApi.subscribeQrLogin(qrCodeStr, {
+            onEvent: (evt) => {
+                if (cancelled || finished) return;
+                if (evt.event !== "qr.updated") return;
+                const payload = evt.data as { status?: string } | undefined;
+                if (payload?.status === "expired") {
+                    setQrRemainingSec(0);
+                    stopTimers();
+                    return;
+                }
+                if (payload?.status === "authorized") {
+                    void tryConsume();
+                }
+            },
+            onError: () => {
+                if (cancelled || finished || fallbackTimer) return;
+                fallbackTimer = setInterval(() => {
+                    void tryConsume();
+                }, 5000);
+            },
+        });
+
+        return () => {
+            cancelled = true;
+            stopTimers();
+            unsubscribe();
+        };
     }, [step, qrCodeStr, qrLocalExpiresAtMs, complete2FA]);
 
     useEffect(() => {
@@ -177,7 +230,8 @@ export default function LoginPage() {
 
         setLocalLoading(true);
         try {
-            const res = await authApi.checkMailAvailability(email, turnstileToken) as { available?: boolean };
+            const res = await authApi.checkMailAvailability(email, turnstileToken) as { available?: boolean; turnstile_token?: string };
+            setStageToken(res?.turnstile_token || "");
             if (res && res.available === false) {
                 setStep("login");
             } else {
@@ -194,38 +248,76 @@ export default function LoginPage() {
         }
     }
 
+    async function submitLoginWithTokens(opts: { stageTok?: string; cfTok?: string }) {
+        try {
+            await login({
+                email,
+                password,
+                turnstile_stage_token: opts.stageTok || undefined,
+                cf_turnstile_response: opts.cfTok || undefined,
+            });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "";
+            if (msg.includes("TURNSTILE_STAGE_TOKEN_EXPIRED")) {
+                clearError();
+                setStageToken("");
+                setPendingAction("login");
+                setTurnstileToken("");
+                setTurnstileResetKey((k) => k + 1);
+                setReverifyModalOpen(true);
+            }
+        }
+    }
+
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
         clearError();
         setLocalError(null);
-        if (!turnstileToken) {
-            setLocalError("请先完成 Turnstile 人机验证");
+        if (!stageToken && !turnstileToken) {
+            setPendingAction("login");
+            setTurnstileResetKey((k) => k + 1);
+            setReverifyModalOpen(true);
             return;
         }
-        await login({
-            email,
-            password,
-            cf_turnstile_response: turnstileToken,
-        });
+        await submitLoginWithTokens({ stageTok: stageToken, cfTok: turnstileToken });
         setTurnstileToken("");
         setTurnstileResetKey((k) => k + 1);
+    }
+
+    async function submitRegisterWithTokens(opts: { stageTok?: string; cfTok?: string }) {
+        try {
+            await register({
+                email,
+                password,
+                username: username.trim() || undefined,
+                display_name: displayName || undefined,
+                turnstile_stage_token: opts.stageTok || undefined,
+                cf_turnstile_response: opts.cfTok || undefined,
+            });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "";
+            if (msg.includes("TURNSTILE_STAGE_TOKEN_EXPIRED")) {
+                clearError();
+                setStageToken("");
+                setPendingAction("register");
+                setTurnstileToken("");
+                setTurnstileResetKey((k) => k + 1);
+                setReverifyModalOpen(true);
+            }
+        }
     }
 
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
         clearError();
         setLocalError(null);
-        if (!turnstileToken) {
-            setLocalError("请先完成 Turnstile 人机验证");
+        if (!stageToken && !turnstileToken) {
+            setPendingAction("register");
+            setTurnstileResetKey((k) => k + 1);
+            setReverifyModalOpen(true);
             return;
         }
-        await register({
-            email,
-            password,
-            username: username.trim() || undefined,
-            display_name: displayName || undefined,
-            cf_turnstile_response: turnstileToken,
-        });
+        await submitRegisterWithTokens({ stageTok: stageToken, cfTok: turnstileToken });
         setTurnstileToken("");
         setTurnstileResetKey((k) => k + 1);
     }
@@ -458,24 +550,21 @@ export default function LoginPage() {
                                         autoFocus
                                     />
                                 </div>
-                                <TurnstileWidget
-                                    action="login"
-                                    resetKey={turnstileResetKey}
-                                    onVerify={(tok) => setTurnstileToken(tok)}
-                                />
                                 <Button
                                     appearance="primary"
                                     type="submit"
-                                    disabled={loading || !password || !turnstileToken}
+                                    disabled={loading || !password}
                                     style={{ width: "100%", marginTop: 8 }}
                                 >
                                     {loading ? <Spinner size="tiny" /> : "登录"}
                                 </Button>
-                                <div className="text-center mt-16">
-                                    <Button appearance="subtle" size="small" onClick={resetFlow}>
-                                        使用其他邮箱
-                                    </Button>
-                                </div>
+                                <Button
+                                    appearance="secondary"
+                                    style={{ width: "100%", marginTop: 8 }}
+                                    onClick={resetFlow}
+                                >
+                                    使用其他邮箱
+                                </Button>
                             </form>
                         )}
 
@@ -529,24 +618,21 @@ export default function LoginPage() {
                                     />
                                     <div className="form-hint" style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>密码长度至少为 12 个字符，包含大小写字母与数字</div>
                                 </div>
-                                <TurnstileWidget
-                                    action="register"
-                                    resetKey={turnstileResetKey}
-                                    onVerify={(tok) => setTurnstileToken(tok)}
-                                />
                                 <Button
                                     appearance="primary"
                                     type="submit"
-                                    disabled={loading || password.length < 12 || !turnstileToken}
+                                    disabled={loading || password.length < 12}
                                     style={{ width: "100%", marginTop: 8 }}
                                 >
                                     {loading ? <Spinner size="tiny" /> : "完成注册"}
                                 </Button>
-                                <div className="text-center mt-16">
-                                    <Button appearance="subtle" size="small" onClick={resetFlow}>
-                                        使用其他邮箱
-                                    </Button>
-                                </div>
+                                <Button
+                                    appearance="secondary"
+                                    style={{ width: "100%", marginTop: 8 }}
+                                    onClick={resetFlow}
+                                >
+                                    使用其他邮箱
+                                </Button>
                             </form>
                         )}
 
@@ -619,6 +705,45 @@ export default function LoginPage() {
                 )}
             </div>
             <SponsorBanner variant="card" dismissible={false} />
+            <Dialog open={reverifyModalOpen} onOpenChange={(_, data) => setReverifyModalOpen(data.open)}>
+                <DialogSurface style={{ maxWidth: 380, width: "calc(100vw - 32px)" }}>
+                    <DialogBody>
+                        <DialogTitle>人机验证已过期</DialogTitle>
+                        <DialogContent>
+                            <p style={{ marginTop: 0, marginBottom: 12, fontSize: 13, color: "var(--text-secondary)" }}>
+                                您的验证凭证已过期，请重新完成 Turnstile 人机验证以继续。
+                            </p>
+                            <TurnstileWidget
+                                action={pendingAction === "register" ? "register" : "login"}
+                                resetKey={turnstileResetKey}
+                                onVerify={async (tok) => {
+                                    setTurnstileToken(tok);
+                                    setReverifyModalOpen(false);
+                                    if (pendingAction === "login") {
+                                        await submitLoginWithTokens({ cfTok: tok });
+                                    } else if (pendingAction === "register") {
+                                        await submitRegisterWithTokens({ cfTok: tok });
+                                    }
+                                    setPendingAction(null);
+                                    setTurnstileToken("");
+                                    setTurnstileResetKey((k) => k + 1);
+                                }}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button
+                                appearance="secondary"
+                                onClick={() => {
+                                    setReverifyModalOpen(false);
+                                    setPendingAction(null);
+                                }}
+                            >
+                                取消
+                            </Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
         </div>
     );
 }
