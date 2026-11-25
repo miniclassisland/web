@@ -1355,6 +1355,7 @@ export interface PluginComponentItem {
     description?: string | null;
     iconGlyph?: string | null;
     isComponentContainer?: boolean;
+    isContainer?: boolean;
     hasSettingsControl?: boolean;
     componentTypeName?: string | null;
     settingsTypeName?: string | null;

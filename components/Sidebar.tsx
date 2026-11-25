@@ -132,6 +132,27 @@ export default function Sidebar({
     );
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
     const [coreVersion, setCoreVersion] = useState("...");
+    const [cacheProgress, setCacheProgress] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const init = (window as unknown as Record<string, unknown>).__mciCacheProgress as
+            | { status?: string; percent?: number }
+            | undefined;
+        if (init?.status === "updating" && typeof init.percent === "number") {
+            setCacheProgress(init.percent);
+        }
+        const onProgress = (e: Event) => {
+            const detail = (e as CustomEvent<{ status?: string; percent?: number }>).detail;
+            if (detail?.status === "updating") {
+                setCacheProgress(Math.max(0, Math.min(99, Number(detail.percent ?? 0))));
+            } else {
+                setCacheProgress(null);
+            }
+        };
+        window.addEventListener("mci-sw-cache-progress", onProgress);
+        return () => window.removeEventListener("mci-sw-cache-progress", onProgress);
+    }, []);
 
     const accountTree = useMemo(() => buildAccountTree(accounts), [accounts]);
 
@@ -410,7 +431,7 @@ export default function Sidebar({
                     <CommunityJoinLink />
                 </div>
                 <div className="sidebar-version-bar">
-                    网页版本 {WEB_VERSION} | 核心版本 {coreVersion}
+                    网页版本 {WEB_VERSION} | {cacheProgress !== null ? `核心更新中 ${cacheProgress}%` : `核心版本 ${coreVersion}`}
                 </div>
             </div>
         </aside>

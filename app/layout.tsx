@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import AppShell from "@/components/AppShell";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
   title: "MINI ClassIsland 管理面板",
   description: "MINI ClassIsland 集控管理平台",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "MINI ClassIsland",
+  },
   icons: {
     icon: "/icon.svg",
   },
@@ -33,6 +39,7 @@ export default function RootLayout({
       </head>
       <body>
         <Providers>
+          <ServiceWorkerRegistrar />
           <AppShell>{children}</AppShell>
         </Providers>
       </body>

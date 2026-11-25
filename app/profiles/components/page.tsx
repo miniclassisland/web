@@ -54,10 +54,18 @@ function findBuiltinMeta(id?: string): BuiltinComponentMeta | undefined {
 }
 
 /** 判断组件是否为容器组件 */
-function isContainerComponent(item?: ComponentSettingsItem | null): boolean {
+function isContainerComponent(
+    item?: ComponentSettingsItem | null,
+    pluginComponents?: PluginComponentItem[]
+): boolean {
     if (!item) return false;
     const meta = findBuiltinMeta(item.Id);
     if (meta?.isContainer) return true;
+    if (pluginComponents && item.Id) {
+        const lower = item.Id.trim().toLowerCase();
+        const pm = pluginComponents.find((p) => (p.id || "").trim().toLowerCase() === lower);
+        if (pm?.isComponentContainer || pm?.isContainer) return true;
+    }
     const settingsObj = item.Settings as Record<string, unknown> | undefined;
     return !!(settingsObj && typeof settingsObj === "object" && Array.isArray(settingsObj.Children));
 }
@@ -512,11 +520,30 @@ export default function ComponentsPage() {
     }
 
     // ── 组件与容器操作 ──
-    function addComponent(id: string, name: string) {
+    function findPluginMeta(id?: string): PluginComponentItem | undefined {
+        if (!id) return undefined;
+        const lower = id.trim().toLowerCase();
+        return pluginComponents.find((p) => (p.id || "").trim().toLowerCase() === lower);
+    }
+
+    function addComponent(id: string, name: string, options?: { isContainer?: boolean }) {
         const meta = findBuiltinMeta(id);
-        const defaultSettings = meta?.defaultSettings
+        const pluginMeta = findPluginMeta(id);
+        const isContainer = Boolean(
+            meta?.isContainer ||
+            options?.isContainer ||
+            pluginMeta?.isComponentContainer ||
+            pluginMeta?.isContainer
+        );
+        let defaultSettings: Record<string, unknown> | undefined = meta?.defaultSettings
             ? JSON.parse(JSON.stringify(meta.defaultSettings))
             : undefined;
+        if (isContainer) {
+            defaultSettings = {
+                ...(defaultSettings || {}),
+                Children: Array.isArray(defaultSettings?.Children) ? defaultSettings.Children : [],
+            };
+        }
         const newComp: ComponentSettingsItem = {
             Id: meta?.id || id,
             NameCache: meta?.name || name,
@@ -590,8 +617,16 @@ export default function ComponentsPage() {
 
     function openContainerChildren(idx: number) {
         const comp = activeChildren[idx];
-        if (!comp || !isContainerComponent(comp)) return;
+        if (!comp || !isContainerComponent(comp, pluginComponents)) return;
         const meta = findBuiltinMeta(comp.Id);
+        const sObj = (comp.Settings && typeof comp.Settings === "object") ? (comp.Settings as Record<string, unknown>) : {};
+        if (!Array.isArray(sObj.Children)) {
+            updateActiveChildrenList((prev) =>
+                prev.map((c, i) =>
+                    i === idx ? { ...c, Settings: { ...sObj, Children: [] } } : c
+                )
+            );
+        }
         setContainerStack((prev) => [
             ...prev,
             {
@@ -600,7 +635,6 @@ export default function ComponentsPage() {
                 id: comp.Id || "",
             },
         ]);
-        const sObj = (comp.Settings && typeof comp.Settings === "object") ? (comp.Settings as Record<string, unknown>) : {};
         const subChildren = Array.isArray(sObj.Children) ? sObj.Children : [];
         setSelectedCompIdx(subChildren.length > 0 ? 0 : -1);
     }
@@ -1616,7 +1650,7 @@ export default function ComponentsPage() {
                                                     ) : (
                                                         (line.Children || []).map((comp, cIdx) => {
                                                             const meta = findBuiltinMeta(comp.Id);
-                                                            const isContainer = isContainerComponent(comp);
+                                                            const isContainer = isContainerComponent(comp, pluginComponents);
                                                             const isCompActive = isLineSelected && containerStack.length === 0 && selectedCompIdx === cIdx;
                                                             const isContainerOpen = isLineSelected && containerStack[0]?.indexInParent === cIdx;
                                                             const childCount = isContainer && comp.Settings && typeof comp.Settings === "object" && Array.isArray((comp.Settings as Record<string, unknown>).Children)
@@ -1764,7 +1798,7 @@ export default function ComponentsPage() {
                                         ) : (
                                             activeChildren.map((comp, cIdx) => {
                                                 const meta = findBuiltinMeta(comp.Id);
-                                                const isContainer = isContainerComponent(comp);
+                                                const isContainer = isContainerComponent(comp, pluginComponents);
                                                 const isSelected = selectedCompIdx === cIdx;
                                                 return (
                                                     <div
@@ -1806,7 +1840,7 @@ export default function ComponentsPage() {
                                 </div>
                                 {currentComp && (
                                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                                        {isContainerComponent(currentComp) && (
+                                        {isContainerComponent(currentComp, pluginComponents) && (
                                             <Button size="small" appearance="primary" icon={<Box24Regular />} onClick={() => openContainerChildren(selectedCompIdx)}>
                                                 管理子组件
                                             </Button>
@@ -1990,7 +2024,9 @@ export default function ComponentsPage() {
                                             </div>
                                         ) : (
                                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
-                                                {pluginComponents.map((pc) => (
+                                                {pluginComponents.map((pc) => {
+                                                    const isPluginContainer = Boolean(pc.isComponentContainer || pc.isContainer);
+                                                    return (
                                                     <div
                                                         key={pc.id}
                                                         className="card"
@@ -2002,14 +2038,19 @@ export default function ComponentsPage() {
                                                             justifyContent: "space-between",
                                                             gap: 6,
                                                             cursor: "pointer",
-                                                            border: pc.isComponentContainer ? "1px dashed var(--accent-color)" : "1px solid var(--border-color)",
+                                                            border: isPluginContainer ? "1px dashed var(--accent-color)" : "1px solid var(--border-color)",
                                                         }}
-                                                        onClick={() => addComponent(pc.id, pc.name || pc.id)}
+                                                        onClick={() => addComponent(pc.id, pc.name || pc.id, { isContainer: isPluginContainer })}
                                                     >
                                                         <div>
-                                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, gap: 4 }}>
                                                                 <span style={{ fontWeight: 600, fontSize: 13 }}>{pc.name || pc.id}</span>
-                                                                <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px" }}>插件</span>
+                                                                <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                                                    {isPluginContainer && (
+                                                                        <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px" }}>容器</span>
+                                                                    )}
+                                                                    <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px" }}>插件</span>
+                                                                </div>
                                                             </div>
                                                             {pc.description && (
                                                                 <div style={{ fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.4 }}>
@@ -2024,7 +2065,8 @@ export default function ComponentsPage() {
                                                             <span style={{ fontSize: 12, color: "var(--accent-color)", fontWeight: 600 }}>添加</span>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
 
